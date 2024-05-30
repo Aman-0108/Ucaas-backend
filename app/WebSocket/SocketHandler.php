@@ -2,7 +2,6 @@
 
 namespace App\WebSocket;
 
-use App\Http\Controllers\Api\WebSocketController;
 use App\Models\Extension;
 use App\Models\User;
 use Ratchet\MessageComponentInterface;
@@ -201,8 +200,19 @@ class SocketHandler implements MessageComponentInterface
         }
     }
 
+    /**
+     * Send a message to a specific client.
+     *
+     * This function sends a message to a client identified by a resource ID.
+     *
+     * @param string $resourceId The resource ID of the client to send the message to.
+     * @param mixed $message The message to be sent to the client.
+     *
+     * @return void
+     */
     public function sendMessageToClient($resourceId, $message)
     {
+        // Check if the client with the provided resource ID exists
         if (isset($this->clients[$resourceId])) {
             $client = $this->clients[$resourceId];
 
@@ -210,6 +220,7 @@ class SocketHandler implements MessageComponentInterface
             $message = json_encode($message);
             $client->send($message);
         } else {
+            // If the client with the provided resource ID is not found, display an error message
             echo "Client with resource ID $resourceId not found.";
         }
     }
@@ -244,40 +255,74 @@ class SocketHandler implements MessageComponentInterface
         return null;
     }
 
+    /**
+     * Validate the provided personal access token.
+     *
+     * This function checks whether the provided personal access token is valid.
+     *
+     * @param string $token The personal access token to validate.
+     *
+     * @return mixed Returns the ID of the token owner if the token is valid, otherwise returns false.
+     */
     protected function isValidToken($token)
     {
-        $tokendetails = PersonalAccessToken::findToken($token);
+        // Find token details by token value
+        $tokenDetails = PersonalAccessToken::findToken($token);
 
-        return ($tokendetails) ? $tokendetails->tokenable->id : false;
-        
+        // If token details are found, return the ID of the token owner; otherwise, return false
+        return ($tokenDetails) ? $tokenDetails->tokenable->id : false;
     }
 
-    // get online extensions
+    /**
+     * Retrieve online extensions.
+     *
+     * This function retrieves online extensions by querying the Extension model
+     * for entries where 'sofia_status' is true. It then constructs a customized
+     * response and sends it to the onDataReceived method.
+     *
+     * @return void
+     */
     protected function getOnlineExtensions()
     {
+        // Query the Extension model for online extensions
         $result = Extension::where('sofia_status', true)->get(['extension', 'sofia_status', 'account_id']);
 
+        // If online extensions are found
         if ($result) {
+            // Construct a customized response
             $customizedResponse = [
                 'key' => 'UserRegister',
                 'result' => $result,
             ];
 
+            // Send the customized response to onDataReceived method
             $this->onDataReceived(json_encode($customizedResponse));
         }
     }
 
-    // get online extensions
+    /**
+     * Retrieve online users.
+     *
+     * This function retrieves online users by querying the User model
+     * for entries where 'socket_status' is true. It then constructs a customized
+     * response and sends it to the onDataReceived method.
+     *
+     * @return void
+     */
     protected function getOnlineUsers()
     {
+        // Query the User model for online users
         $result = User::where('socket_status', true)->get(['id', 'name', 'email']);
 
+        // If online users are found
         if ($result) {
+            // Construct a customized response
             $customizedResponse = [
                 'key' => 'onlineUser',
                 'result' => $result,
             ];
 
+            // Send the customized response to onDataReceived method
             $this->onDataReceived(json_encode($customizedResponse));
         }
     }
