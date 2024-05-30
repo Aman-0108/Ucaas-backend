@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('timezones', function (Blueprint $table) {
             $table->id();
             $table->uuid('uid_no')->index()->nullable();
-            $table->foreignId('account_id')->references('id')->on('accounts');
+            // $table->foreignId('account_id')->references('id')->on('accounts');
             $table->string('name')->nullable();
             $table->string('value')->nullable();
             $table->bigInteger('created_by')->nullable();

@@ -24,7 +24,6 @@ class TimezoneSeeder extends Seeder
                 'name' => $timezone,
                 'value' => $timezone,
                 'created_by' => 1,
-                'account_id' => 1,
             ]);
         }
     }
