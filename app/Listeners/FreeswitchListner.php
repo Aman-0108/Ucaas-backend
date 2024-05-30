@@ -89,6 +89,9 @@ class FreeswitchListner
             case 'CHANNEL_STATE':
                 $this->handleChannelState($eventData);
                 break;
+            case 'RECORD_START':
+                $this->recordStart($eventData);
+                break;
             case 'RECORD_STOP':
                 $this->handleCallRecord($eventData);
                 break;
@@ -315,5 +318,10 @@ class FreeswitchListner
 
         // Dispatch an event with the incoming call recorded data to notify the application
         Event::dispatch(new CallRecorded($eventData));
+    }
+
+    protected function recordStart($eventData)
+    {
+        Log::info($eventData);
     }
 }

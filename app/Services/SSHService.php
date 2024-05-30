@@ -154,14 +154,23 @@ class SSHService
         }
     }
 
-    // download
+    /**
+     * Downloads a file from a remote server via SFTP.
+     *
+     * This function downloads a file from a remote server using SFTP (Secure File Transfer Protocol).
+     *
+     * @param string $localFilePath The local file path where the downloaded file will be saved.
+     * @param string $remoteFilePath The remote file path of the file to be downloaded.
+     *
+     * @return bool Returns true if the file was downloaded successfully, false otherwise.
+     */
     public function downloadFile($localFilePath, $remoteFilePath)
     {
         // Download the file from the remote server
         if ($this->sftp->get($remoteFilePath, $localFilePath)) {
-            return true;
+            return true; // File downloaded successfully
         } else {
-            return false;
+            return false; // Failed to download file
         }
     }
 }

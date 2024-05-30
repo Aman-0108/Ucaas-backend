@@ -52,4 +52,9 @@ return [
         'port' => env('WEBSOCKET_PORT', 8091)
     ],
 
+    'stripe' => [
+        'api_key' => env('STRIPE_KEY', ''),
+        'api_secret' => env('STRIPE_SECRET', '')
+    ]
+
 ];
