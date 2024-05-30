@@ -28,10 +28,8 @@ class StripeController extends Controller
     // live
     public function createPaymentMethod($request)
     {
-        Stripe::setApiKey(env('STRIPE_SECRET_T'));
-
         try {
-            $paymentMethod = PaymentMethod::create([
+            $inputData = [
                 'type' => 'card',
                 'card' => [
                     'number' => $request['card_number'],
@@ -40,7 +38,9 @@ class StripeController extends Controller
                     'cvc' => $request['cvc'],
                     //'token' => 'tok_visa'
                 ],
-            ]);
+            ];
+
+            $paymentMethod = $this->stripe->paymentMethods->create($inputData);
 
             return response()->json(['success' => $paymentMethod], 200);
         } catch (\Exception $e) {
@@ -52,18 +52,15 @@ class StripeController extends Controller
     // live
     public function createPaymentIntent($accountId, $amount, $paymentId)
     {
-        // Set your secret API key
-        Stripe::setApiKey(env('STRIPE_SECRET_T'));
-
         // Define metadata
         $metadata = [
             'account_id' => $accountId,
             // Add more metadata fields as needed
         ];
 
-        $intent = PaymentIntent::create([
+        $paymentData = [
             'confirm' => true,
-            'amount' => $amount, // Amount in cents
+            'amount' => $amount * 100, // Amount in cents
             'currency' => 'usd',
             'payment_method' => $paymentId,
             'automatic_payment_methods' => [
@@ -71,7 +68,11 @@ class StripeController extends Controller
                 'allow_redirects' => 'never'
             ],
             'metadata' => $metadata,
-        ]);
+        ];
+
+        $intent = $this->stripe->paymentIntents->create($paymentData);
+
+        // $intent = PaymentIntent::create();
 
         return $intent->id;
     }

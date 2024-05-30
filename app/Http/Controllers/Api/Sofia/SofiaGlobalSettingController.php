@@ -88,7 +88,7 @@ class SofiaGlobalSettingController extends Controller
         $type = $this->type;
 
         // Generate UID and attach it to the validated data
-        $validated['uid_no'] = createUid($action, $type, $validated, $userId);
+        createUid($action, $type, $validated, $userId);
 
         // Create a new Sip profile domain record in the database
         $data = SofiaGlobalSetting::create($validated);
@@ -214,7 +214,7 @@ class SofiaGlobalSettingController extends Controller
         $type = $this->type;
 
         // Generate UID and attach it to the validated data
-        $validated['uid_no'] = createUid($action, $type, $formattedDescription, $userId);
+        createUid($action, $type, $formattedDescription, $userId);
 
         // Update the settings with the validated data
         $globalSettings->update($validated);

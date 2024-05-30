@@ -13,10 +13,7 @@ return new class extends Migration
     {
         Schema::create('groups', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uid_no')->nullable();
-            // ->onUpdate('cascade')->onDelete('cascade')
-            $table->foreignId('account_id')->references('id')->on('accounts');
-            // ->onUpdate('cascade')->onDelete('cascade')
+            $table->foreignId('account_id')->references('id')->on('accounts')->onUpdate('cascade')->onDelete('cascade');
             $table->string('group_name')->nullable();
             $table->bigInteger('created_by')->nullable();
             $table->softDeletes();

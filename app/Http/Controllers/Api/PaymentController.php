@@ -211,7 +211,7 @@ class PaymentController extends Controller
             $invoiceData = $invoice->generateInvoice($transactionId);
 
             // Send mail to account holder with invoice
-            Mail::to($account->email)->send(new SendInvoice($invoiceData));
+            // Mail::to($account->email)->send(new SendInvoice($invoiceData));
 
             $payment->invoice_url = $invoiceData['pdfPath'];
             $payment->save();

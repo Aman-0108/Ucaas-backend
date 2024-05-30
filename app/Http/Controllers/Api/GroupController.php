@@ -109,7 +109,6 @@ class GroupController extends Controller
             $request->all(),
             [
                 'account_id' => 'required|exists:accounts,id',
-                'uid_no' => 'exists:uids,uid_no',
                 'group_name' => 'required|unique:groups,group_name',
                 'created_by' => 'required|exists:users,id',
             ]
@@ -138,7 +137,7 @@ class GroupController extends Controller
         $type = $this->type;
 
         // Generate UID and attach it to the validated data
-        $validated['uid_no'] = createUid($action, $type, $validated, $userId);
+        createUid($action, $type, $validated, $userId);
 
         // Create a new group record with validated data
         $data = Group::create($validated);
@@ -192,7 +191,6 @@ class GroupController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                'uid_no' => 'exists:uids,uid_no',
                 'created_by' => 'exists:users,id',
                 'group_name' => 'unique:groups,group_name,' . $id,
             ]
@@ -221,7 +219,7 @@ class GroupController extends Controller
         $type = $this->type;
 
         // Generate UID and attach it to the validated data
-        $validated['uid_no'] = createUid($action, $type, $formattedDescription, $userId);
+        createUid($action, $type, $formattedDescription, $userId);
 
         // Update the group record with validated data
         $group->update($validated);

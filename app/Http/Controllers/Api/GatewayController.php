@@ -109,7 +109,6 @@ class GatewayController extends Controller
             [
                 // Validation rules for each field
                 'account_id' => 'required|exists:accounts,id',
-                'uid_no' => 'exists:uids,uid_no',
                 'name' => 'required|unique:gateways,name',
                 'username' => 'required|string',
                 'password' => 'required|string',
@@ -149,7 +148,7 @@ class GatewayController extends Controller
         $type = $this->type;
 
         // Generate UID and attach it to the validated data
-        $validated['uid_no'] = createUid($action, $type, $validated, $userId);
+        createUid($action, $type, $validated, $userId);
 
         // Create a new gateway record with the validated data
         $data = Gateway::create($validated);
@@ -243,7 +242,7 @@ class GatewayController extends Controller
         $type = $this->type;
 
         // Generate UID and attach it to the validated data
-        $validated['uid_no'] = createUid($action, $type, $formattedDescription, $userId);
+        createUid($action, $type, $formattedDescription, $userId);
 
         // Update the gateway with the validated data
         $gateway->update($validated);

@@ -72,7 +72,6 @@ class TimezoneController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                'uid_no' => 'required|exists:uids,uid_no',
                 'name' => 'required|unique:timezones,name',
                 'value' => 'required',
                 'created_by' => 'required|exists:users,id',
@@ -125,9 +124,7 @@ class TimezoneController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                'uid_no' => 'exists:uids,uid_no',
                 'name' => 'unique:timezones,name,' .$id,
-                // 'value' => 'required',
                 'created_by' => 'exists:users,id',
             ]
         );

@@ -15,7 +15,6 @@ class CreateVariablesTable extends Migration
     {
         Schema::create('variables', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uid_no')->index()->nullable();
             $table->string('command');
             $table->string('var_name');
             $table->string('var_value');

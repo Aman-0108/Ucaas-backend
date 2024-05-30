@@ -15,7 +15,6 @@ class CreateDialplansTable extends Migration
     {
         Schema::create('dialplans', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uid_no')->index()->nullable();
             $table->enum('type', ['Local', 'Inbound', 'Outbound'])->nullable();
             $table->string('country_code');
             $table->string('destination');
