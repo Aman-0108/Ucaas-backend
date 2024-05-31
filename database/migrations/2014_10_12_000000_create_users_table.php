@@ -16,7 +16,6 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
 
-            $table->uuid('uid_no')->nullable();
             $table->string('name')->nullable();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
@@ -30,14 +29,14 @@ return new class extends Migration
             $table->bigInteger('account_id')->nullable();
 
             $table->integer('timezone_id')->nullable();
-            $table->enum('language', ['English', 'Hindi'])->default('English');
-            $table->enum('status', ['E', 'D'])->default('E')->comment('E for Enable & D for Disable');
+            $table->enum('language', config('enums.languages'))->default('English');
+            $table->enum('status', config('enums.user.status'))->default(config('enums.user.defaultstatus'))->comment(config('enums.user.statuscomment'));
 
-            $table->enum('usertype', ['','Admin', 'Company', 'Primary', 'General'])->default('');
+            $table->enum('usertype', config('enums.user.types'))->default(config('enums.user.defaultusertype'));
             $table->bigInteger('extension_id')->nullable();     
             
             $table->bigInteger('socket_session_id')->nullable();
-            $table->enum('socket_status',['online', 'offline'])->default('offline');
+            $table->enum('socket_status',config('enums.socket.status'))->default(config('enums.socket.defaultstatus'));
 
             $table->integer('approved_by')->nullable();
             

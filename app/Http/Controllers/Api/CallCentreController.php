@@ -224,8 +224,10 @@ class CallCentreController extends Controller
             // Retrieve data from the request object
             $inputs = $request->agents;
 
-            foreach ($inputs as $input) {
-
+            foreach ($inputs as $input) {         
+                
+                $input['call_center_queue_id'] = $id;       
+                
                 if (isset($input['id'])) {
                     $agentValidator = Validator::make(
                         $input,
@@ -287,7 +289,6 @@ class CallCentreController extends Controller
                 }
             }
         }
-
 
         DB::commit();
 

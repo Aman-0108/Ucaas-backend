@@ -153,17 +153,19 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         // To get all the roles
         Route::get('roles', 'index');
 
-        // To store new role
-        Route::post('role/store', 'store');
+        Route::middleware(['admin'])->group(function () {
+            // To store new role
+            Route::post('role/store', 'store');
+            
+            // To update the particular role by Id
+            Route::put('role/{id}', 'update');
+
+            // To destroy the role by Id
+            Route::delete('role/{id}', 'destroy');
+        });
 
         // To get the particular role by Id
         Route::get('role/{id}', 'show');
-
-        // To update the particular role by Id
-        Route::put('role/{id}', 'update');
-
-        // To destroy the role by Id
-        Route::delete('role/{id}', 'destroy');
     });
 
     // Domain
@@ -617,7 +619,7 @@ Route::controller(PaymentController::class)->group(function () {
 });
 
 Route::controller(CommioController::class)->group(function () {
-    Route::post('searchDid', 'searchDid_commio');    
+    Route::post('searchDid', 'searchDid_commio');
 });
 
 Route::controller(TfnController::class)->group(function () {

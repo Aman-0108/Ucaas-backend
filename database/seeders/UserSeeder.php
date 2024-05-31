@@ -20,52 +20,42 @@ class UserSeeder extends Seeder
             'email' => 'developer@webvio.com',
             'password' => bcrypt('123456'),
             'username' => 'dummy',
-            'account_id' => 1
+            'usertype' => 'Admin'
         ]);
 
         User::create([
             'name' => 'Azhar',
             'email' => 'peter@webvio.com',
             'password' => bcrypt('123456'),
-            'username' => 'Azahar',
-            'domain_id' => 1,
-            'account_id' => 1
+            'username' => 'Azahar'
         ]);
 
         User::create([
             'name' => 'Tushar',
             'email' => 'john@webvio.com',
             'password' => bcrypt('123456'),
-            'username' => 'Tushar',
-            'domain_id' => 1,
-            'account_id' => 1
+            'username' => 'Tushar'
         ]);       
 
         User::create([
             'name' => 'Ravi',
             'email' => 'ravi@webvio.com',
             'password' => bcrypt('123456'),
-            'username' => 'Ravi',
-            'domain_id' => 1,
-            'account_id' => 1
+            'username' => 'Ravi'
         ]);
 
         User::create([
             'name' => 'solman',
             'email' => 'solman@webvio.com',
             'password' => bcrypt('123456'),
-            'username' => 'solman',
-            'domain_id' => 1,
-            'account_id' => 1
+            'username' => 'solman'
         ]);
 
         User::create([
             'name' => 'Bikash',
             'email' => 'bikash@webvio.com',
             'password' => bcrypt('123456'),
-            'username' => 'Bikash',
-            'domain_id' => 1,
-            'account_id' => 1
+            'username' => 'Bikash'
         ]);
     }
 }

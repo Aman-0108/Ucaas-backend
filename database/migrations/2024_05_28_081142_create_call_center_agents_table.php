@@ -17,9 +17,10 @@ class CreateCallCenterAgentsTable extends Migration
     {
         Schema::create('call_center_agents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('call_center_queue_id')->references('id')->on('call_center_queues');
+            $table->foreignId('call_center_queue_id')->references('id')->on('call_center_queues')->onUpdate('cascade')->onDelete('cascade');
+            
             $table->string('agent_name')->nullable();
-           
+
             $table->enum('type', ['callback', 'uuid-standby'])->nullable();
             $table->string('contact')->nullable();
             $table->unsignedInteger('max_no_answer')->nullable();
