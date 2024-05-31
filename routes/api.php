@@ -560,6 +560,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::post('vendor/store', 'store');
             Route::put('vendor/update/{id}', 'update');
             Route::delete('vendor/destroy/{id}', 'destroy');
+            Route::get('vendor/show/{id}', 'show');
         });
 
         // Rate Chart

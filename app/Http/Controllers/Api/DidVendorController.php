@@ -204,6 +204,37 @@ class DidVendorController extends Controller
         return response()->json($response, Response::HTTP_OK);
     }
 
+
+    public function show($id)
+    {
+        // Find the domain with the given ID
+        $vendor = DidVendor::find($id);
+
+        // Check if the domain exists
+        if (!$vendor) {
+            // If domain is not found, prepare error response
+            $response = [
+                'status' => false,
+                'error' => 'Vendor not found'
+            ];
+            // Return a JSON response with error message and 404 status code
+            return response()->json($response, Response::HTTP_NOT_FOUND);
+        }
+
+        // Prepare success response with domain details
+        $response = [
+            'status' => true,
+            'data' => ($vendor) ? $vendor : '', // Include domain details if found
+            'message' => 'Successfully fetched'
+        ];
+
+        // Return a JSON response containing the domain details
+        return response()->json($response, Response::HTTP_OK);
+    }
+
+
+
+
     /**
      * Remove the specified resource from storage.
      *

@@ -225,7 +225,7 @@ class CallCentreController extends Controller
             $inputs = $request->agents;
 
             foreach ($inputs as $input) {
-
+                $input['call_center_queue_id'] = $id; 
                 if (isset($input['id'])) {
                     $agentValidator = Validator::make(
                         $input,

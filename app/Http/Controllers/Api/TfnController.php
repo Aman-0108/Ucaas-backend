@@ -12,6 +12,8 @@ use App\Models\DidVendor;
 use App\Models\DidRateChart;
 use App\Models\DidDetail;
 
+use function PHPUnit\Framework\isEmpty;
+
 class TfnController extends Controller
 {
     public function getActiveDidVendor()
@@ -113,15 +115,60 @@ class TfnController extends Controller
 
             }
 
-            
         }
-        
-
-        
-        
+    
     }
 
     public function purchaseTfn(Request $request){
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'vendorId' => 'required',
+                //'dids' => 'required',
+                'didQty' => 'required|integer',
+                'rate' => 'required',
+                'accountId' => 'required',
+            ]
+        );
+        if ($validator->fails()) {
+            $response = [
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validator->errors()
+            ];
+            return response()->json($response, Response::HTTP_FORBIDDEN);
+        }
+        $DidVendorController = new DidVendorController();
+        $vendorDataResponse = $DidVendorController->show($request->vendorId);
+       
+        
+        if(empty($vendorDataResponse))
+        {
+            $response = [
+                'status' => false,
+                'message' => 'Vendor Id Not Found.',
+                'errors' => $validator->errors()
+            ];
+            return response()->json($response, Response::HTTP_NOT_FOUND);
+        }
+        else
+        {
+            $functionDataObject = $vendorDataResponse->getData();
+            //echo $functionDataObject->data->vendor_name; exit;
+           
+            if ($request->has('dids')) {
+                print_r($request->dids); exit;
+                $inputs = $request->dids;
+                foreach ($inputs as $input) 
+                {
+                    echo $input; echo '<br>';
+                }
+            }
+        }
+
 
     }
+
+
+   
 }

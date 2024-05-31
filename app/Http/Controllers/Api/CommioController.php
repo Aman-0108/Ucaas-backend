@@ -168,7 +168,7 @@ class CommioController extends Controller
                     "tollfreePrefix" => $numbersData->tollfreePrefix,
                     "match" => $numbersData->match,
                     "currency" => "USD",
-                    "price" => $functionDataObject->data->rate,
+                    "price" => !empty($functionDataObject->data->rate) ? $functionDataObject->data->rate : "",
                 ];
             }
 
