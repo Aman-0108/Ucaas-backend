@@ -155,15 +155,27 @@ class TfnController extends Controller
         {
             $functionDataObject = $vendorDataResponse->getData();
             //echo $functionDataObject->data->vendor_name; exit;
-           
-            if ($request->has('dids')) {
-                print_r($request->dids); exit;
-                $inputs = $request->dids;
-                foreach ($inputs as $input) 
-                {
-                    echo $input; echo '<br>';
-                }
+
+            if($functionDataObject->data->vendor_name == 'Commio'){
+
+                
+                $CommioController = new CommioController();
+                $purchaseDataResponse = $CommioController->purchaseDidInCommio($request->vendorId,$request->didQty,$request->rate,$request->accountId,$request->dids);
+                //$responseFunctionDataObject = $purchaseDataResponse->getData();
+                //return response()->json($responseFunctionDataObject, Response::HTTP_OK);
+                
             }
+            else{
+                $response = [
+                    'status' => false,
+                    'message' => 'Active Vendor is not Properly Configure',
+                    'errors' => $validator->errors()
+                ];
+                return response()->json($response, Response::HTTP_NOT_FOUND);
+            }
+           
+           
+           
         }
 
 

@@ -184,4 +184,103 @@ class CommioController extends Controller
             
 
     }
+
+    public function purchaseDidInCommio($vendorId,$didQty,$rate,$accountId,$dids)
+    {
+
+        $tnsarray = [];
+        if (!empty($dids)) {
+            //echo count($request->dids); exit;
+            $inputs = $dids;
+            foreach ($inputs as $input) 
+            {
+                $tnsarray[] = array(
+                    "caller_id"=>null,
+                    "caller_id"=> null,
+                    "account_location_id"=> null,
+                    "sms_routing_profile_id"=> null,
+                    "route_id"=> null,
+                    "features" => array(
+                    "cnam"=> false,
+                    "sms"=> true,
+                    "e911"=> false
+                    ),
+                    "did"=> $input['dids']
+                );
+            }
+            //return response()->json($tnsarray, Response::HTTP_OK);
+
+                    $issuedata = [
+                        "MerchantGuid" => $this->connex_MerchantGuid,
+                        "FirstName" => $firstName,
+                        "LastName" => $lastname,
+                        "Phone" => $phone,
+                        "Address1"=> $res,
+                        "Address2"=> "",
+                        "City"=> $city,
+                        "State"=> $state,
+                        "Zipcode"=> $zip,
+                        "Country"=> $country,
+                        //"UsageLimit"=> 10,
+                        "AmountLimit"=> $amount,
+                        "ExpirationDate"=> $expdate,
+                        "TerminateDate"=> $termidate,
+                        "PurchaseType"=> $purchase_type,
+                        "IncomingTransactionCode"=> $tran_code,
+                        "SequenceNumber" => $seqno,
+                        "SupplierId"=>$iatacode
+                    ];
+                    //echo '<pre>'; print_r($issuedata); exit;
+                    $crediCredentials = json_encode($issuedata, JSON_FORCE_OBJECT);
+
+
+
+
+                    $curl = curl_init();
+                    curl_setopt_array($curl, array(
+                    CURLOPT_URL => 'https://api.thinq.com/account/{{account_id}}/origination/order/create',
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_ENCODING => '',
+                    CURLOPT_MAXREDIRS => 10,
+                    CURLOPT_TIMEOUT => 0,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                    CURLOPT_CUSTOMREQUEST => 'POST',
+                    CURLOPT_POSTFIELDS =>'{
+                        "order": {
+                        "tns":  [
+                                    {
+                                    "caller_id": null,
+                                    "account_location_id": null,
+                                    "sms_routing_profile_id": null,
+                                    "route_id": null,
+                                    "features": {
+                                        "cnam": false,
+                                        "sms": true,
+                                        "e911": false
+                                    },
+                                    "did": XXXXXXXXXX
+                                    }
+                                ],
+                        "blocks": []
+                        }
+                    }',
+                    CURLOPT_HTTPHEADER => array(
+                        'Authorization: Basic <auth string>',
+                        'Content-Type: application/json'
+                    ),
+                    ));
+
+                    $response = curl_exec($curl);
+
+                    curl_close($curl);
+                    echo $response;
+
+            
+
+
+
+            
+        }
+    }
 }
