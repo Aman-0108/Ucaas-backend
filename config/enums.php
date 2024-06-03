@@ -1,6 +1,32 @@
 <?php
 
-return $global = [
+return $enums = [
+    'languages' => [
+        'English',
+        'Hindi'
+    ],
+    'user' => [
+        'types' => [
+            'Admin',
+            'Company',
+            'Primary',
+            'General'
+        ],
+        'defaultusertype' => 'Primary',
+        'status' => [
+            'E',
+            'D'
+        ],
+        'defaultstatus' => 'E',
+        'statuscomment' => 'E for Enable & D for Disable'
+    ],
+    'socket' => [
+        'status' => [
+            'online',
+            'offline'
+        ],
+        'defaultstatus' => 'offline'
+    ],
     'agent' => [
         'strategy' => [
             'ring-all',
@@ -26,33 +52,6 @@ return $global = [
             'Receiving',
             'In a queue call',
         ],
-    ],
-    'Agentbackup' => [
-        'Strategy' => [
-            'RINGALL' => 'ring-all',
-            'LONGESTIDLEAGENT' => 'longest-idle-agent',
-            'ROUNDROBIN' => 'round-robin',
-            'TOPDOWN' => 'top-down',
-            'AGENTWITHLEASTTALKTIME' => 'agent-with-least-talk-time',
-            'AGENTWITHFEWESTCALLS' => 'agent-with-fewest-calls',
-            'SEQUENTIALLYBYAGENTORDER' => 'sequentially-by-agent-order',
-            'RANDOM' => 'random',
-            'RINGPROGRESSIVELY' => 'ring-progressively',
-        ],
-        'Status' => [
-            'LoggedOut' => 'Logged Out',
-            'Available' => 'Available',
-            'AOD' => 'Available (On Demand)',
-            'OnBreak' => 'On Break',
-
-        ],
-        'state' => [
-            'Idle' => 'Idle',
-            'Waiting' => 'Waiting',
-            'Receiving' => 'Receiving',
-            'InAQueueCall' => 'In a queue call',
-        ],
-    ],
-
+    ]
     // Add more static values as needed
 ];
