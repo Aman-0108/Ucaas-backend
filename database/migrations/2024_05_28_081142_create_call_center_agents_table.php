@@ -21,7 +21,7 @@ class CreateCallCenterAgentsTable extends Migration
             
             $table->string('agent_name')->nullable();
 
-            $table->enum('type', ['callback', 'uuid-standby'])->nullable();
+            $table->enum('type', config('enums.agent.type'))->nullable();
             $table->string('contact')->nullable();
             $table->unsignedInteger('max_no_answer')->nullable();
             $table->unsignedBigInteger('wrap_up_time')->nullable();

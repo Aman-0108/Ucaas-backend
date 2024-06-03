@@ -39,12 +39,15 @@ return $enums = [
             'random',
             'ring-progressively',
         ],
+        'type' => [
+            'callback',
+            'uuid-standby'
+        ],
         'status' => [
             'Logged Out',
             'Available',
             'Available (On Demand)',
-            'On Break',
-
+            'On Break'
         ],
         'state' => [
             'Idle',

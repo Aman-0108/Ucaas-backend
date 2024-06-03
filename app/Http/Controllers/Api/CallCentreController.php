@@ -119,6 +119,7 @@ class CallCentreController extends Controller
                     [
                         'call_center_queue_id' => 'required|exists:call_center_queues,id',
                         'agent_name' => 'required|string|unique:call_center_agents,agent_name,' . $input['agent_name'] . ',id,call_center_queue_id,' . $call_center_queue_id,
+                        'type' => 'in:' . implode(',', config('enums.agent.type')),
                         'tier_level' => 'numeric|between:0,9',
                         'tier_position' => 'numeric|between:0,9',
                         'status' => 'in:' . implode(',', config('enums.agent.status')),
@@ -235,6 +236,7 @@ class CallCentreController extends Controller
                             'id' => 'required|exists:call_center_agents,id',
                             'call_center_queue_id' => 'required|exists:call_center_queues,id',
                             'agent_name' => 'required|string|unique:call_center_agents,agent_name,' . $input['id'] . ',id,call_center_queue_id,' . $id,
+                            'type' => 'in:' . implode(',', config('enums.agent.type')),
                             'tier_level' => 'numeric|between:0,9',
                             'tier_position' => 'numeric|between:0,9',
                             'status' => 'in:' . implode(',', config('enums.agent.status')),
@@ -247,6 +249,7 @@ class CallCentreController extends Controller
                         [
                             'call_center_queue_id' => 'required|exists:call_center_queues,id',
                             'agent_name' => 'required|string|unique:call_center_agents,agent_name,' . $input['agent_name'] . ',id,call_center_queue_id,' . $id,
+                            'type' => 'in:' . implode(',', config('enums.agent.type')),
                             'tier_level' => 'numeric|between:0,9',
                             'tier_position' => 'numeric|between:0,9',
                             'status' => 'in:' . implode(',', config('enums.agent.status')),
