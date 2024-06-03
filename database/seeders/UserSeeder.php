@@ -19,15 +19,15 @@ class UserSeeder extends Seeder
             'name' => 'developer',
             'email' => 'developer@webvio.com',
             'password' => bcrypt('123456'),
-            'username' => 'dummy',
-            'usertype' => 'Admin'
+            'username' => 'developer',
+            'usertype' => 'SupreAdmin'
         ]);
 
         User::create([
             'name' => 'Azhar',
             'email' => 'peter@webvio.com',
             'password' => bcrypt('123456'),
-            'username' => 'Azahar'
+            'username' => 'Azhar'
         ]);
 
         User::create([

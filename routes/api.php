@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\TfnController;
 use App\Http\Controllers\Api\DidRateController;
 use App\Http\Controllers\Api\DidVendorController;
 use App\Http\Controllers\Api\InvoiceController;
+use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\StripeControllerc;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -63,18 +64,23 @@ Route::group(['middleware' => 'guest'], function () {
     // All timezones
     Route::get('timezones/{Account?}', [TimezoneController::class, 'index']);
 
-    Route::controller(AccountController::class)->group(function () {
-        // To create new account 
-        Route::post('account-store', 'store');
-        // Login 
-        Route::post('account-login', 'login');
-
-        // Payment adjusted
-        Route::post('payment-adjust', 'paymentAdjust');
-
-        // Recharge
-        Route::post('recharge', 'recharge');
+    Route::controller(LeadController::class)->group(function () {
+        // To create new lead 
+        Route::post('lead-store', 'store');
     });
+
+    // Route::controller(AccountController::class)->group(function () {
+    //     // To create new account 
+    //     Route::post('account-store', 'store');
+    //     // Login 
+    //     Route::post('account-login', 'login');
+
+    //     // Payment adjusted
+    //     Route::post('payment-adjust', 'paymentAdjust');
+
+    //     // Recharge
+    //     Route::post('recharge', 'recharge');
+    // });
 
     // To store new account
     Route::post('account-detail/stores', [AccountDetailsController::class, 'store']);

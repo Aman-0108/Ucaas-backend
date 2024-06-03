@@ -54,6 +54,18 @@ return $enums = [
             'Receiving',
             'In a queue call',
         ],
+    ],
+    'company' => [
+        'company_status' => [
+            'Payment Completed',
+            'Document Uploaded',
+            'Document Verified',
+            'Profile Configured'
+        ],
+        'status' => [
+            'active',
+            'inactive'
+        ]
     ]
     // Add more static values as needed
 ];

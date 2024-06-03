@@ -50,11 +50,11 @@ class StripeController extends Controller
     }
 
     // live
-    public function createPaymentIntent($accountId, $amount, $paymentId)
+    public function createPaymentIntent($leadId, $amount, $paymentId)
     {
         // Define metadata
         $metadata = [
-            'account_id' => $accountId,
+            'lead_id' => $leadId,
             // Add more metadata fields as needed
         ];
 
@@ -71,8 +71,6 @@ class StripeController extends Controller
         ];
 
         $intent = $this->stripe->paymentIntents->create($paymentData);
-
-        // $intent = PaymentIntent::create();
 
         return $intent->id;
     }
