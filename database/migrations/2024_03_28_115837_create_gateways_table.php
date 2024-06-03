@@ -13,10 +13,7 @@ return new class extends Migration
     {
         Schema::create('gateways', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uid_no')->index()->nullable();
-            // ->onUpdate('cascade')->onDelete('cascade')
-            $table->foreignId('account_id')->references('id')->on('accounts');
-            // ->onUpdate('cascade')->onDelete('cascade')
+            $table->foreignId('account_id')->references('id')->on('accounts')->onUpdate('cascade')->onDelete('cascade');
             $table->string('name')->nullable();
             $table->string('username')->nullable();
             $table->string('password')->nullable();

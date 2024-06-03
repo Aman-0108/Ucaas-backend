@@ -16,7 +16,10 @@ class AccountSeeder extends Seeder
     public function run()
     {
         Account::create([
-            'name' => 'JP',
+            'admin_name' => 'deloitte',
+            'company_name' => 'Deloitte',
+            'timezone_id' => 1,
+            'email' => 'tushar@webviotechnologies.com'
         ]);
     }
 }

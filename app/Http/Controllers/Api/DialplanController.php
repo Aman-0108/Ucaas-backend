@@ -146,7 +146,7 @@ class DialplanController extends Controller
         $type = $this->type;
 
         // Generate UID and attach it to the validated data
-        $validated['uid_no'] = createUid($action, $type, $validated, $userId);
+        createUid($action, $type, $validated, $userId);
 
         // Create a new dialplan record with the validated data
         $data = Dialplan::create($validated);
@@ -252,7 +252,7 @@ class DialplanController extends Controller
         $type = $this->type;
 
         // Generate UID and attach it to the validated data
-        $validated['uid_no'] = createUid($action, $type, $formattedDescription, $userId);
+        createUid($action, $type, $formattedDescription, $userId);
 
         // Update the dialplan record with validated data
         $dialplan->update($validated);

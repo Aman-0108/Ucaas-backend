@@ -16,7 +16,6 @@ return new class extends Migration
         Schema::create('sip_profiles', function (Blueprint $table) {
             $table->id();
 
-            $table->uuid('uid_no')->index()->nullable();
             $table->string('name')->nullable();
             $table->string('description')->nullable();
 

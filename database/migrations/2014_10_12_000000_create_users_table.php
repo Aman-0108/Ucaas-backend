@@ -40,7 +40,7 @@ return new class extends Migration
             $table->enum('socket_status',['online', 'offline'])->default('offline');
 
             $table->integer('approved_by')->nullable();
-            
+            $table->text('firebase_token')->nullable();            
 
             $table->rememberToken();
             $table->softDeletes();

@@ -89,7 +89,7 @@ class SipProfileDomainController extends Controller
         $type = $this->type;
 
         // Generate UID and attach it to the validated data
-        $validated['uid_no'] = createUid($action, $type, $validated, $userId);
+        createUid($action, $type, $validated, $userId);
 
         // Create a new Sip profile domain record in the database
         $data = SipProfileDomain::create($validated);
@@ -176,7 +176,7 @@ class SipProfileDomainController extends Controller
         $type = $this->type;
 
         // Generate UID and attach it to the validated data
-        $validated['uid_no'] = createUid($action, $type, $formattedDescription, $userId);
+        createUid($action, $type, $formattedDescription, $userId);
 
         // Update the domain with the validated data
         $domain->update($validated);

@@ -39,7 +39,7 @@ class CreateAccountsTable extends Migration
 
             $table->string('temp_password')->nullable();
             $table->string('payment_url')->nullable();
-            // $table->text('firebase_token')->nullable();
+            $table->text('firebase_token')->nullable();
 
             $table->softDeletes();
             $table->timestamps();
