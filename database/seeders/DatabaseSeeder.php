@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         $this->call(TimezoneSeeder::class);
+        $this->call(PackageSeeder::class);
         $this->call(PaymentGatewaySeeder::class);
         $this->call(UserSeeder::class);
         $this->call(SofiaGlobalsettingsSeeder::class);

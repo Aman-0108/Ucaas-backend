@@ -31,16 +31,16 @@ class CreateAccountsTable extends Migration
             $table->string('zip')->nullable();
             $table->string('country')->nullable();
 
-            $table->enum('company_status',['new','applied','approved']);
-            $table->enum('status',['active','inactive'])->default('active');
+            $table->enum('company_status', config('enums.company.company_status'))->comment(config('enums.company.comment_company_status'));
+            $table->enum('status', config('enums.company.status'))->default(config('enums.company.default_status'));
 
             $table->foreignId('package_id')->references('id')->on('packages');
 
-            $table->string('passkey')->nullable();
+            // $table->string('passkey')->nullable();
             $table->integer('approved_by')->nullable();
 
-            $table->string('temp_password')->nullable();
-            $table->string('payment_url')->nullable();
+            // $table->string('temp_password')->nullable();
+            // $table->string('payment_url')->nullable();
             $table->text('firebase_token')->nullable();
 
             $table->softDeletes();

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 
@@ -15,6 +14,7 @@
         <h2>Account Details:</h2>
         <ul>
             <li><strong>Username/Email:</strong> {{ $account['email'] }}</li>
+            <li><strong>Password:</strong> {{ $account['password'] }}</li>
         </ul>
 
         <h2>Next Steps:</h2>
@@ -22,6 +22,9 @@
             <li><strong>Url to upload company details</strong> {{ $account['dynamicUrl'] }} </li>
             <li><strong>Explore:</strong> Discover all the amazing features and services we offer.</li>
             <li><strong>Customize:</strong> Personalize your account settings to suit your preferences.</li>
+            <li><strong>Log In:</strong> Head over to our website at <a
+                    href="{{ config('globals.website_url') }}">{{ config('globals.website_url') }}/login</a>.</li>
+
             <li><strong>Get Started:</strong> Dive right in and start making the most of {{ config('app.name') }}.</li>
         </ol>
 
@@ -31,8 +34,8 @@
         <p>Once again, welcome aboard! We're excited to have you as part of our community.</p>
 
         <p>Best regards,<br>
-            [Your Name]<br>
-            [Your Job Title]<br>
+            John Doe<br>
+            HR Manager<br>
             {{ config('app.name') }}</p>
     </body>
 

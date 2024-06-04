@@ -48,7 +48,6 @@ class LeadController extends Controller
                 'zip' => 'required|string',
                 'country' => 'required|string',
                 'package_id' => 'required|numeric|exists:packages,id',
-                'status' => 'in:active,inactive'
             ]
         );
 

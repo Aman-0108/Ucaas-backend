@@ -15,7 +15,7 @@ class CreatePackagesTable extends Migration
     {
         Schema::create('packages', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->nullable();
+            $table->string('name');
             $table->string('number_of_user')->nullable();
             $table->text('description')->nullable();
             $table->enum('subscription_type', ['annually', 'monthly'])->default('annually'); 

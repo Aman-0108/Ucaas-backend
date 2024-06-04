@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\SendInvoice;
 use App\Models\Account;
 use App\Models\CardDetail;
 use App\Models\Lead;
@@ -15,11 +16,10 @@ use Illuminate\Http\Response;
 
 use Illuminate\Support\Facades\Validator;
 
-// use Stripe\Subscription;
-use Stripe\PaymentMethod;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 
 class PaymentController extends Controller
 {
@@ -108,10 +108,10 @@ class PaymentController extends Controller
         $input = $request->only(['card_number', 'exp_month', 'exp_year', 'cvc', 'type']);
 
         // Create payment method using Stripe
-        $paymentResponse = $this->stripeController->createPaymentMethod($input);
+        $paymentMethodResponse = $this->stripeController->createPaymentMethod($input);
 
-        $paymentContent = $paymentResponse->getContent();
-        $responseData = json_decode($paymentContent, true);
+        $paymentMethodContent = $paymentMethodResponse->getContent();
+        $responseData = json_decode($paymentMethodContent, true);
 
         if (isset($responseData['error'])) {
             // Handle the error related to incorrect card number
@@ -138,7 +138,7 @@ class PaymentController extends Controller
 
             $account = $this->createAccount($lead);
 
-            $this->createUser($account);
+            $user = $this->createUser($account);
 
             $accountId = $account->id;            
 
@@ -151,7 +151,7 @@ class PaymentController extends Controller
             DB::commit();
 
             // Send mail to account holder with invoice
-            // Mail::to($account->email)->send(new SendInvoice($invoiceData));
+            Mail::to($user->email)->send(new SendInvoice($invoiceData));
 
             $response = [
                 'status' => true,
@@ -187,8 +187,8 @@ class PaymentController extends Controller
         // Create a new account using lead information
         $account = Account::create($lead);
 
-        // Set the company_status to 'Payment Completed'
-        $account->company_status = 'Payment Completed';
+        // Set the company_status to '1'
+        $account->company_status = '1';
 
         // Save changes
         $account->save();
@@ -227,7 +227,9 @@ class PaymentController extends Controller
         ];
 
         // Create a new user with the generated credentials
-        User::create($userCredentials);
+        $user = User::create($userCredentials);
+        
+        return $user;
     }
 
     /**

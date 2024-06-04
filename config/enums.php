@@ -57,15 +57,17 @@ return $enums = [
     ],
     'company' => [
         'company_status' => [
-            'Payment Completed',
-            'Document Uploaded',
-            'Document Verified',
-            'Profile Configured'
+            1,
+            2,
+            3,
+            4
         ],
+        'comment_company_status' => '1 for Payment Completed, 2 for Document Uploaded, 3 for Document Verified & 4 for Profile Configured',
         'status' => [
             'active',
             'inactive'
-        ]
+        ],
+        'default_status' => 'active'
     ]
     // Add more static values as needed
 ];
