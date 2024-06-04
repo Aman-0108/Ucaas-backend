@@ -19,6 +19,35 @@ class LeadController extends Controller
     }
 
     /**
+     * Retrieves a list of leads.
+     *
+     * It then returns a JSON response containing the list of leads.
+     *    
+     * @return \Illuminate\Http\JsonResponse A JSON response containing the list of lead.
+     */
+    public function index()
+    {
+        // Start building the query to fetch leads
+        $leads = Lead::query();
+
+        // COMING FROM GLOBAL CONFIG
+        $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+
+        // Execute the query to fetch leads
+        $leads = $leads->orderBy('id', 'desc')->paginate($ROW_PER_PAGE);
+
+        // Prepare the response data
+        $response = [
+            'status' => true,
+            'data' => $leads,
+            'message' => 'Successfully fetched.'
+        ];
+
+        // Return a JSON response containing the list of leads
+        return response()->json($response, Response::HTTP_OK);
+    }
+
+    /**
      * Store a new Lead.
      *
      * This method validates the incoming request data and stores a new lead in the database.

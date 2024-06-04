@@ -65,6 +65,9 @@ Route::group(['middleware' => 'guest'], function () {
     Route::get('timezones/{Account?}', [TimezoneController::class, 'index']);
 
     Route::controller(LeadController::class)->group(function () {
+        // To get all the leads
+        Route::get('leads', 'index');
+
         // To create new lead 
         Route::post('lead-store', 'store');
     });
