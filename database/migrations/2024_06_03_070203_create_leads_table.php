@@ -22,11 +22,13 @@ class CreateLeadsTable extends Migration
             $table->foreignId('timezone_id')->references('id')->on('timezones');
             $table->string('email');
             $table->string('contact_no');
-            $table->string('alternate_contact_no');
+            $table->string('alternate_contact_no')->nullable();
 
+            $table->string('building')->nullable();
             $table->string('unit');
             $table->string('street');
             $table->string('city');
+            $table->string('state');
             $table->string('zip');
             $table->string('country');
 

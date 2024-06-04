@@ -23,9 +23,11 @@ class CreateAccountsTable extends Migration
             $table->string('contact_no');
             $table->string('alternate_contact_no')->nullable();
 
+            $table->string('building')->nullable();
             $table->string('unit')->nullable();
             $table->string('street')->nullable();
             $table->string('city')->nullable();
+            $table->string('state');
             $table->string('zip')->nullable();
             $table->string('country')->nullable();
 

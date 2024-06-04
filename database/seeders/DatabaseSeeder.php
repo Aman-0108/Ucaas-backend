@@ -13,13 +13,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        // \App\Models\User::factory(10)->create();
-        $this->call(UidSeeder::class);
         $this->call(TimezoneSeeder::class);
-        // $this->call(AccountSeeder::class);
+        $this->call(PaymentGatewaySeeder::class);
         $this->call(UserSeeder::class);
-        // $this->call(DomainSeeder::class);
-        // $this->call(GroupSeeder::class);
         $this->call(SofiaGlobalsettingsSeeder::class);
+        $this->call(SipProfileSeeder::class);
     }
 }

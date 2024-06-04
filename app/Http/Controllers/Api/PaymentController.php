@@ -138,9 +138,9 @@ class PaymentController extends Controller
 
             $account = $this->createAccount($lead);
 
-            $accountId = $account->id;
-
             $this->createUser($account);
+
+            $accountId = $account->id;            
 
             $this->saveCard($request, $accountId);
 
@@ -171,25 +171,49 @@ class PaymentController extends Controller
         }
     }
 
+    /**
+     * Creates a new account using lead information.
+     * @param $lead object The lead object containing information for creating the account.
+     * @return Account The newly created account object with company_status set to 'Payment Completed'.
+     */
     public function createAccount($lead)
     {
+        // Remove unnecessary properties from the lead object
         unset($lead->id, $lead->created_at, $lead->updated_at);
 
+        // Convert the lead object to an array
         $lead = $lead->toArray();
 
+        // Create a new account using lead information
         $account = Account::create($lead);
 
+        // Set the company_status to 'Payment Completed'
         $account->company_status = 'Payment Completed';
+
+        // Save changes
         $account->save();
 
+        // Return the newly created account
         return $account;
     }
 
+    /**
+     * Creates a new user associated with the provided account.
+     *
+     * This function extracts the name and email from the account's email address,
+     * generates user credentials based on the account information, and then creates a new user.
+     * The user's password is hashed using the company name of the account.
+     *
+     * @param $account object The account object to associate the new user with.
+     * @return void
+     */
     public function createUser($account)
     {
+        // Extract name from email address
         $parts = explode('@', $account->email);
         $name = $parts[0]; // 'test'
 
+        // Generate user credentials
         $userCredentials = [
             'name' => $name,
             'email' => $account->email,
@@ -202,11 +226,22 @@ class PaymentController extends Controller
             'account_id' => $account->id
         ];
 
+        // Create a new user with the generated credentials
         User::create($userCredentials);
     }
 
+    /**
+     * Saves card details associated with an account.
+     *
+     * This function updates or creates a new record in the CardDetail model based on the provided request data.
+     * 
+     * @param $request Illuminate\Http\Request The request object containing card details.
+     * @param $accountId int The ID of the account associated with the card details.
+     * @return void
+     */
     public function saveCard($request, $accountId)
     {
+        // Update or create card details based on account_id and card_number
         CardDetail::updateOrCreate(
             ['account_id' => $accountId, 'card_number' => $request->card_number], // Conditions to check if the record exists
             [
@@ -218,19 +253,31 @@ class PaymentController extends Controller
         );
     }
 
+    /**
+     * Creates a new subscription for an account based on the provided package information.
+     *
+     * This function generates subscription data based on the package type (monthly or annually),
+     * sets the start date to the current date and calculates the end date accordingly.
+     * It then creates a new subscription record associated with the provided account and package.
+     *
+     * @param $package object The package object containing subscription type and other details.
+     * @param $transactionId int|string The ID of the transaction associated with the subscription.
+     * @param $accountId int The ID of the account for which the subscription is created.
+     * @return void
+     */
     public function createSubscription($package, $transactionId, $accountId)
     {
+        // Get current date
         $currentDate = Carbon::now();
 
+        // Calculate end date based on package subscription type
         if ($package->subscription_type == 'monthly') {
             $endDate = $currentDate->addMonth()->format('Y-m-d H:i:s');
-        }
-
-        if ($package->subscription_type == 'annually') {
+        } elseif ($package->subscription_type == 'annually') {
             $endDate = $currentDate->addYear()->format('Y-m-d H:i:s');
         }
 
-        // subscription insert
+        // Subscription data to be inserted
         $subscriptionData = [
             'transaction_id' => $transactionId,
             'account_id' => $accountId,
@@ -240,9 +287,23 @@ class PaymentController extends Controller
             'status' => 'active'
         ];
 
+        // Create a new subscription record
         Subscription::create($subscriptionData);
     }
 
+    /**
+     * Adds a new payment record for an account.
+     *
+     * This function records payment details in the database, including the amount, transaction ID,
+     * subscription type, and other relevant information. It then generates an invoice for the payment
+     * and updates the payment record with the generated invoice URL.
+     *
+     * @param $accountId int The ID of the account for which the payment is added.
+     * @param $amount float The total amount of the payment.
+     * @param $transactionId int|string The ID of the transaction associated with the payment.
+     * @param $subscriptionType string The type of subscription associated with the payment.
+     * @return Payment The newly created payment object.
+     */
     public function addPayment($accountId, $amount, $transactionId, $subscriptionType)
     {
         // Record transaction details in the database
@@ -262,15 +323,18 @@ class PaymentController extends Controller
             // 'invoice_url' => $pdfUrl
         ];
 
+        // Create a new payment record
         $payment = Payment::create($inputData);
 
         // Generate Invoice
         $invoice = new InvoiceController();
         $invoiceData = $invoice->generateInvoice($transactionId);
 
+        // Update payment record with invoice URL
         $payment->invoice_url = $invoiceData['pdfPath'];
         $payment->save();
 
+        // Return the newly created payment object
         return $payment;
     }
 }
