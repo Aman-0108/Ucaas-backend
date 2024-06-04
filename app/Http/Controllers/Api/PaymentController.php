@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Mail\SendInvoice;
+use App\Mail\NewUserMail;
 use App\Models\Account;
 use App\Models\CardDetail;
 use App\Models\Lead;
@@ -146,12 +146,21 @@ class PaymentController extends Controller
 
             $payment = $this->addPayment($accountId, $amount, $transactionId, $package->subscription_type);
 
-            $this->createSubscription($package, $transactionId, $accountId);
+            $this->createSubscription($package, $transactionId, $accountId);            
 
-            DB::commit();
+            $userCredentials = [
+                'company_name' => $account->company_name,
+                'email' => $account->email,
+                'username' => $account->company_name,
+                'password' => Hash::make($account->company_name),
+                'dynamicUrl' => $payment->invoice_url,
+                'pdfPath' => $payment->invoice_url
+            ];
 
             // Send mail to account holder with invoice
-            Mail::to($user->email)->send(new SendInvoice($invoiceData));
+            Mail::to($account->email)->send(new NewUserMail($userCredentials));
+
+            DB::commit();
 
             $response = [
                 'status' => true,
