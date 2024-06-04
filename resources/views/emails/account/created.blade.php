@@ -19,6 +19,7 @@
 
         <h2>Next Steps:</h2>
         <ol>
+            <li><strong>Transaction id: </strong>{{ $account['transactionId'] }}</li>
             <li><strong>Url to upload company details</strong> {{ $account['dynamicUrl'] }} </li>
             <li><strong>Explore:</strong> Discover all the amazing features and services we offer.</li>
             <li><strong>Customize:</strong> Personalize your account settings to suit your preferences.</li>

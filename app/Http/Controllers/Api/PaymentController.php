@@ -152,8 +152,9 @@ class PaymentController extends Controller
                 'company_name' => $account->company_name,
                 'email' => $account->email,
                 'username' => $account->company_name,
-                'password' => Hash::make($account->company_name),
-                'dynamicUrl' => $payment->invoice_url,
+                'password' => $account->company_name,
+                'dynamicUrl' => '',
+                'transactionId' => $transactionId,
                 'pdfPath' => $payment->invoice_url
             ];
 

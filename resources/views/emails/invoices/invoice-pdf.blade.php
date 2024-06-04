@@ -76,9 +76,9 @@
         <table class="w-full">
             <tr>
                 <td class="w-half">
-                    <img src="{{ asset('laraveldaily.png') }}" alt="laravel daily" width="200" />
+                    <img src="{{ asset('laraveldaily.png') }}" alt="ucaas" width="200" />
                 </td>
-                <td class="w-half" style="text-align: end">
+                <td class="w-half" style="text-align: right">
                     <h2>Invoice ID: #{{ $payment->id }} </h2>
                 </td>
             </tr>
