@@ -160,7 +160,7 @@ class TfnController extends Controller
 
                 
                 $CommioController = new CommioController();
-                $purchaseDataResponse = $CommioController->purchaseDidInCommio($request->vendorId,$request->didQty,$request->rate,$request->accountId,$request->dids);
+                return $purchaseDataResponse = $CommioController->purchaseDidInCommio($request->vendorId,$request->didQty,$request->rate,$request->accountId,$request->dids);
                 //$responseFunctionDataObject = $purchaseDataResponse->getData();
                 //return response()->json($responseFunctionDataObject, Response::HTTP_OK);
                 
