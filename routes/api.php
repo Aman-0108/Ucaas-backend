@@ -151,11 +151,11 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::post('role/store', 'store');
 
             // To update the particular role by Id
-            Route::put('role/{id}', 'update');
-
-            // To destroy the role by Id
-            Route::delete('role/{id}', 'destroy');
+            Route::put('role/{id}', 'update');            
         });
+
+        // To destroy the role by Id
+        Route::delete('role/{id}', 'destroy')->middleware('admin');
 
         // To get the particular role by Id
         Route::get('role/{id}', 'show');

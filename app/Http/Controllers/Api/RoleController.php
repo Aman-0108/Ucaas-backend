@@ -34,6 +34,10 @@ class RoleController extends Controller
         // Retrieve all roles from the database
         $roles = Role::query();
 
+        if ($request->has('account_id')) {
+            $roles->where('created_by', $request->account_id);
+        }
+
         // Execute the query to fetch domains
         $roles = $roles->get();
 
