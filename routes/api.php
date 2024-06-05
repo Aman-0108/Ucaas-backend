@@ -72,22 +72,6 @@ Route::group(['middleware' => 'guest'], function () {
         Route::post('lead-store', 'store');
     });
 
-    // Route::controller(AccountController::class)->group(function () {
-    //     // To create new account 
-    //     Route::post('account-store', 'store');
-    //     // Login 
-    //     Route::post('account-login', 'login');
-
-    //     // Payment adjusted
-    //     Route::post('payment-adjust', 'paymentAdjust');
-
-    //     // Recharge
-    //     Route::post('recharge', 'recharge');
-    // });
-
-    // To store new account
-    Route::post('account-detail/stores', [AccountDetailsController::class, 'store']);
-
     // User Auth
     Route::controller(AuthController::class)->group(function () {
         Route::group(['prefix' => 'auth'], function () {
