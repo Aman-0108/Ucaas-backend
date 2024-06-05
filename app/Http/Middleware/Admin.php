@@ -20,11 +20,12 @@ class Admin
         if (auth()->user()->usertype == 'SupreAdmin') {
             return $next($request);
         }
-     
+
         $response = [
             'status' => false,
             'message' => 'You do not have privileges.'
         ];
+
         // Return a 403 Forbidden response
         return response()->json($response, Response::HTTP_FORBIDDEN);
     }
