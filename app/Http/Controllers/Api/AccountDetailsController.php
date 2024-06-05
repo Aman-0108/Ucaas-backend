@@ -7,7 +7,6 @@ use App\Models\Account;
 use App\Models\AccountDetail;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -177,6 +176,11 @@ class AccountDetailsController extends Controller
 
         // Create a new Account Details record with validated data
         $data = AccountDetail::create($validated);
+
+        // update the company status
+        $account = Account::find($accountId);
+        $account->company_status = 2;
+        $account->save();
 
         // Commit the database transaction
         DB::commit();

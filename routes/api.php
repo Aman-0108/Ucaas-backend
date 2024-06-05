@@ -149,7 +149,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::middleware(['admin', 'company'])->group(function () {
             // To store new role
             Route::post('role/store', 'store');
-            
+
             // To update the particular role by Id
             Route::put('role/{id}', 'update');
 
@@ -280,20 +280,23 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Account Details
     Route::controller(AccountDetailsController::class)->group(function () {
+
+        Route::middleware(['company'])->group(function () {
+            // To store new account
+            Route::post('account-detail/store', 'store');
+
+            // To update the particular account details by Id
+            Route::post('account-detail/update', 'update');
+
+            // To destroy the account by Id
+            Route::delete('account-detail/destroy/{id}', 'destroy');
+        });
+
         // To get all the accounts
         Route::get('account-details', 'index');
 
-        // To store new account
-        Route::post('account-detail/store', 'store');
-
         // To get the particular account by Id
         Route::get('account-detail/account/{id}', 'show');
-
-        // To update the particular account details by Id
-        Route::post('account-detail/update', 'update');
-
-        // To destroy the account by Id
-        Route::delete('account-detail/destroy/{id}', 'destroy');
     });
 
     // Extension
