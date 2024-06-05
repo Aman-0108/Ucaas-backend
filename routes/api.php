@@ -146,7 +146,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         // To get all the roles
         Route::get('roles', 'index');
 
-        Route::middleware(['admin', 'company'])->group(function () {
+        Route::middleware(['adminOrCompany'])->group(function () {
             // To store new role
             Route::post('role/store', 'store');
 
