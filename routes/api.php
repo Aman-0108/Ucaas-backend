@@ -36,6 +36,7 @@ use App\Http\Controllers\Api\DidRateController;
 use App\Http\Controllers\Api\DidVendorController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\LeadController;
+use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\StripeControllerc;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -625,6 +626,8 @@ Route::controller(TfnController::class)->group(function () {
     Route::post('purchaseTfn', 'purchaseTfn');
 });
 
-
+Route::controller(PermissionController::class)->group(function () {
+    Route::get('permission', 'index');
+});
 
 // Route::get('/ws', [UserController::class, 'socket']);

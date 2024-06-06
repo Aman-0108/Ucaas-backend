@@ -106,8 +106,8 @@ class RoleController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                'name' => 'required|unique:roles,name,NULL,id,created_by,' . $request->input('created_by'),
-                'created_by' => 'required|exists:users,id',
+                'name' => 'required|unique:roles,name,NULL,id,created_by,' . $userId,
+                'created_by' => $userId,
             ]
         );
 
