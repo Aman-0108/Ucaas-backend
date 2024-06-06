@@ -32,7 +32,7 @@ class RoleController extends Controller
     public function index(Request $request)
     {
         // Retrieve all roles from the database
-        $roles = Role::query();
+        $roles = Role::with(['rolepermission.permission']);
 
         if ($request->has('account_id')) {
             $roles->where('created_by', $request->account_id);

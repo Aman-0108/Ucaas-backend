@@ -10,4 +10,10 @@ class RolePermission extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    public function permission()
+    {
+        return $this->belongsTo(Permission::class, 'permission_id', 'id');
+    }
+    
 }
