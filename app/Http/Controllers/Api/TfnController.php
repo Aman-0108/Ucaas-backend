@@ -27,6 +27,17 @@ class TfnController extends Controller
        
     }
 
+    public function getVendor($id)
+    {
+        $vendors = DidVendor::where('id',$id)->get();
+        if ($vendors->isEmpty()) {
+            return response()->json($vendors, Response::HTTP_NOT_FOUND);
+        } else {
+            return response()->json($vendors, Response::HTTP_OK);
+        }
+       
+    }
+
     public function searchTfn(Request $request)
     {
         
@@ -37,7 +48,7 @@ class TfnController extends Controller
                 'searchType' => 'required',
                 'quantity' => 'required|integer',
                 'npa' => 'required|integer',
-                
+                'companyId' => 'required|integer',
             ]
             
         );
@@ -98,7 +109,7 @@ class TfnController extends Controller
                     else{
                         $rateType = 'random';
                         $CommioController = new CommioController();
-                        $vendorDataResponse = $CommioController->searchDidInCommio($vendorId,$vendorName,$vendorUserName,$vendorToken,$request->searchType,$request->quantity,$request->npa,$rateType);
+                        $vendorDataResponse = $CommioController->searchDidInCommio($request->companyId,$vendorId,$vendorName,$vendorUserName,$vendorToken,$request->searchType,$request->quantity,$request->npa,$rateType);
                         $functionDataObject = $vendorDataResponse->getData();
 
                         return response()->json($functionDataObject, Response::HTTP_OK);
@@ -128,6 +139,7 @@ class TfnController extends Controller
                 'didQty' => 'required|integer',
                 'rate' => 'required',
                 'accountId' => 'required',
+                'companyId' => 'required|integer',
             ]
         );
         if ($validator->fails()) {
@@ -160,7 +172,7 @@ class TfnController extends Controller
 
                 
                 $CommioController = new CommioController();
-                return $purchaseDataResponse = $CommioController->purchaseDidInCommio($request->vendorId,$request->didQty,$request->rate,$request->accountId,$request->dids);
+                return $purchaseDataResponse = $CommioController->purchaseDidInCommio($request->companyId,$request->vendorId,$request->didQty,$request->rate,$request->accountId,$request->dids);
                 //$responseFunctionDataObject = $purchaseDataResponse->getData();
                 //return response()->json($responseFunctionDataObject, Response::HTTP_OK);
                 

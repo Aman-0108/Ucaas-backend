@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\DidVendor;
+use App\Models\DidOrderStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
@@ -109,7 +111,7 @@ class CommioController extends Controller
 
     }
 
-    public function searchDidInCommio($vendorId,$vendorName,$vendorUserName,$vendorToken,$searchType,$quantity,$npa,$rateType)
+    public function searchDidInCommio($companyId,$vendorId,$vendorName,$vendorUserName,$vendorToken,$searchType,$quantity,$npa,$rateType)
     {
        
             $authToken = $vendorToken;
@@ -185,17 +187,20 @@ class CommioController extends Controller
 
     }
 
-    public function purchaseDidInCommio($vendorId,$didQty,$rate,$accountId,$dids)
+    public function purchaseDidInCommio($companyId,$vendorId,$didQty,$rate,$accountId,$dids)
     {
+        // $completeOrder = $this->completeOrder(1,16130488,1,14642);
+        // print_r($completeOrder); exit;
 
-        // Prepare the response data
-       
 
-        //echo '<pre>'; print_r($issuedata); exit;
-       
+        $DidController = new DidVendorController();
+        $vendorDataResponse = $DidController->show($vendorId);
+        $datas = $vendorDataResponse->getData();
+        $username = $datas->data->username;
+        $password = $datas->data->token;
+        
         $tnsarray = [];
         if (!empty($dids)) {
-            //echo count($request->dids); exit;
             $inputs = $dids;
             foreach ($inputs as $input) 
             {
@@ -207,7 +212,7 @@ class CommioController extends Controller
                     "route_id"=> null,
                     "features" => array(
                     "cnam"=> false,
-                    "sms"=> true,
+                    "sms"=> false,
                     "e911"=> false
                     ),
                     "did"=> $input['dids']
@@ -221,9 +226,13 @@ class CommioController extends Controller
                 ]
             );
 
+            $jsondata = json_encode($issuedata);
+
+            //print_r($issuedata); exit;
+
             $curl = curl_init();
             curl_setopt_array($curl, array(
-            CURLOPT_URL => 'https://api.thinq.com/account/{{account_id}}/origination/order/create',
+            CURLOPT_URL => 'https://api.thinq.com/account/'.$accountId.'/origination/order/create',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -231,9 +240,9 @@ class CommioController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => $issuedata,
+            CURLOPT_POSTFIELDS => $jsondata,
             CURLOPT_HTTPHEADER => array(
-                'Authorization: Basic <auth string>',
+                'Authorization: Basic '. base64_encode("$username:$password"),
                 'Content-Type: application/json'
             ),
             ));
@@ -241,8 +250,84 @@ class CommioController extends Controller
             $response = curl_exec($curl);
 
             curl_close($curl);
-            echo $response;
+
+            //print_r($response);   exit;
+            //echo $response['status'];
+            $responseData = json_decode($response, true); 
+            //echo $responseData['message'] ;  exit;
+            if (isset($responseData['status'])) {
+                if($responseData['status'] == 'created')
+                {
+                    $ordeDetail = [
+                        'account_id' => $companyId,
+                        'vendor_id' => $vendorId,
+                        'order_id' => $responseData['id'],
+                        'status' => $responseData['status'],
+                    ];
+                    $ordeDetail = DidOrderStatus::create($ordeDetail);
+
+                    if($ordeDetail){
+                        //params = companyid , orderid, vendorId , commio account id
+                        $completeOrder = $this->completeOrder($companyId,$responseData['id'],$vendorId,$accountId);
+                        
+                    }
+                }
+                else
+                {
+                    $res = [
+                        'status' => false,
+                        'message' => $responseData['message'],
+                    ];
             
+                    return response()->json($res, Response::HTTP_OK);
+                }
+            } else {
+                
+                $res = [
+                    'status' => false,
+                    'message' => $responseData['message'],
+                ];
+        
+                return response()->json($res, Response::HTTP_OK);
+            }
+
+
         }
+    }
+
+    //params = companyid , orderid, vendorId , commio account id
+    public function completeOrder($accountId,$orderId,$vendorId,$commioAccountId)
+    {
+
+        $DidController = new DidVendorController();
+        $vendorDataResponse = $DidController->show($vendorId);
+        $datas = $vendorDataResponse->getData();
+        $username = $datas->data->username;
+        $password = $datas->data->token;
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+        CURLOPT_URL => 'https://api.thinq.com/account/'.$commioAccountId.'/origination/order/complete/'.$orderId,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_HTTPHEADER => array(
+            'Authorization: Basic '. base64_encode("$username:$password"),
+            'Content-Type: application/json'
+        ),
+        ));
+
+        $response = curl_exec($curl);
+
+        curl_close($curl);
+        echo $response;
+
+
+
     }
 }
