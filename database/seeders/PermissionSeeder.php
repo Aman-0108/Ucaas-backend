@@ -33,10 +33,17 @@ class PermissionSeeder extends Seeder
 
             // Check if the model exists
             if (class_exists('App\\Models\\' . $modelName)) {
-                Permission::create([
-                    'model' => $modelName,
-                    'slug' => $slug
-                ]);
+                $actions = ['browse','read','edit','add','delete'];
+
+                foreach($actions as $action) {
+                    Permission::create([
+                        'model' => $modelName,
+                        'type' => $modelName,
+                        'action' => $action,
+                        'slug' => $slug
+                    ]);
+                }                
+               
             }
         }
     }

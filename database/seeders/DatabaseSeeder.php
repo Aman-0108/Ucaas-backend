@@ -20,5 +20,6 @@ class DatabaseSeeder extends Seeder
         $this->call(SofiaGlobalsettingsSeeder::class);
         $this->call(SipProfileSeeder::class);
         $this->call(PermissionSeeder::class);
+        $this->call(AccountSeeder::class);
     }
 }

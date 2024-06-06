@@ -19,7 +19,7 @@ class PermissionController extends Controller
     public function index()
     {
         // Retrieve all permissions from the database
-        $permissions = Permission::all();
+        $permissions = Permission::all()->groupBy('type');
 
         // Prepare the response data
         $response = [
