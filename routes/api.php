@@ -36,6 +36,7 @@ use App\Http\Controllers\Api\DidRateController;
 use App\Http\Controllers\Api\DidVendorController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\LeadController;
+use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\StripeControllerc;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -71,22 +72,6 @@ Route::group(['middleware' => 'guest'], function () {
         // To create new lead 
         Route::post('lead-store', 'store');
     });
-
-    // Route::controller(AccountController::class)->group(function () {
-    //     // To create new account 
-    //     Route::post('account-store', 'store');
-    //     // Login 
-    //     Route::post('account-login', 'login');
-
-    //     // Payment adjusted
-    //     Route::post('payment-adjust', 'paymentAdjust');
-
-    //     // Recharge
-    //     Route::post('recharge', 'recharge');
-    // });
-
-    // To store new account
-    Route::post('account-detail/stores', [AccountDetailsController::class, 'store']);
 
     // User Auth
     Route::controller(AuthController::class)->group(function () {
@@ -162,16 +147,16 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         // To get all the roles
         Route::get('roles', 'index');
 
-        Route::middleware(['admin'])->group(function () {
+        Route::middleware(['adminOrCompany'])->group(function () {
             // To store new role
             Route::post('role/store', 'store');
-            
-            // To update the particular role by Id
-            Route::put('role/{id}', 'update');
 
-            // To destroy the role by Id
-            Route::delete('role/{id}', 'destroy');
+            // To update the particular role by Id
+            Route::put('role/{id}', 'update');            
         });
+
+        // To destroy the role by Id
+        Route::delete('role/{id}', 'destroy')->middleware('admin');
 
         // To get the particular role by Id
         Route::get('role/{id}', 'show');
@@ -296,20 +281,23 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Account Details
     Route::controller(AccountDetailsController::class)->group(function () {
+
+        Route::middleware(['company'])->group(function () {
+            // To store new account
+            Route::post('account-detail/store', 'store');
+
+            // To update the particular account details by Id
+            Route::post('account-detail/update', 'update');
+
+            // To destroy the account by Id
+            Route::delete('account-detail/destroy/{id}', 'destroy');
+        });
+
         // To get all the accounts
         Route::get('account-details', 'index');
 
-        // To store new account
-        Route::post('account-detail/store', 'store');
-
         // To get the particular account by Id
         Route::get('account-detail/account/{id}', 'show');
-
-        // To update the particular account details by Id
-        Route::post('account-detail/update', 'update');
-
-        // To destroy the account by Id
-        Route::delete('account-detail/destroy/{id}', 'destroy');
     });
 
     // Extension
@@ -638,6 +626,8 @@ Route::controller(TfnController::class)->group(function () {
     Route::post('purchaseTfn', 'purchaseTfn');
 });
 
-
+Route::controller(PermissionController::class)->group(function () {
+    Route::get('permission', 'index');
+});
 
 // Route::get('/ws', [UserController::class, 'socket']);

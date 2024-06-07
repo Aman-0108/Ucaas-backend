@@ -11,4 +11,9 @@ class Role extends Model
     use HasFactory, SoftDeletes;
 
     protected $guarded = [];
+
+    public function rolepermission() {
+        return $this->hasMany(RolePermission::class, 'role_id');
+    }
+    
 }

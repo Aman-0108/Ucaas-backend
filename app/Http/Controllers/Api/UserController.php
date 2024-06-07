@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-
+use App\Models\RolePermission;
 use App\Models\User;
+use App\Traits\GetPermission;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -14,6 +15,7 @@ use WebSocket\Client;
 
 class UserController extends Controller
 {
+    use GetPermission;
     /**
      * Creates a new user.
      *
@@ -37,9 +39,9 @@ class UserController extends Controller
                     'email' => 'required|email|unique:users,email',
                     'password' => 'required',
                     'username' => 'required|unique:users,username',
-                    'group_id' => 'required|exists:groups,id',
-                    'domain_id' => 'required|exists:domains,id',
-                    'account_id' => 'required|exists:accounts,id',
+                    // 'group_id' => 'required|exists:groups,id',
+                    // 'domain_id' => 'required|exists:domains,id',
+                    // 'account_id' => 'required|exists:accounts,id',
                     'timezone_id' => 'required|exists:timezones,id',
                     'status' => 'required|in:E,D',
                     'usertype' => 'required|in:Primary,General',
@@ -62,13 +64,15 @@ class UserController extends Controller
                 'email' => $request->email,
                 'username' => $request->username,
                 'password' => Hash::make($request->password),
-                'group_id' => $request->group_id,
-                'domain_id' => $request->domain_id,
-                'account_id' => $request->account_id,
+                // 'group_id' => $request->group_id,
+                // 'domain_id' => $request->domain_id,
+                // 'account_id' => $request->account_id,
                 'timezone_id' => $request->timezone_id,
                 'status' => $request->status,
                 'usertype' => $request->usertype,
             ]);
+
+            $this->setDefaultPermission($user);
 
             // Prepare success response
             return response()->json([
@@ -141,7 +145,7 @@ class UserController extends Controller
     public function users(Request $request)
     {
         // Retrieve all users from the database
-        $users = User::with(['domain', 'extension']);
+        $users = User::with(['domain', 'extension', 'role', 'rolepermission.permission']);
 
         // Check if the request contains an 'account' parameter
         if ($request->has('account')) {
@@ -325,5 +329,47 @@ class UserController extends Controller
         // fwrite($file, $response);
         // fclose($file);
         // echo $appName = config('globals.app_name');
+    }
+
+    public function setDefaultPermission($user)
+    {
+        $formattedData = [];
+
+        if($user->usertype == 'General') {
+            $userPermission = $this->getDefaultUserPermissions();
+
+            foreach ($userPermission as $permision) {
+                $formattedData[] = [
+                    'role_id' => 1,
+                    'permission_id' => $permision->id,
+                    'created_at' =>  date("Y-m-d H:i:s"),
+                    'updated_at' =>  date("Y-m-d H:i:s")
+                ];
+            }
+
+            RolePermission::insert($formattedData);
+
+            $user->role_id = 1;
+            $user->save();
+        }
+
+        if ($user->usertype == 'Company') {
+
+            $permissions = $this->getDefaultCompaniesPermissions();
+
+            foreach ($permissions as $permision) {
+                $formattedData[] = [
+                    'role_id' => 2,
+                    'permission_id' => $permision->id,
+                    'created_at' =>  date("Y-m-d H:i:s"),
+                    'updated_at' =>  date("Y-m-d H:i:s")
+                ];
+            }
+
+            RolePermission::insert($formattedData);
+
+            $user->role_id = 2;
+            $user->save();
+        }
     }
 }

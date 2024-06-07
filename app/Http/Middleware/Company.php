@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class CompanyMiddleware
+class Company
 {
     /**
      * Handle an incoming request.
@@ -15,10 +15,10 @@ class CompanyMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->user()->tokenCan('role:account')) {
+        if (auth()->user()->usertype == 'Company') {
             return $next($request);
         }
         
-        return response()->json('Not Authorized', 401);
+        return response()->json('Not Authorized', Response::HTTP_FORBIDDEN);
     }
 }

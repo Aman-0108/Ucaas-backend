@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
-class Admin
+class AdminOrCompany
 {
     /**
      * Handle an incoming request.
@@ -17,7 +17,9 @@ class Admin
      */
     public function handle(Request $request, Closure $next)
     {
-        if (auth()->user()->usertype == 'SupreAdmin') {
+        $userType = auth()->user()->usertype;
+
+        if ($userType == 'SupreAdmin' || $userType == 'Company') {
             return $next($request);
         }
 

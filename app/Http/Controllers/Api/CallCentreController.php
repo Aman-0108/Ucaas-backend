@@ -68,6 +68,7 @@ class CallCentreController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
+                'account_id' => 'required|exists:accounts,id',
                 'queue_name' => 'required|unique:call_center_queues,queue_name',
                 'greeting' => 'string|nullable',
                 'extension' => 'string',
@@ -77,6 +78,7 @@ class CallCentreController extends Controller
                 'queue_timeout_action' => 'string|nullable',
                 'discard_abandoned_after' => 'numeric',
                 'queue_cid_prefix' => 'string',
+                'created_by' => 'required|exists:users,id'
             ]
         );
 

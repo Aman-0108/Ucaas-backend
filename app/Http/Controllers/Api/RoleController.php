@@ -32,7 +32,11 @@ class RoleController extends Controller
     public function index(Request $request)
     {
         // Retrieve all roles from the database
-        $roles = Role::query();
+        $roles = Role::with(['rolepermission.permission']);
+
+        if ($request->has('account_id')) {
+            $roles->where('created_by', $request->account_id);
+        }
 
         // Execute the query to fetch domains
         $roles = $roles->get();
@@ -97,12 +101,13 @@ class RoleController extends Controller
     {
         // Retrieve the ID of the authenticated user making the request
         $userId = $request->user()->id;
+        $request->merge(['created_by' => $userId]);
 
         // Validate incoming request data
         $validator = Validator::make(
             $request->all(),
             [
-                'name' => 'required|unique:roles,name,NULL,id,created_by,' . $request->input('created_by'),
+                'name' => 'required|unique:roles,name,NULL,id,created_by,' . $request->created_by,
                 'created_by' => 'required|exists:users,id',
             ]
         );

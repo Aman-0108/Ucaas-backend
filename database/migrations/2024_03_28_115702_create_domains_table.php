@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('domains', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uid_no')->index()->nullable();
             $table->foreignId('account_id')->references('id')->on('accounts');
             $table->string('domain_name')->nullable();
             $table->bigInteger('created_by')->nullable();

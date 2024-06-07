@@ -7,7 +7,6 @@ use App\Models\Account;
 use App\Models\AccountDetail;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -112,21 +111,13 @@ class AccountDetailsController extends Controller
      */
     public function store(Request $request)
     {
-        // Retrieve the ID of the authenticated user making the request
-        if (isset($request->user()->id)) {
-            $userId = $request->user()->id;
-        }
-
-        // Decrypt the encrypted ID
-        if (isset($request->account_id)) {
-            $accountId = Crypt::decrypt($request->account_id);
-        }
+        $userId = $request->user()->id;
 
         // Validate incoming request data
         $validator = Validator::make(
             $request->all(),
             [
-                'account_id' => 'required',
+                'account_id' => 'required|exists:accounts,id',
                 'registration_path' => 'required|mimes:jpeg,png,jpg,pdf|max:2048',
                 'tin_path' => 'required|mimes:jpeg,png,jpg,pdf|max:2048',
                 'moa_path' => 'required|mimes:jpeg,png,jpg,pdf|max:2048',
@@ -145,19 +136,7 @@ class AccountDetailsController extends Controller
             return response()->json($response, Response::HTTP_FORBIDDEN);
         }
 
-        // check accout exist or not
-        $account = Account::find($accountId);
-
-        // if account not exist throw error
-        if (!$account) {
-            // If the account is not found, return a 404 Not Found response
-            $response = [
-                'status' => false,
-                'error' => 'Account not found'
-            ];
-
-            return response()->json($response, Response::HTTP_NOT_FOUND);
-        }
+        $accountId = $request->account_id;
 
         $filePaths = [];
         $files = $request->only(['registration_path', 'tin_path', 'moa_path']);
@@ -197,6 +176,11 @@ class AccountDetailsController extends Controller
 
         // Create a new Account Details record with validated data
         $data = AccountDetail::create($validated);
+
+        // update the company status
+        $account = Account::find($accountId);
+        $account->company_status = 2;
+        $account->save();
 
         // Commit the database transaction
         DB::commit();

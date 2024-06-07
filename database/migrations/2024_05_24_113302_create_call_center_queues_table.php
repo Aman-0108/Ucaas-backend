@@ -16,12 +16,13 @@ class CreateCallCenterQueuesTable extends Migration
     {
         Schema::create('call_center_queues', function (Blueprint $table) {
             $table->id();
+
+            $table->foreignId('account_id')->references('id')->on('accounts');
+
             $table->string('queue_name')->nullable();
             $table->string('greeting')->nullable();
             $table->string('extension')->nullable();
             $table->enum('strategy', config('enums.agent.strategy'))->nullable();
-
-            $table->string('domain')->nullable();
 
             $table->string('moh_sound')->nullable();
             $table->boolean('record_template')->default(false);
@@ -40,6 +41,8 @@ class CreateCallCenterQueuesTable extends Migration
             $table->string('queue_timeout_action')->nullable();
             $table->unsignedBigInteger('discard_abandoned_after')->nullable();
             $table->string('queue_cid_prefix')->nullable();
+
+            $table->foreignId('created_by')->references('id')->on('users');
 
             $table->timestamps();
         });
