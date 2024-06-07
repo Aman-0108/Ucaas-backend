@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('extensions', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('uid_no')->index()->nullable();            
+            $table->id();      
 
             $table->foreignId('account_id')->references('id')->on('accounts');
 

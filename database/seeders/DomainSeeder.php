@@ -16,27 +16,10 @@ class DomainSeeder extends Seeder
      */
     public function run()
     {
-        $uid = Uid::find(1);
-
         Domain::create([
             'domain_name' => '192.168.1.150',
             'created_by' => 1,
-            'account_id' => 1,
-            'uid_no' => $uid->uid_no
-        ]);
-
-        Domain::create([
-            'domain_name' => '192.168.1.21',
-            'created_by' => 1,
-            'account_id' => 1,
-            'uid_no' => $uid->uid_no
-        ]);
-
-        Domain::create([
-            'domain_name' => '192.168.1.22',
-            'created_by' => 1,
-            'account_id' => 1,
-            'uid_no' => $uid->uid_no
-        ]);
+            'account_id' => 1
+        ]);       
     }
 }

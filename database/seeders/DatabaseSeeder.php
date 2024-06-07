@@ -15,11 +15,21 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(TimezoneSeeder::class);
         $this->call(PackageSeeder::class);
+        $this->call(FeatureSeeder::class);
         $this->call(PaymentGatewaySeeder::class);
         $this->call(UserSeeder::class);
+        
+        $this->call(PermissionSeeder::class);
+
         $this->call(SofiaGlobalsettingsSeeder::class);
         $this->call(SipProfileSeeder::class);
-        $this->call(PermissionSeeder::class);
+        $this->call(SipProfileSettingsSeeder::class);
+        $this->call(SipProfileDomainSeeder::class);
+        $this->call(DialplanSeeder::class);
+
         $this->call(AccountSeeder::class);
+        $this->call(DomainSeeder::class);
+
+        $this->call(ExtensionSeeder::class);
     }
 }

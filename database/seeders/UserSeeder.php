@@ -23,40 +23,40 @@ class UserSeeder extends Seeder
             'usertype' => 'SupreAdmin'
         ]);
 
-        User::create([
-            'name' => 'Azhar',
-            'email' => 'peter@webvio.com',
-            'password' => bcrypt('123456'),
-            'username' => 'Azhar'
-        ]);
+        // User::create([
+        //     'name' => 'Azhar',
+        //     'email' => 'peter@webvio.com',
+        //     'password' => bcrypt('123456'),
+        //     'username' => 'Azhar'
+        // ]);
 
-        User::create([
-            'name' => 'Tushar',
-            'email' => 'john@webvio.com',
-            'password' => bcrypt('123456'),
-            'username' => 'Tushar'
-        ]);       
+        // User::create([
+        //     'name' => 'Tushar',
+        //     'email' => 'john@webvio.com',
+        //     'password' => bcrypt('123456'),
+        //     'username' => 'Tushar'
+        // ]);       
 
-        User::create([
-            'name' => 'Ravi',
-            'email' => 'ravi@webvio.com',
-            'password' => bcrypt('123456'),
-            'username' => 'Ravi'
-        ]);
+        // User::create([
+        //     'name' => 'Ravi',
+        //     'email' => 'ravi@webvio.com',
+        //     'password' => bcrypt('123456'),
+        //     'username' => 'Ravi'
+        // ]);
 
-        User::create([
-            'name' => 'solman',
-            'email' => 'solman@webvio.com',
-            'password' => bcrypt('123456'),
-            'username' => 'solman'
-        ]);
+        // User::create([
+        //     'name' => 'solman',
+        //     'email' => 'solman@webvio.com',
+        //     'password' => bcrypt('123456'),
+        //     'username' => 'solman'
+        // ]);
 
-        User::create([
-            'name' => 'Bikash',
-            'email' => 'bikash@webvio.com',
-            'password' => bcrypt('123456'),
-            'username' => 'Bikash'
-        ]);
+        // User::create([
+        //     'name' => 'Bikash',
+        //     'email' => 'bikash@webvio.com',
+        //     'password' => bcrypt('123456'),
+        //     'username' => 'Bikash'
+        // ]);
        
     }
 }

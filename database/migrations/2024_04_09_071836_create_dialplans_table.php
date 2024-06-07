@@ -19,7 +19,7 @@ class CreateDialplansTable extends Migration
             $table->string('country_code');
             $table->string('destination');
             $table->string('context')->nullable();
-            $table->string('dial_action')->comment('select from dropdown[in drop down there will have single voip account/extension and as well group]');
+            $table->string('dial_action')->nullable()->comment('select from dropdown[in drop down there will have single voip account/extension and as well group]');
             $table->string('caller_Id_name')->nullable();
             $table->string('caller_Id_number')->nullable();
             $table->string('caller_Id_name_prefix')->nullable()->comment('set a prefix on a caller id name');

@@ -20,7 +20,7 @@ class AccountSeeder extends Seeder
             'admin_name' => 'rdx',
             'company_name' => 'RDX',
             'timezone_id' => 1,
-            'email' => 'rdx@webviotechnologies.com',
+            'email' => 'rdx@webvio.com',
             'contact_no' => 9609090569,
             'state' => 'WB',
             'company_status' => 1,
