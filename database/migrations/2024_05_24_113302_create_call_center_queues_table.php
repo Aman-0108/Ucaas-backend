@@ -24,8 +24,6 @@ class CreateCallCenterQueuesTable extends Migration
             $table->string('extension')->nullable();
             $table->enum('strategy', config('enums.agent.strategy'))->nullable();
 
-            $table->string('domain')->nullable();
-
             $table->string('moh_sound')->nullable();
             $table->boolean('record_template')->default(false);
 
