@@ -335,11 +335,10 @@ class UserController extends Controller
     {
         $formattedData = [];
 
-        if ($user->usertype == 'Company') {
+        if($user->usertype == 'General') {
+            $userPermission = $this->getDefaultUserPermissions();
 
-            $permissions = $this->getDefaultCompaniesPermissions();
-
-            foreach ($permissions as $permision) {
+            foreach ($userPermission as $permision) {
                 $formattedData[] = [
                     'role_id' => 1,
                     'permission_id' => $permision->id,
@@ -354,10 +353,11 @@ class UserController extends Controller
             $user->save();
         }
 
-        if($user->usertype == 'General') {
-            $userPermission = $this->getDefaultUserPermissions();
+        if ($user->usertype == 'Company') {
 
-            foreach ($userPermission as $permision) {
+            $permissions = $this->getDefaultCompaniesPermissions();
+
+            foreach ($permissions as $permision) {
                 $formattedData[] = [
                     'role_id' => 2,
                     'permission_id' => $permision->id,
