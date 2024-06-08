@@ -19,7 +19,7 @@ class AdminOrCompany
     {
         $userType = auth()->user()->usertype;
 
-        if ($userType == 'SupreAdmin' || $userType == 'Company') {
+        if ($userType == 'SuperAdmin' || $userType == 'Company') {
             return $next($request);
         }
 

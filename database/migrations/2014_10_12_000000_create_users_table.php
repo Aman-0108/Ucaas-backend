@@ -33,7 +33,7 @@ return new class extends Migration
             $table->enum('status', config('enums.user.status'))->default(config('enums.user.defaultstatus'))->comment(config('enums.user.statuscomment'));
 
             $table->enum('usertype', config('enums.user.types'))->default(config('enums.user.defaultusertype'));
-            $table->foreignId('role_id')->nullable()->references('id')->on('roles')->onUpdate('cascade')->onDelete('cascade');
+            // $table->foreignId('role_id')->nullable()->references('id')->on('roles')->onUpdate('cascade')->onDelete('cascade');
             $table->bigInteger('extension_id')->nullable();     
             
             $table->bigInteger('socket_session_id')->nullable();
