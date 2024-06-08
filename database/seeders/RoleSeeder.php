@@ -14,14 +14,14 @@ class RoleSeeder extends Seeder
      */
     public function run()
     {
-        Role::create([
-            'name' => 'General',
-            'created_by' => 1
-        ]);
+        // Role::create([
+        //     'name' => 'General',
+        //     'created_by' => 1
+        // ]);
 
-        Role::create([
-            'name' => 'Company',
-            'created_by' => 1
-        ]);
+        // Role::create([
+        //     'name' => 'Company',
+        //     'created_by' => 1
+        // ]);
     }
 }

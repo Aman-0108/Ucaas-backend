@@ -20,7 +20,7 @@ class UserSeeder extends Seeder
             'email' => 'developer@webvio.com',
             'password' => bcrypt('123456'),
             'username' => 'developer',
-            'usertype' => 'SupreAdmin'
+            'usertype' => 'SuperAdmin'
         ]);       
     }
 }

@@ -22,7 +22,7 @@ class PermissionController extends Controller
     public function index()
     {
         // Retrieve all permissions from the database
-        $permissions = Permission::all()->groupBy('type');
+        $permissions = Permission::all()->groupBy('slug');
 
         // Prepare the response data
         $response = [

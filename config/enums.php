@@ -7,11 +7,11 @@ return $enums = [
     ],
     'user' => [
         'types' => [
-            'SupreAdmin',
-            'Company',
-            'General'
+            '',
+            'SuperAdmin',
+            'Company'
         ],
-        'defaultusertype' => 'General',
+        'defaultusertype' => '',
         'status' => [
             'E',
             'D'
