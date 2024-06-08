@@ -629,6 +629,7 @@ Route::controller(TfnController::class)->group(function () {
 Route::controller(PermissionController::class)->group(function () {
     Route::get('permission', 'index');
     Route::post('assign-permission-role', 'assignPermissionToRole');
+    Route::post('set-default-permission-for-role', 'setDefaultPermissionForRole');
 });
 
 // Route::get('/ws', [UserController::class, 'socket']);

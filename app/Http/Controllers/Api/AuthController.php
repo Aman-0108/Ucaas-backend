@@ -8,20 +8,19 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Notifications\PasswordReset;
+use App\Traits\GetPermission;
 use Carbon\Carbon;
-use Illuminate\Auth\Passwords\PasswordBroker;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Response;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    use Notifiable;
+    use Notifiable, GetPermission;
 
     /**
      * Registers a new user.
@@ -163,11 +162,15 @@ class AuthController extends Controller
         $user = $request->user();
 
         $userData = User::with(['extension', 'group'])->where('id', $user->id)->first();
+                      
+        $permissions = $this->getPermission($user->id);
+
+        $userData->role_permissions = $permissions;        
 
         $data = [
             'status' => ($user) ? true : false, // Check if a user is authenticated
             'data' => ($user) ? $userData : [], // If user is authenticated, return user data, otherwise return an empty array
-            'message' => 'Successfully fetched user'
+            'message' => 'Successfully fetched user'            
         ];
 
         // Return a JSON response containing user information

@@ -82,14 +82,35 @@ class User extends Authenticatable
         return $this->hasOne(Group::class, 'id', 'group_id');
     }
 
-    public function role()
-    {
-        return $this->belongsTo(Role::class, 'role_id', 'id');
-    }
+    // public function role()
+    // {
+    //     return $this->belongsTo(Role::class, 'role_id', 'id');
+    // }
 
-    public function rolepermission()
-    {
-        return $this->hasMany(RolePermission::class, 'role_id', 'role_id');
-    }
+    // public function rolepermission()
+    // {
+    //     return $this->hasMany(RolePermission::class, 'role_id', 'role_id');
+    // }
 
+    // public function userRole()
+    // {
+    //     return $this->hasOne(UserRole::class, 'user_id', 'id');
+    // }
+
+    // public function userPermission()
+    // {
+    //     return $this->hasOne(UserPermission::class, 'user_id', 'id');
+    // }
+
+    // public function role()
+    // {
+    //     return $this->hasOne(UserRole::class, 'user_id', 'id');
+    // }
+
+    // public function permissions()
+    // {
+    //     return $this->hasMany(UserPermission::class, 'user_id', 'id');
+    // }
+
+    
 }
