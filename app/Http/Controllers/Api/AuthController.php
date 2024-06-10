@@ -163,7 +163,7 @@ class AuthController extends Controller
 
         $userData = User::with(['extension', 'group'])->where('id', $user->id)->first();
                       
-        $permissions = $this->getPermission($user->id);
+        $permissions = $this->getAllPermissions($user->id);
 
         $userData->role_permissions = $permissions;        
 

@@ -54,7 +54,7 @@ trait GetPermission
         return $permission_ids;
     }
 
-    public function getPermission($userId)
+    public function getAllPermissions($userId)
     {
         $role = UserRole::where('user_id', $userId)->first();
 
