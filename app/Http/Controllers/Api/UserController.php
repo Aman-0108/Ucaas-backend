@@ -34,6 +34,9 @@ class UserController extends Controller
     public function create(Request $request)
     {
         try {
+
+            $userId = $request->user()->id;
+
             // Validate the request data
             $validateUser = Validator::make(
                 $request->all(),
@@ -76,13 +79,14 @@ class UserController extends Controller
                 'account_id' => $request->account_id,
                 'timezone_id' => $request->timezone_id,
                 'status' => $request->status,
+                'created_by' => $userId
             ]);
 
             $this->insertUserRole($user->id, $request->role_id);
 
             $checkPermissions = RolePermission::where('role_id', $request->role_id)->get();
 
-            if($checkPermissions->isEmpty()) {
+            if ($checkPermissions->isEmpty()) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Rules not set for this Role',
@@ -165,14 +169,18 @@ class UserController extends Controller
      */
     public function users(Request $request)
     {
-        // Retrieve all users from the database
-        // $users = User::with(['domain', 'extension', 'role', 'rolepermission.permission']);
-        $users = User::with(['domain', 'extension']);
+        $userId = $request->user()->id;
 
-        // Check if the request contains an 'account' parameter
-        if ($request->has('account')) {
+        // Retrieve all users from the database
+        $users = User::with(['domain', 'extension', 'userRole.roles']);
+
+        $users->where('id', '!=', $userId);
+
+        if ($request->user()->usertype == 'Company') {
             // If 'account' parameter is provided, filter extensions by account ID
-            $users->where('account_id', $request->account);
+            $users->where('account_id', $request->user()->account_id);
+        } else {
+            $users->where('created_by', $userId);
         }
 
         // COMING FROM GLOBAL CONFIG
@@ -180,6 +188,11 @@ class UserController extends Controller
 
         // Execute the query to fetch users
         $users = $users->orderBy('id', 'asc')->paginate($ROW_PER_PAGE);
+
+        $users->through(function ($user) {
+            $user->permissions = UserPermission::where('user_id', $user->id)->pluck('permission_id')->toArray();
+            return $user;
+        });
 
         // Prepare success response with user data
         $response = [
@@ -265,15 +278,18 @@ class UserController extends Controller
             [
                 'name' => 'string|min:2',
                 'email' => 'email|unique:users,email,' . $id,
-                // 'password' => '',
                 'username' => 'unique:users,username',
-                'group_id' => 'exists:groups,id',
                 'domain_id' => 'exists:domains,id',
                 'account_id' => 'exists:accounts,id',
                 'timezone_id' => 'exists:timezones,id',
                 'status' => 'in:E,D',
-                'usertype' => 'in:Primary,General',
                 'firebase_token' => 'string',
+                'permissions' => [
+                    'required',
+                    'array'
+                ],
+                'permissions.*' => 'required|integer',
+                'role_id' => 'integer|exists:roles,id'
             ]
         );
 
@@ -293,8 +309,28 @@ class UserController extends Controller
         // Retrieve the validated input...
         $validated = $validator->validated();
 
+        DB::beginTransaction();
+
         // Update the user record in the database with the validated input
         $user->update($validated);
+
+        if ($request->has('permissions') && $request->has('role_id')) {
+
+            $this->insertUserRole($user->id, $request->role_id);
+
+            $checkPermissions = RolePermission::where('role_id', $request->role_id)->get();
+
+            if ($checkPermissions->isEmpty()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Rules not set for this Role',
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            $this->setUserPermission($user->id, $request->permissions);
+        }
+
+        DB::commit();
 
         // Prepare success response with updated user data
         $response = [
@@ -405,6 +441,9 @@ class UserController extends Controller
                 'user_id' => $userId,
                 'role_id' => $roleId
             ]);
+        } else {
+            $userRole->role_id = $roleId;
+            $userRole->save();
         }
     }
 
@@ -419,6 +458,12 @@ class UserController extends Controller
                 'created_at' => date("Y-m-d H:i:s"),
                 'updated_at' => date("Y-m-d H:i:s")
             ];
+        }
+
+        $checkExist = UserPermission::where('user_id', $userId)->first();
+
+        if ($checkExist) {
+            UserPermission::where('user_id', $userId)->delete();
         }
 
         UserPermission::insert($formattedData);

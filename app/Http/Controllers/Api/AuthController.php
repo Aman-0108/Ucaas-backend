@@ -165,7 +165,7 @@ class AuthController extends Controller
         // Check if a user is authenticated
         $user = $request->user();
 
-        $userData = User::with(['extension', 'group', 'userRole.roles'])->where('id', $user->id)->first();
+        $userData = User::with(['extension', 'userRole.roles'])->where('id', $user->id)->first();
 
         $permissions = [];
         // $permissions = $this->getAllPermissions($user->id);
@@ -175,7 +175,7 @@ class AuthController extends Controller
             // $roles = Role::where('created_by', $user->id)->get();
         }
 
-        if ($user->usertype == '') {
+        if (empty($user->usertype)) {
             $permissions = UserPermission::where('user_id', $user->id)->pluck('permission_id')->toArray();
 
             // $roles = UserRole::where('user_id', $user->id)->get();

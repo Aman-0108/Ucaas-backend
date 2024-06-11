@@ -97,10 +97,10 @@ class User extends Authenticatable
         return $this->hasOne(UserRole::class, 'user_id', 'id');
     }
 
-    // public function userPermission()
-    // {
-    //     return $this->hasOne(UserPermission::class, 'user_id', 'id');
-    // }
+    public function Permissions()
+    {
+        return $this->hasOne(UserPermission::class, 'user_id', 'id');
+    }
 
     // public function role()
     // {

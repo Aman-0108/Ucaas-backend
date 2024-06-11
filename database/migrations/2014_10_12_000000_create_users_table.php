@@ -41,6 +41,7 @@ return new class extends Migration
 
             $table->integer('approved_by')->nullable();
             $table->text('firebase_token')->nullable();            
+            $table->integer('created_by')->nullable();
 
             $table->rememberToken();
             $table->softDeletes();
