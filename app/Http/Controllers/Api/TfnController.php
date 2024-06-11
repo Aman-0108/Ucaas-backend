@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\DB;
 use App\Models\DidVendor;
 use App\Models\DidRateChart;
 use App\Models\DidDetail;
-use App\Models\WalletTransaction;
 
 use function PHPUnit\Framework\isEmpty;
 
@@ -19,29 +18,17 @@ class TfnController extends Controller
 {
     public function getActiveDidVendor()
     {
-        $vendors = DidVendor::where('status','active')->get();
+        $vendors = DidVendor::where('status', 'active')->get();
         if ($vendors->isEmpty()) {
             return response()->json($vendors, Response::HTTP_NOT_FOUND);
         } else {
             return response()->json($vendors, Response::HTTP_OK);
         }
-       
-    }
-
-    public function getVendor($id)
-    {
-        $vendors = DidVendor::where('id',$id)->get();
-        if ($vendors->isEmpty()) {
-            return response()->json($vendors, Response::HTTP_NOT_FOUND);
-        } else {
-            return response()->json($vendors, Response::HTTP_OK);
-        }
-       
     }
 
     public function searchTfn(Request $request)
     {
-        
+
 
         $validator = Validator::make(
             $request->all(),
@@ -49,9 +36,9 @@ class TfnController extends Controller
                 'searchType' => 'required',
                 'quantity' => 'required|integer',
                 'npa' => 'required|integer',
-                'companyId' => 'required|integer',
+
             ]
-            
+
         );
 
 
@@ -78,13 +65,11 @@ class TfnController extends Controller
             ];
 
             return response()->json($response, Response::HTTP_FORBIDDEN);
-
-           
         } else {
-            $vendorId           =  !empty($vendorDataObject[0]->id) ? $vendorDataObject[0]->id : "" ;
-            $vendorName         =  !empty($vendorDataObject[0]->vendor_name) ? $vendorDataObject[0]->vendor_name : "" ;
-            $vendorUserName     =  !empty($vendorDataObject[0]->username) ? $vendorDataObject[0]->username : "" ;
-            $vendorToken        =  !empty($vendorDataObject[0]->token) ? $vendorDataObject[0]->token : "" ;
+            $vendorId           =  !empty($vendorDataObject[0]->id) ? $vendorDataObject[0]->id : "";
+            $vendorName         =  !empty($vendorDataObject[0]->vendor_name) ? $vendorDataObject[0]->vendor_name : "";
+            $vendorUserName     =  !empty($vendorDataObject[0]->username) ? $vendorDataObject[0]->username : "";
+            $vendorToken        =  !empty($vendorDataObject[0]->token) ? $vendorDataObject[0]->token : "";
 
             if (empty($vendorName)) {
                 $response = [
@@ -93,30 +78,27 @@ class TfnController extends Controller
                     'errors' => $validator->errors()
                 ];
                 return response()->json($response, Response::HTTP_FORBIDDEN);
-            }
-            else{
+            } else {
 
-                if($vendorName == 'Commio'){
+                if ($vendorName == 'Commio') {
 
                     if (empty($vendorUserName) || empty($vendorToken)) {
-    
+
                         $response = [
                             'status' => false,
                             'message' => 'API Credentials are not Properly Configured',
                             'errors' => $validator->errors()
                         ];
                         return response()->json($response, Response::HTTP_FORBIDDEN);
-                    }
-                    else{
+                    } else {
                         $rateType = 'random';
                         $CommioController = new CommioController();
-                        $vendorDataResponse = $CommioController->searchDidInCommio($request->companyId,$vendorId,$vendorName,$vendorUserName,$vendorToken,$request->searchType,$request->quantity,$request->npa,$rateType);
+                        $vendorDataResponse = $CommioController->searchDidInCommio($vendorId, $vendorName, $vendorUserName, $vendorToken, $request->searchType, $request->quantity, $request->npa, $rateType);
                         $functionDataObject = $vendorDataResponse->getData();
 
                         return response()->json($functionDataObject, Response::HTTP_OK);
                     }
-                }
-                else{
+                } else {
                     $response = [
                         'status' => false,
                         'message' => 'Active Vendor is not Properly Configure',
@@ -124,14 +106,12 @@ class TfnController extends Controller
                     ];
                     return response()->json($response, Response::HTTP_NOT_FOUND);
                 }
-
             }
-
         }
-    
     }
 
-    public function purchaseTfn(Request $request){
+    public function purchaseTfn(Request $request)
+    {
         $validator = Validator::make(
             $request->all(),
             [
@@ -140,7 +120,6 @@ class TfnController extends Controller
                 'didQty' => 'required|integer',
                 'rate' => 'required',
                 'accountId' => 'required',
-                'companyId' => 'required|integer',
             ]
         );
         if ($validator->fails()) {
@@ -151,71 +130,37 @@ class TfnController extends Controller
             ];
             return response()->json($response, Response::HTTP_FORBIDDEN);
         }
+        $DidVendorController = new DidVendorController();
+        $vendorDataResponse = $DidVendorController->show($request->vendorId);
 
-        //verify the Amount Which need to be deducted from accorifng to TF qty
 
-        $AccountWallet = new WalletTransactionController();
-        $AccountWalletData = $AccountWallet->useWalletBalance($request->companyId,$request->rate); 
-        $AccountWalletDataObject = $AccountWalletData->getData();
-
-        if($AccountWalletDataObject->status==false){
+        if (empty($vendorDataResponse)) {
             $response = [
                 'status' => false,
-                'errors' => $AccountWalletDataObject->message
+                'message' => 'Vendor Id Not Found.',
+                'errors' => $validator->errors()
             ];
-            return response()->json($response, Response::HTTP_FORBIDDEN);
-        }
-        else{
-            //call socket for wallet balance update info to Frontend
+            return response()->json($response, Response::HTTP_NOT_FOUND);
+        } else {
+            $functionDataObject = $vendorDataResponse->getData();
+            //echo $functionDataObject->data->vendor_name; exit;
 
-            $DidVendorController = new DidVendorController();
-            $vendorDataResponse = $DidVendorController->show($request->vendorId);
-            if(empty($vendorDataResponse))
-            {
+            if ($functionDataObject->data->vendor_name == 'Commio') {
+
+
+                $CommioController = new CommioController();
+                return $purchaseDataResponse = $CommioController->purchaseDidInCommio($request->vendorId, $request->didQty, $request->rate, $request->accountId, $request->dids);
+                //$responseFunctionDataObject = $purchaseDataResponse->getData();
+                //return response()->json($responseFunctionDataObject, Response::HTTP_OK);
+
+            } else {
                 $response = [
                     'status' => false,
-                    'message' => 'Vendor Id Not Found.',
+                    'message' => 'Active Vendor is not Properly Configure',
                     'errors' => $validator->errors()
                 ];
                 return response()->json($response, Response::HTTP_NOT_FOUND);
             }
-            else
-            {
-                $functionDataObject = $vendorDataResponse->getData();
-                //echo $functionDataObject->data->vendor_name; exit;
-
-                if($functionDataObject->data->vendor_name == 'Commio'){
-
-                    
-                    $CommioController = new CommioController();
-                    return $purchaseDataResponse = $CommioController->purchaseDidInCommio($request->companyId,$request->vendorId,$request->didQty,$request->rate,$request->accountId,$request->dids);
-                    //$responseFunctionDataObject = $purchaseDataResponse->getData();
-                    //return response()->json($responseFunctionDataObject, Response::HTTP_OK);
-                    
-                }
-                else{
-                    $response = [
-                        'status' => false,
-                        'message' => 'Active Vendor is not Properly Configure',
-                        'errors' => $validator->errors()
-                    ];
-                    return response()->json($response, Response::HTTP_NOT_FOUND);
-                }
-            
-            
-            
-            }
         }
-        
-
-        
-       
-        
-        
-
-
     }
-
-
-   
 }
