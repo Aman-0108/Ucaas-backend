@@ -143,7 +143,7 @@ class UserController extends Controller
                     'status' => false,
                     'message' => 'validation error',
                     'errors' => $validateUser->errors()
-                ], 401);
+                ], Response::HTTP_NOT_ACCEPTABLE);
             }
 
             // If validation succeeds, return a JSON response indicating that the username is available
