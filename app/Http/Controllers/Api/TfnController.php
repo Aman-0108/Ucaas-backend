@@ -130,6 +130,20 @@ class TfnController extends Controller
             ];
             return response()->json($response, Response::HTTP_FORBIDDEN);
         }
+
+        $AccountWallet = new WalletTransactionController();
+        $AccountWalletData = $AccountWallet->useWalletBalance($request->companyId,$request->rate); 
+        $AccountWalletDataObject = $AccountWalletData->getData();
+
+        if($AccountWalletDataObject->status==false){
+            $response = [
+                'status' => false,
+                'errors' => $AccountWalletDataObject->message
+            ];
+            return response()->json($response, Response::HTTP_FORBIDDEN);
+        } 
+        else {
+            
         $DidVendorController = new DidVendorController();
         $vendorDataResponse = $DidVendorController->show($request->vendorId);
 
@@ -141,26 +155,31 @@ class TfnController extends Controller
                 'errors' => $validator->errors()
             ];
             return response()->json($response, Response::HTTP_NOT_FOUND);
-        } else {
-            $functionDataObject = $vendorDataResponse->getData();
-            //echo $functionDataObject->data->vendor_name; exit;
+        } 
+            else {
+                $functionDataObject = $vendorDataResponse->getData();
+                //echo $functionDataObject->data->vendor_name; exit;
 
-            if ($functionDataObject->data->vendor_name == 'Commio') {
+                if ($functionDataObject->data->vendor_name == 'Commio') {
 
 
-                $CommioController = new CommioController();
-                // return $purchaseDataResponse = $CommioController->purchaseDidInCommio($request->vendorId, $request->didQty, $request->rate, $request->accountId, $request->dids);
-                //$responseFunctionDataObject = $purchaseDataResponse->getData();
-                //return response()->json($responseFunctionDataObject, Response::HTTP_OK);
+                    $CommioController = new CommioController();
+                    $purchaseDataResponse = $CommioController->purchaseDidInCommio($request->companyId,$request->vendorId, $request->didQty, $request->rate, $request->accountId, $request->dids);
+                    //$responseFunctionDataObject = $purchaseDataResponse->getData();
+                    //return response()->json($responseFunctionDataObject, Response::HTTP_OK);
 
-            } else {
-                $response = [
-                    'status' => false,
-                    'message' => 'Active Vendor is not Properly Configure',
-                    'errors' => $validator->errors()
-                ];
-                return response()->json($response, Response::HTTP_NOT_FOUND);
+                } else {
+                    $response = [
+                        'status' => false,
+                        'message' => 'Active Vendor is not Properly Configure',
+                        'errors' => $validator->errors()
+                    ];
+                    return response()->json($response, Response::HTTP_NOT_FOUND);
+                }
             }
         }
+
+
+
     }
 }
