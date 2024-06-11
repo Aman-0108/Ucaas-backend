@@ -258,6 +258,8 @@ class CommioController extends Controller
             if (isset($responseData['status'])) {
                 if($responseData['status'] == 'created')
                 {
+
+                    //add param like order created but not Completed order as per commio
                     $ordeDetail = [
                         'account_id' => $companyId,
                         'vendor_id' => $vendorId,
@@ -269,7 +271,31 @@ class CommioController extends Controller
                     if($ordeDetail){
                         //params = companyid , orderid, vendorId , commio account id
                         $completeOrder = $this->completeOrder($companyId,$responseData['id'],$vendorId,$accountId);
-                        
+                        echo $completeOrder['status'];
+                        if (isset($completeOrder['status']) && isset($completeOrder['type'])) 
+                        {
+                            //origination_order
+                            if($completeOrder['status'] == 'completed')
+                            {
+                                if($completeOrder['type'] == 'origination_order')
+                                {
+                                    foreach($completeOrder['tns'] as $row)
+                                    {
+                                        $purchasedDid = $row['did'];
+                                        //insert into database
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            $res = [
+                                'status' => false,
+                                'message' => 'Order Completion Failed!Please Contact Support.',
+                            ];
+                            return response()->json($res, Response::HTTP_OK);
+                        }
+
                     }
                 }
                 else
@@ -325,8 +351,9 @@ class CommioController extends Controller
         $response = curl_exec($curl);
 
         curl_close($curl);
-        echo $response;
-
+        //echo $response;
+        $responseData = json_decode($response, true); 
+        return $responseData;
 
 
     }

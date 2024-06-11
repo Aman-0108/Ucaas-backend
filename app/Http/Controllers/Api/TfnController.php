@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\DidVendor;
 use App\Models\DidRateChart;
 use App\Models\DidDetail;
+use App\Models\WalletTransaction;
 
 use function PHPUnit\Framework\isEmpty;
 
@@ -150,45 +151,67 @@ class TfnController extends Controller
             ];
             return response()->json($response, Response::HTTP_FORBIDDEN);
         }
-        $DidVendorController = new DidVendorController();
-        $vendorDataResponse = $DidVendorController->show($request->vendorId);
-       
-        
-        if(empty($vendorDataResponse))
-        {
+
+        //verify the Amount Which need to be deducted from accorifng to TF qty
+
+        $AccountWallet = new WalletTransactionController();
+        $AccountWalletData = $AccountWallet->useWalletBalance($request->companyId,$request->rate); 
+        $AccountWalletDataObject = $AccountWalletData->getData();
+
+        if($AccountWalletDataObject->status==false){
             $response = [
                 'status' => false,
-                'message' => 'Vendor Id Not Found.',
-                'errors' => $validator->errors()
+                'errors' => $AccountWalletDataObject->message
             ];
-            return response()->json($response, Response::HTTP_NOT_FOUND);
+            return response()->json($response, Response::HTTP_FORBIDDEN);
         }
-        else
-        {
-            $functionDataObject = $vendorDataResponse->getData();
-            //echo $functionDataObject->data->vendor_name; exit;
+        else{
+            //call socket for wallet balance update info to Frontend
 
-            if($functionDataObject->data->vendor_name == 'Commio'){
-
-                
-                $CommioController = new CommioController();
-                return $purchaseDataResponse = $CommioController->purchaseDidInCommio($request->companyId,$request->vendorId,$request->didQty,$request->rate,$request->accountId,$request->dids);
-                //$responseFunctionDataObject = $purchaseDataResponse->getData();
-                //return response()->json($responseFunctionDataObject, Response::HTTP_OK);
-                
-            }
-            else{
+            $DidVendorController = new DidVendorController();
+            $vendorDataResponse = $DidVendorController->show($request->vendorId);
+            if(empty($vendorDataResponse))
+            {
                 $response = [
                     'status' => false,
-                    'message' => 'Active Vendor is not Properly Configure',
+                    'message' => 'Vendor Id Not Found.',
                     'errors' => $validator->errors()
                 ];
                 return response()->json($response, Response::HTTP_NOT_FOUND);
             }
-           
-           
-           
+            else
+            {
+                $functionDataObject = $vendorDataResponse->getData();
+                //echo $functionDataObject->data->vendor_name; exit;
+
+                if($functionDataObject->data->vendor_name == 'Commio'){
+
+                    
+                    $CommioController = new CommioController();
+                    return $purchaseDataResponse = $CommioController->purchaseDidInCommio($request->companyId,$request->vendorId,$request->didQty,$request->rate,$request->accountId,$request->dids);
+                    //$responseFunctionDataObject = $purchaseDataResponse->getData();
+                    //return response()->json($responseFunctionDataObject, Response::HTTP_OK);
+                    
+                }
+                else{
+                    $response = [
+                        'status' => false,
+                        'message' => 'Active Vendor is not Properly Configure',
+                        'errors' => $validator->errors()
+                    ];
+                    return response()->json($response, Response::HTTP_NOT_FOUND);
+                }
+            
+            
+            
+            }
         }
+        
+
+        
+       
+        
+        
 
 
     }
