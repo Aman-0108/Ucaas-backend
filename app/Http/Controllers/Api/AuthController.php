@@ -7,6 +7,8 @@ use App\Enums\TokenAbility;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\DefaultPermission;
+use App\Models\UserPermission;
 use App\Notifications\PasswordReset;
 use App\Traits\GetPermission;
 use Carbon\Carbon;
@@ -162,15 +164,23 @@ class AuthController extends Controller
         $user = $request->user();
 
         $userData = User::with(['extension', 'group'])->where('id', $user->id)->first();
-                      
-        $permissions = $this->getAllPermissions($user->id);
 
-        $userData->role_permissions = $permissions;        
+        $permissions = [];
+        // $permissions = $this->getAllPermissions($user->id);
+        if ($user->usertype == 'Company') {
+            $permissions = DefaultPermission::where('setfor', 'New Company')->pluck('permission_id')->toArray();
+        }
+
+        if($user->usertype == '') {
+            $permissions = UserPermission::where('user_id', $user->id)->pluck('permission_id')->toArray();
+        }
+   
+        $userData->role_permissions = $permissions;
 
         $data = [
             'status' => ($user) ? true : false, // Check if a user is authenticated
             'data' => ($user) ? $userData : [], // If user is authenticated, return user data, otherwise return an empty array
-            'message' => 'Successfully fetched user'            
+            'message' => 'Successfully fetched user'
         ];
 
         // Return a JSON response containing user information

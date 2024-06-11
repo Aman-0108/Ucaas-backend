@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Permission;
 use App\Models\RolePermission;
+use App\Models\UserRole;
 use App\Traits\GetPermission;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -44,16 +45,16 @@ class PermissionController extends Controller
             'permissions' => [
                 'required',
                 'array',
-                function ($attribute, $value, $fail) {
-                    // Validate uniqueness of role_id and permission_id combination
-                    $existingPermissions = RolePermission::where('role_id', request()->input('role_id'))
-                        ->whereIn('permission_id', $value)
-                        ->count();
+                // function ($attribute, $value, $fail) {
+                //     // Validate uniqueness of role_id and permission_id combination
+                //     $existingPermissions = RolePermission::where('role_id', request()->input('role_id'))
+                //         ->whereIn('permission_id', $value)
+                //         ->count();
 
-                    if ($existingPermissions > 0) {
-                        $fail('The combination of role_id and permission_id already exists.');
-                    }
-                },
+                //     if ($existingPermissions > 0) {
+                //         $fail('The combination of role_id and permission_id already exists.');
+                //     }
+                // },
             ],
             'permissions.*' => 'required|integer'
         ];
@@ -70,6 +71,8 @@ class PermissionController extends Controller
                 'errors' => $validator->errors()
             ], Response::HTTP_FORBIDDEN);
         }
+
+        RolePermission::where('role_id', $request->role_id)->delete();
 
         $formattedData = [];
 
@@ -190,5 +193,60 @@ class PermissionController extends Controller
         }
 
         return RolePermission::insert($formattedData);
+    }
+
+    public function setUserPermission(Request $request)
+    {
+        $rules = [
+            'role_id' => 'required|integer|exists:roles,id',
+            'permissions' => [
+                'required',
+                'array'
+            ],
+            'permissions.*' => 'required|integer',
+            'user_id' => 'required|integer|exists:users,id'
+        ];
+
+        // Validate the request data
+        $validator = Validator::make($request->all(), $rules);
+
+        // Check if validation fails
+        if ($validator->fails()) {
+            // If validation fails, prepare error response with validation errors
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validator->errors()
+            ], Response::HTTP_FORBIDDEN);
+        }
+
+        $userRole = UserRole::find($request->user_id);
+
+        // set user role
+        if($userRole) {
+            $userRole->role_id = $request->role_id;
+            $userRole->save();
+        }
+
+        // 
+        $rolePermission = RolePermission::select('permission_id')->where('role_id', $request->role_id)->get();
+        
+        if($rolePermission->isEmpty()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'This role does not have any permissions yet.',
+            ], Response::HTTP_FORBIDDEN);
+        }
+
+        $rolePermission = $rolePermission->toArray();
+
+        $response = [
+            'status' => true,
+            'data' => $rolePermission,
+            'message' => 'success',
+        ];
+        
+        return response()->json($response, Response::HTTP_OK);
+
     }
 }

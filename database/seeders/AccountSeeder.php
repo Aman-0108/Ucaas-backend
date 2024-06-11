@@ -40,23 +40,23 @@ class AccountSeeder extends Seeder
             'usertype' => 'Company'
         ]);
 
-        UserRole::create([
-            'user_id' => $user->id,
-            'role_id' => 2
-        ]);
+        // UserRole::create([
+        //     'user_id' => $user->id,
+        //     'role_id' => 2
+        // ]);
 
-        $pids = $this->getDefaultCompaniesPermissions();
+        // $pids = $this->getDefaultCompaniesPermissions();
 
-        $formattedData = [];
-        foreach($pids as $pid) {
-            $formattedData[] = [
-                'role_id' => 2,
-                'permission_id' => $pid,
-                'created_at' => date("Y-m-d H:i:s"),
-                'updated_at' => date("Y-m-d H:i:s")
-            ];
-        }
+        // $formattedData = [];
+        // foreach($pids as $pid) {
+        //     $formattedData[] = [
+        //         'role_id' => 2,
+        //         'permission_id' => $pid,
+        //         'created_at' => date("Y-m-d H:i:s"),
+        //         'updated_at' => date("Y-m-d H:i:s")
+        //     ];
+        // }
 
-        RolePermission::insert($formattedData);
+        // RolePermission::insert($formattedData);
     }
 }

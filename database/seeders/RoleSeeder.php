@@ -15,13 +15,13 @@ class RoleSeeder extends Seeder
     public function run()
     {
         Role::create([
-            'name' => 'New User',
-            'created_by' => 1
+            'name' => 'Admin',
+            'created_by' => 2
         ]);
 
         Role::create([
-            'name' => 'New Company',
-            'created_by' => 1
+            'name' => 'Manager',
+            'created_by' => 2
         ]);
     }
 }

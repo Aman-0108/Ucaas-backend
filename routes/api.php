@@ -630,6 +630,8 @@ Route::controller(PermissionController::class)->group(function () {
     Route::get('permission', 'index');
     Route::post('assign-permission-role', 'assignPermissionToRole');
     Route::post('set-default-permission-for-role', 'setDefaultPermissionForRole');
+
+    Route::post('set-user-permision', 'setUserPermission');
 });
 
 // Route::get('/ws', [UserController::class, 'socket']);

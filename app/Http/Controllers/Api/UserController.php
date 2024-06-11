@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\RolePermission;
 use App\Models\User;
+use App\Models\UserPermission;
+use App\Models\UserRole;
 use App\Traits\GetPermission;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
 use WebSocket\Client;
@@ -39,12 +42,16 @@ class UserController extends Controller
                     'email' => 'required|email|unique:users,email',
                     'password' => 'required',
                     'username' => 'required|unique:users,username',
-                    // 'group_id' => 'required|exists:groups,id',
-                    // 'domain_id' => 'required|exists:domains,id',
-                    // 'account_id' => 'required|exists:accounts,id',
+                    'domain_id' => 'required|exists:domains,id',
+                    'account_id' => 'required|exists:accounts,id',
                     'timezone_id' => 'required|exists:timezones,id',
                     'status' => 'required|in:E,D',
-                    'usertype' => 'required|in:Primary,General',
+                    'role_id' => 'required|integer|exists:roles,id',
+                    'permissions' => [
+                        'required',
+                        'array'
+                    ],
+                    'permissions.*' => 'required|integer',
                 ]
             );
 
@@ -58,21 +65,35 @@ class UserController extends Controller
                 ], Response::HTTP_FORBIDDEN);
             }
 
+            DB::beginTransaction();
             // Create a new user record in the database
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'username' => $request->username,
                 'password' => Hash::make($request->password),
-                // 'group_id' => $request->group_id,
-                // 'domain_id' => $request->domain_id,
-                // 'account_id' => $request->account_id,
+                'domain_id' => $request->domain_id,
+                'account_id' => $request->account_id,
                 'timezone_id' => $request->timezone_id,
                 'status' => $request->status,
-                'usertype' => $request->usertype,
             ]);
 
-            $this->setDefaultPermission($user);
+            $this->insertUserRole($user->id, $request->role_id);
+
+            $checkPermissions = RolePermission::where('role_id', $request->role_id)->get();
+
+            if($checkPermissions->isEmpty()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Rules not set for this Role',
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            $this->setUserPermission($user->id, $request->permissions);
+
+            DB::commit();
+
+            // $this->setDefaultPermission($user);
 
             // Prepare success response
             return response()->json([
@@ -145,7 +166,8 @@ class UserController extends Controller
     public function users(Request $request)
     {
         // Retrieve all users from the database
-        $users = User::with(['domain', 'extension', 'role', 'rolepermission.permission']);
+        // $users = User::with(['domain', 'extension', 'role', 'rolepermission.permission']);
+        $users = User::with(['domain', 'extension']);
 
         // Check if the request contains an 'account' parameter
         if ($request->has('account')) {
@@ -335,7 +357,7 @@ class UserController extends Controller
     {
         $formattedData = [];
 
-        if($user->usertype == 'General') {
+        if ($user->usertype == 'General') {
             $userPermission = $this->getDefaultUserPermissions();
 
             foreach ($userPermission as $permision) {
@@ -371,5 +393,34 @@ class UserController extends Controller
             $user->role_id = 2;
             $user->save();
         }
+    }
+
+    public function insertUserRole($userId, $roleId)
+    {
+        $userRole = UserRole::find($userId);
+
+        // set user role
+        if (!$userRole) {
+            UserRole::create([
+                'user_id' => $userId,
+                'role_id' => $roleId
+            ]);
+        }
+    }
+
+    public function setUserPermission($userId, $permissions)
+    {
+        // insert into user permission
+        $formattedData = [];
+        foreach ($permissions as $permission) {
+            $formattedData[] = [
+                'user_id' => $userId,
+                'permission_id' => $permission,
+                'created_at' => date("Y-m-d H:i:s"),
+                'updated_at' => date("Y-m-d H:i:s")
+            ];
+        }
+
+        UserPermission::insert($formattedData);
     }
 }

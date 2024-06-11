@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\DefaultPermission;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -21,6 +22,7 @@ class DatabaseSeeder extends Seeder
         
         $this->call(RoleSeeder::class);
         $this->call(PermissionSeeder::class);
+        $this->call(DefaultPermissionSeeder::class);
 
         $this->call(SofiaGlobalsettingsSeeder::class);
         $this->call(SipProfileSeeder::class);
