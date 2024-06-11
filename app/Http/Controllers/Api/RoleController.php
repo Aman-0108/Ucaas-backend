@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Role;
+use App\Traits\GetPermission;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Validator;
 class RoleController extends Controller
 {
     protected $type;
+    use GetPermission;
 
     /**
      * Constructor function initializes the 'type' property to 'Role'.
@@ -30,16 +32,11 @@ class RoleController extends Controller
      * @return \Illuminate\Http\JsonResponse Returns a JSON response containing all fetched roles.
      */
     public function index(Request $request)
-    {
-        // Retrieve all roles from the database
-        $roles = Role::with(['rolepermission.permission']);
+    {        
+        $userId = $request->user()->id;
 
-        if ($request->has('account_id')) {
-            $roles->where('created_by', $request->account_id);
-        }
-
-        // Execute the query to fetch domains
-        $roles = $roles->get();
+        // Retrieve all permissions with role from the database
+        $roles = Role::with('permissions')->where('created_by', $userId)->get();
 
         // Prepare the response data
         $response = [

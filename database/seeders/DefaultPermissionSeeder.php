@@ -1,0 +1,33 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\DefaultPermission;
+use App\Models\Permission;
+use Illuminate\Database\Seeder;
+
+class DefaultPermissionSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     *
+     * @return void
+     */
+    public function run()
+    {
+        $Permissions = Permission::all();
+
+        $formatteddata = [];
+
+        foreach ($Permissions as $permission) {
+            $formatteddata[] = [
+                'permission_id' => $permission->id,
+                'setfor' => 'New Company',
+                'created_at' => date("Y-m-d H:i:s"),
+                'updated_at' => date("Y-m-d H:i:s")
+            ];
+        }
+
+        DefaultPermission::insert($formatteddata);
+    }
+}
