@@ -8,7 +8,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\DefaultPermission;
+use App\Models\Role;
 use App\Models\UserPermission;
+use App\Models\UserRole;
 use App\Notifications\PasswordReset;
 use App\Traits\GetPermission;
 use Carbon\Carbon;
@@ -163,19 +165,25 @@ class AuthController extends Controller
         // Check if a user is authenticated
         $user = $request->user();
 
-        $userData = User::with(['extension', 'group'])->where('id', $user->id)->first();
+        $userData = User::with(['extension', 'group', 'userRole.roles'])->where('id', $user->id)->first();
 
         $permissions = [];
         // $permissions = $this->getAllPermissions($user->id);
         if ($user->usertype == 'Company') {
             $permissions = DefaultPermission::where('setfor', 'New Company')->pluck('permission_id')->toArray();
+
+            // $roles = Role::where('created_by', $user->id)->get();
         }
 
-        if($user->usertype == '') {
+        if ($user->usertype == '') {
             $permissions = UserPermission::where('user_id', $user->id)->pluck('permission_id')->toArray();
+
+            // $roles = UserRole::where('user_id', $user->id)->get();
         }
-   
-        $userData->role_permissions = $permissions;
+
+        $userData->permissions = $permissions;
+        
+        // $userData->roles = $roles;
 
         $data = [
             'status' => ($user) ? true : false, // Check if a user is authenticated

@@ -24,6 +24,9 @@ class DatabaseSeeder extends Seeder
         $this->call(PermissionSeeder::class);
         $this->call(DefaultPermissionSeeder::class);
         $this->call(RolePermissionSeeder::class);
+        
+        $this->call(DidVendorSeeder::class);
+        $this->call(DidRateChartSeeder::class);
 
         $this->call(SofiaGlobalsettingsSeeder::class);
         $this->call(SipProfileSeeder::class);
