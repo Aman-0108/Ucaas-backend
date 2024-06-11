@@ -379,16 +379,6 @@ class UserController extends Controller
         return response()->json($response, Response::HTTP_OK);
     }
 
-    public function events(Request $request)
-    {
-        // $response = $request->all();
-        // $response = json_encode($response, true);
-        // $file = fopen("example.txt", "w");
-        // fwrite($file, $response);
-        // fclose($file);
-        // echo $appName = config('globals.app_name');
-    }
-
     public function setDefaultPermission($user)
     {
         $formattedData = [];
