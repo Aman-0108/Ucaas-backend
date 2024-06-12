@@ -60,9 +60,10 @@ return $enums = [
             1,
             2,
             3,
-            4
+            4,
+            5
         ],
-        'comment_company_status' => '1 for Payment Completed, 2 for Document Uploaded, 3 for Document Verified & 4 for Profile Configured',
+        'comment_company_status' => '1 for Payment Completed, 2 for Document Uploaded, 3 for Document Verified, 4 for Profile Configured & 5 for payment verified',
         'status' => [
             'active',
             'inactive'
