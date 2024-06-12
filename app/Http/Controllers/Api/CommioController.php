@@ -271,7 +271,7 @@ class CommioController extends Controller
                     if($ordeDetail){
                         //params = companyid , orderid, vendorId , commio account id
                         $completeOrder = $this->completeOrder($companyId,$responseData['id'],$vendorId,$accountId);
-                        echo $completeOrder['status'];
+                        //echo $completeOrder['status'];
                         if (isset($completeOrder['status']) && isset($completeOrder['type'])) 
                         {
                             //origination_order
@@ -281,9 +281,20 @@ class CommioController extends Controller
                                 {
                                     foreach($completeOrder['tns'] as $row)
                                     {
+
                                         $purchasedDid = $row['did'];
-                                        //insert into database
+                                        //insert into did detail tbl
+                                        $ordeDetail = [
+                                            'account_id' => $companyId,
+                                            'domain' => $vendorId,
+                                            'did' => $responseData['id'],
+                                            'price' => $responseData['status'],
+                                            'created_by' => $request->user()->id,
+                                        ];
+                                        $ordeDetail = DidOrderStatus::create($ordeDetail);
                                     }
+
+                                    //make the order Status Completed in did order statuses tbl
                                 }
                             }
                         }
@@ -291,11 +302,19 @@ class CommioController extends Controller
                         {
                             $res = [
                                 'status' => false,
-                                'message' => 'Order Completion Failed!Please Contact Support.',
+                                'message' => 'Order Created But Completion Failed!Please Contact Support. With Order Id '.$responseData['id']
                             ];
                             return response()->json($res, Response::HTTP_OK);
                         }
 
+                    }
+                    else
+                    {
+                        $res = [
+                            'status' => false,
+                            'message' => 'Order Completion Failed!Please Contact Support.',
+                        ];
+                        return response()->json($res, Response::HTTP_OK);
                     }
                 }
                 else
