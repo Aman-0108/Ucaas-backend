@@ -103,15 +103,15 @@ class GatewayController extends Controller
                 'username' => 'required|string',
                 'password' => 'required|string',
                 'proxy' => 'required',
-                'expireseconds' => 'digits_between:1,20',
-                'register' => 'string',
-                'profile' => 'string',
+                'expireseconds' => 'digits_between:1,20|nullable',
+                'register' => 'string|nullable',
+                'profile' => 'string|nullable',
                 'status' => 'required|in:E,D',
-                'description' => 'string',
-                'retry' => 'numeric',
-                'fromUser' => 'string|min:3',
-                'fromDomain' => 'string|min:5',
-                'realm' => 'string|min:2',
+                'description' => 'string|nullable',
+                'retry' => 'numeric|nullable',
+                'fromUser' => 'string|min:3|nullable',
+                'fromDomain' => 'string|min:5|nullable',
+                'realm' => 'string|min:2|nullable',
             ]
         );
 
