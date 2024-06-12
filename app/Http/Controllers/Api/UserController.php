@@ -311,6 +311,7 @@ class UserController extends Controller
 
         DB::beginTransaction();
 
+        unset($validated['permissions'], $validated['role_id']);
         // Update the user record in the database with the validated input
         $user->update($validated);
 
@@ -423,7 +424,7 @@ class UserController extends Controller
 
     public function insertUserRole($userId, $roleId)
     {
-        $userRole = UserRole::find($userId);
+        $userRole = UserRole::where('user_id', $userId)->first();
 
         // set user role
         if (!$userRole) {
