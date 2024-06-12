@@ -32,16 +32,7 @@ class GatewayController extends Controller
     public function index(Request $request)
     {
         // Retrieve all gateways from the database
-        $gateways = Gateway::query();
-
-        // Check if the request contains an 'account' parameter
-        if ($request->has('account')) {
-            // If 'account' parameter is provided, filter gateways by account ID
-            $gateways->where('account_id', $request->account);
-        }
-
-        // Execute the query to fetch domains
-        $gateways = $gateways->get();
+        $gateways = Gateway::all();
 
         // Prepare the response data
         $response = [
@@ -108,20 +99,19 @@ class GatewayController extends Controller
             $request->all(),
             [
                 // Validation rules for each field
-                'account_id' => 'required|exists:accounts,id',
                 'name' => 'required|unique:gateways,name',
                 'username' => 'required|string',
                 'password' => 'required|string',
                 'proxy' => 'required',
-                'expireseconds' => 'required|digits_between:1,20',
-                'register' => 'required|string',
-                'profile' => 'required|string',
+                'expireseconds' => 'digits_between:1,20',
+                'register' => 'string',
+                'profile' => 'string',
                 'status' => 'required|in:E,D',
-                'description' => 'required|string',
+                'description' => 'string',
                 'retry' => 'numeric',
-                'fromUser' => 'required|string|min:3',
-                'fromDomain' => 'required|string|min:5',
-                'realm' => 'required|string|min:2',
+                'fromUser' => 'string|min:3',
+                'fromDomain' => 'string|min:5',
+                'realm' => 'string|min:2',
             ]
         );
 
@@ -149,6 +139,8 @@ class GatewayController extends Controller
 
         // Generate UID and attach it to the validated data
         createUid($action, $type, $validated, $userId);
+
+        $validated['created_by'] = $userId;
 
         // Create a new gateway record with the validated data
         $data = Gateway::create($validated);
@@ -202,7 +194,6 @@ class GatewayController extends Controller
             [
                 // Validation rules for each field
                 'status' => 'in:E,D',
-                'account_id' => 'exists:accounts,id',
                 'name' => 'unique:gateways,name,' . $id,
                 'username' => 'string|min:5',
                 'password' => 'string|min:5',

@@ -12,12 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('gateways', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('account_id')->references('id')->on('accounts')->onUpdate('cascade')->onDelete('cascade');
-            $table->string('name')->nullable();
-            $table->string('username')->nullable();
-            $table->string('password')->nullable();
-            $table->ipAddress('proxy')->nullable();
+            $table->id();            
+            $table->string('name');
+            $table->string('username');
+            $table->string('password');
+            $table->ipAddress('proxy');
             $table->bigInteger('expireseconds')->nullable();
             $table->string('register')->nullable();
             $table->string('profile')->nullable();
@@ -27,7 +26,7 @@ return new class extends Migration
             $table->enum('status', ['E', 'D'])->default('D')->comment('E for Enable & D for Disable');
             $table->text('description')->nullable();
             $table->bigInteger('retry')->nullable();
-            $table->softDeletes();
+            $table->integer('created_by');
             $table->timestamps();
         });
     }
