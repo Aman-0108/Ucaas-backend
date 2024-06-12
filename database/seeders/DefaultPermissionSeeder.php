@@ -15,7 +15,11 @@ class DefaultPermissionSeeder extends Seeder
      */
     public function run()
     {
-        $Permissions = Permission::all();
+        $filter = [
+            'User', 'Role', 'RolePermission', 'Extension', 'ChannelHangupComplete', 'WalletTransaction'
+        ];
+
+        $Permissions = Permission::whereIn('model', $filter)->get();
 
         $formatteddata = [];
 
