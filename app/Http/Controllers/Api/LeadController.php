@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\UtilityController;
 use App\Models\Lead;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -90,6 +91,20 @@ class LeadController extends Controller
             ];
 
             return response()->json($response, Response::HTTP_FORBIDDEN);
+        }
+
+        // Additional layer of security to check email
+        $utility = new UtilityController();
+
+        if(!$utility->is_valid_email($request->email)) {
+            // Prepare a success response with the stored account data
+            $response = [
+                'status' => false,
+                'message' => 'Mail exchange is not available'
+            ];
+
+            // Return a JSON response with the success message and stored account data
+            return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
         // Retrieve the validated input

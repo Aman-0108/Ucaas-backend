@@ -38,6 +38,7 @@ use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\StripeControllerc;
+use App\Http\Controllers\UtilityController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -152,7 +153,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::post('role/store', 'store');
 
             // To update the particular role by Id
-            Route::put('role/{id}', 'update');            
+            Route::put('role/{id}', 'update');
         });
 
         // To destroy the role by Id
@@ -633,5 +634,11 @@ Route::controller(PermissionController::class)->group(function () {
 
     Route::post('set-user-permision', 'setUserPermission');
 });
+
+Route::controller(UtilityController::class)->group(function () {
+    Route::post('check-mx', 'checkMailExchangeserver');
+    Route::post('get-ip-from-host', 'getIpFromHost');
+});
+
 
 // Route::get('/ws', [UserController::class, 'socket']);
