@@ -433,15 +433,7 @@ class AccountController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                'account_id' => 'required|string|exists:accounts,id',
-                'package_id' => [
-                    'required',
-                    Rule::exists('accounts')->where(function ($query) use ($request) {
-                        $query->where('id', $request->account_id)
-                            ->whereNotNull('package_id');
-                    }),
-                ],
-                'company_status' => 'required|in:new,applied,approved',
+                'account_id' => 'required|string|exists:accounts,id'
             ]
         );
 
@@ -470,36 +462,28 @@ class AccountController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
-        if ($account->company_status == 'applied' || $account->company_status == 'approved') {
+        if (intval($account->company_status) === 1 || intval($account->company_status) === 2) {
+            // If the account is not found, return a 404 Not Found response
+            $response = [
+                'status' => false,
+                'error' => 'Either document is not uploaded or payment not verified'
+            ];
+
+            return response()->json($response, Response::HTTP_EXPECTATION_FAILED);
+        }
+
+        if (intval($account->company_status) === 4) {
             // If the account status is already applied, return a response indicating it's already verified
             $response = [
                 'status' => false,
-                'message' => 'Already verified.',
+                'message' => 'Document already verified.',
             ];
 
             return response()->json($response, Response::HTTP_IM_USED);
         }
 
-        // $paymentLink = $this->stripeController->createPaymentLink($account->id, $account->package_id);
-        // $paymentLink = '';
-
-        // Encrypt the Account ID
-        $encryptedId = Crypt::encrypt($account->id);
-        $package_id = $account->package_id;
-
-        // Generate dynamic URL with account_id
-        $paymentLink = env('FRONTEND_URL', url()) . '/payment?id=' . $package_id . '&account_id=' . $encryptedId;
-
-        $account->approved_by = $userId;
-        $account->company_status = $request->company_status;
-        $account->payment_url = $paymentLink;
-
-        if ($request->company_status == 'applied') {
-            // Send notification to the user
-            $account->status = 'active';
-            $account->notify(new AccountCredentialCreated($account));
-        }
-
+        $account->company_status = 4;
+        $account->document_approved_by = $userId;
         $account->save();
 
         $response = [
@@ -511,7 +495,7 @@ class AccountController extends Controller
         return response()->json($response, Response::HTTP_ACCEPTED);
     }
 
-    // After Payment status change
+    // After Payment change company status
     public function postPaymentVerify(Request $request)
     {
         // Get the ID of the authenticated user
@@ -521,15 +505,7 @@ class AccountController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                'account_id' => 'required|string|exists:accounts,id',
-                'package_id' => [
-                    'required',
-                    Rule::exists('accounts')->where(function ($query) use ($request) {
-                        $query->where('id', $request->account_id)
-                            ->whereNotNull('package_id');
-                    }),
-                ],
-                // 'company_status' => 'required|in:new,applied,approved',
+                'account_id' => 'required|string|exists:accounts,id'
             ]
         );
 
@@ -558,44 +534,23 @@ class AccountController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
-        if ($account->company_status == 'approved') {
+        if (intval($account->company_status) === 2) {
             // If the account status is already approved, return a response indicating it's already approved
             $response = [
                 'status' => false,
-                'message' => 'Already approved.',
+                'message' => 'payment already verified.',
             ];
 
             return response()->json($response, Response::HTTP_IM_USED);
         }
 
-        if ($account->company_status == 'applied') {
-            $account->company_status = 'approved';
-            $account->save();
-        }
-
-        $parts = explode('@', $account->email);
-        $name = $parts[0]; // 'test'
-
-        $userCredentials = [
-            'name' => $name,
-            'email' => $account->email,
-            'username' => $account->company_name,
-            'password' => Hash::make($account->company_name),
-            'timezone_id' => $account->timezone_id,
-            'status' => 'E',
-            'usertype' => 'Primary',
-            'socket_status' => 'offline',
-            'approved_by' => $userId,
-            'account_id' => $account->id
-        ];
-
-        $user = User::create($userCredentials);
-
-        $user->notify(new NewUserNotification($userCredentials));
+        $account->company_status = 2;
+        $account->payment_approved_by = $userId;
+        $account->save();
 
         $response = [
             'status' => true,
-            'message' => 'successfully verified.',
+            'message' => 'Payment successfully verified.',
         ];
 
         return response()->json($response, Response::HTTP_ACCEPTED);

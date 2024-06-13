@@ -273,11 +273,11 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         // To destroy the account by Id
         Route::delete('account/{id}', 'destroy');
 
-        // document verification
-        Route::post('document-verify', 'postDocumentVerify');
-
         // Payment Verification
         Route::post('payment-verify', 'postPaymentVerify');
+
+        // document verification
+        Route::post('document-verify', 'postDocumentVerify');        
     });
 
     // Account Details

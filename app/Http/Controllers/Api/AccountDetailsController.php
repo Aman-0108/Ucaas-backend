@@ -179,7 +179,7 @@ class AccountDetailsController extends Controller
 
         // update the company status
         $account = Account::find($accountId);
-        $account->company_status = 2;
+        $account->company_status = 3;
         $account->save();
 
         // Commit the database transaction

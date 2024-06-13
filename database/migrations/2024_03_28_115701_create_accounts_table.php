@@ -36,11 +36,9 @@ class CreateAccountsTable extends Migration
 
             $table->foreignId('package_id')->references('id')->on('packages');
 
-            // $table->string('passkey')->nullable();
-            $table->integer('approved_by')->nullable();
+            $table->foreignId('payment_approved_by')->nullable()->references('id')->on('users');
+            $table->integer('document_approved_by')->nullable()->references('id')->on('users');
 
-            // $table->string('temp_password')->nullable();
-            // $table->string('payment_url')->nullable();
             $table->text('firebase_token')->nullable();
 
             $table->softDeletes();
