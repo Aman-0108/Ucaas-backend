@@ -45,16 +45,18 @@ class AccountController extends Controller
         // Check if the request contains an 'company_status' parameter
         if ($request->has('company_status')) {
             // If 'company_status' parameter is provided, filter domains by company_status
-            $accountQuery->where('company_status', $request->company_status);
+            if($request->company_status == 'document') {
+                $filter = [2,3];
+                $accountQuery->whereIn('company_status', $filter);
+            } else {
+                $accountQuery->where('company_status', $request->company_status);
+            }
         }
 
         // Retrieve filtered accounts with their details and timezone
         $accounts = $accountQuery->with(['details', 'timezone'])->get();
 
         foreach ($accounts as $account) {
-
-            $account->passkey = null;
-
             if (!empty($account->details)) {
                 $details = $account->details;
                 $details->registration_path = Storage::url($details->registration_path);
