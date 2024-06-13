@@ -435,7 +435,7 @@ class AccountController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                'account_id' => 'required|string|exists:accounts,id'
+                'account_id' => 'required|exists:accounts,id'
             ]
         );
 
@@ -507,7 +507,7 @@ class AccountController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                'account_id' => 'required|string|exists:accounts,id'
+                'account_id' => 'required|exists:accounts,id'
             ]
         );
 
