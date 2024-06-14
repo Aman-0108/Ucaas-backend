@@ -4,22 +4,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Mail\NewUserMail;
-use App\Models\Account;
-use App\Models\BillingAddress;
-use App\Models\CardDetail;
 use App\Models\Lead;
 use App\Models\Package;
 use App\Models\Payment;
-use App\Models\Subscription;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 use Illuminate\Support\Facades\Validator;
-
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 
 class PaymentController extends Controller
@@ -97,19 +89,31 @@ class PaymentController extends Controller
             return response()->json($response, Response::HTTP_FORBIDDEN);
         }
 
+        // Additional layer of security to check 
+        if (!is_valid_email($request->email)) {
+            // Prepare a success response with the stored account data
+            $response = [
+                'status' => false,
+                'message' => 'Mail exchange is not available'
+            ];
+
+            // Return a JSON response with the success message and stored account data
+            return response()->json($response, Response::HTTP_NOT_FOUND);
+        }
+
         // Find the lead by ID
-        $lead = Lead::find($request->lead_id);       
+        $lead = Lead::find($request->lead_id);
 
         $package = Package::find($lead->package_id);
 
         $amount = intval($package->offer_price);
 
-        $input = $request->only(['card_number', 'exp_month', 'exp_year', 'cvc', 'type']);
-        
+        $stripePaymentinput = $request->only(['card_number', 'exp_month', 'exp_year', 'cvc', 'type']);
+
         $billingInput = $request->only(['fullname', 'contact_no', 'email', 'address', 'zip', 'city', 'state', 'country']);
 
         // Create payment method using Stripe
-        $paymentMethodResponse = $this->stripeController->createPaymentMethod($input);
+        $paymentMethodResponse = $this->stripeController->createPaymentMethod($stripePaymentinput);
 
         $paymentMethodContent = $paymentMethodResponse->getContent();
         $responseData = json_decode($paymentMethodContent, true);
@@ -144,13 +148,13 @@ class PaymentController extends Controller
 
             // Add Account
             $accountController = new AccountController($this->stripeController);
-            $account = $accountController->createAccount($lead->toArray());          
+            $account = $accountController->createAccount($lead->toArray());
 
-            $accountId = $account->id;  
+            $accountId = $account->id;
 
             // Add Billing Address
             $billingAddress = new BillingAddressController();
-            $billingAddress->addData($accountId, $billingInput); 
+            $billingAddress->addData($accountId, $billingInput);
 
             // Add user
             $userController = new UserController();
@@ -172,7 +176,7 @@ class PaymentController extends Controller
 
             // Add Subscription
             $subscriptionController = new SubscriptionController();
-            $subscriptionController->createSubscription($accountId, $package, $transactionId);        
+            $subscriptionController->createSubscription($accountId, $package, $transactionId);
 
             $userCredentials = [
                 'company_name' => $account->company_name,
@@ -205,7 +209,7 @@ class PaymentController extends Controller
             // Return a JSON response with the list of accounts with status(200)
             return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-    }    
+    }
 
     /**
      * Adds a new payment record for an account.

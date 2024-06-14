@@ -93,10 +93,8 @@ class LeadController extends Controller
             return response()->json($response, Response::HTTP_FORBIDDEN);
         }
 
-        // Additional layer of security to check email
-        $utility = new UtilityController();
-
-        if(!$utility->is_valid_email($request->email)) {
+        // Additional layer of security to check 
+        if (!is_valid_email($request->email)) {
             // Prepare a success response with the stored account data
             $response = [
                 'status' => false,

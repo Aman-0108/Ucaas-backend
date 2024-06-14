@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\DefaultPermission;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 
 class DatabaseSeeder extends Seeder
 {
@@ -19,12 +20,12 @@ class DatabaseSeeder extends Seeder
         $this->call(FeatureSeeder::class);
         $this->call(PaymentGatewaySeeder::class);
         $this->call(UserSeeder::class);
-        
+
         $this->call(RoleSeeder::class);
         $this->call(PermissionSeeder::class);
         $this->call(DefaultPermissionSeeder::class);
         // $this->call(RolePermissionSeeder::class);
-        
+
         $this->call(DidVendorSeeder::class);
         $this->call(DidRateChartSeeder::class);
 
@@ -38,5 +39,8 @@ class DatabaseSeeder extends Seeder
         $this->call(DomainSeeder::class);
 
         $this->call(ExtensionSeeder::class);
+
+        // Clear storage/app/public directory
+        // Storage::disk('public')->deleteDirectory('pdfs');       
     }
 }

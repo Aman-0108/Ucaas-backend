@@ -84,7 +84,7 @@ if (!function_exists('compareValues')) {
  *
  * @return \Illuminate\Http\JsonResponse
  */
-if (!function_exists('channelHangupCompleteDataFormat')) {
+if (!function_exists('freeSwitchDisconnected')) {
     function freeSwitchDisconnected()
     {
         // Prepare the response data
@@ -282,5 +282,21 @@ if (!function_exists('generateTemporaryPassword')) {
         }
 
         return $temporaryPassword;
+    }
+}
+
+// 
+if (!function_exists('is_valid_email')) {
+    function is_valid_email($email)
+    {
+        // First, perform a basic syntax check
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        // Next, extract the domain from the email address
+        list($user, $domain) = explode('@', $email);
+
+        return (checkdnsrr($domain, 'MX')) ? true : false;
     }
 }

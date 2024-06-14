@@ -62,12 +62,7 @@ class UtilityController extends Controller
         // Next, extract the domain from the email address
         list($user, $domain) = explode('@', $email);
 
-        // Check if the domain has DNS MX records
-        if (checkdnsrr($domain, 'MX')) {
-            return true; // Domain exists and accepts email
-        } else {
-            return false; // Domain doesn't exist or doesn't accept email
-        }
+        return (checkdnsrr($domain, 'MX')) ? true : false;
     }
 
     // Get IP address from host
