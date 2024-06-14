@@ -285,7 +285,12 @@ if (!function_exists('generateTemporaryPassword')) {
     }
 }
 
-// 
+/**
+ * Validates an email address.
+ *
+ * @param string $email The email address to validate.
+ * @return bool True if the email address is valid, false otherwise.
+ */
 if (!function_exists('is_valid_email')) {
     function is_valid_email($email)
     {
@@ -297,6 +302,9 @@ if (!function_exists('is_valid_email')) {
         // Next, extract the domain from the email address
         list($user, $domain) = explode('@', $email);
 
+        // Use the 'checkdnsrr' function to check if the domain has MX records
+        // This helps to verify if the domain has a valid mail server
+        // If MX records exist, it indicates that the domain is capable of receiving emails
         return (checkdnsrr($domain, 'MX')) ? true : false;
     }
 }
