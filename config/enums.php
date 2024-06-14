@@ -68,7 +68,13 @@ return $enums = [
             'active',
             'inactive'
         ],
-        'default_status' => 'active'
+        'default_status' => 'active',
+        'save_card' => [
+            1,
+            2
+        ],
+        'default_save_card' => 2,
+        'comment_save_card' => '1 for save card & 2 for do not save card'
     ]
     // Add more static values as needed
 ];

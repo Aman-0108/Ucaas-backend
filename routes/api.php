@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AccountDetailsController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BillingAddressController;
 use App\Http\Controllers\Api\CallCentreController;
 use App\Http\Controllers\Api\ChannelHangupController;
 use App\Http\Controllers\Api\DialplanController;
@@ -102,6 +103,14 @@ Route::middleware(['auth:sanctum', 'company'])->group(function () {
     Route::group(['prefix' => 'auth'], function () {
         Route::get('account', [AccountController::class, 'account']);
         Route::get('account-logout', [AccountController::class, 'logout']);
+    });
+
+    Route::controller(BillingAddressController::class)->group(function () {
+        Route::get('billing-address', 'index');
+        Route::post('billing-address/store', 'store');
+        Route::get('billing-address/show/{id}', 'show');
+        Route::put('billing-address/update/{id}', 'update');
+        Route::delete('billing-address/destroy/{id}', 'destroy');
     });
 });
 
@@ -277,7 +286,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::post('payment-verify', 'postPaymentVerify');
 
         // document verification
-        Route::post('document-verify', 'postDocumentVerify');        
+        Route::post('document-verify', 'postDocumentVerify');
     });
 
     // Account Details
@@ -639,6 +648,3 @@ Route::controller(UtilityController::class)->group(function () {
     Route::post('check-mx', 'checkMailExchangeserver');
     Route::post('get-ip-from-host', 'getIpFromHost');
 });
-
-
-// Route::get('/ws', [UserController::class, 'socket']);

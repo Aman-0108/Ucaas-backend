@@ -41,6 +41,8 @@ class CreateAccountsTable extends Migration
 
             $table->text('firebase_token')->nullable();
 
+            $table->enum('save_card', config('enums.company.save_card'))->default(config('enums.company.default_save_card'))->comment(config('enums.company.comment_save_card'));
+
             $table->softDeletes();
             $table->timestamps();
         });

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Mail\NewUserMail;
 use App\Models\Account;
+use App\Models\BillingAddress;
 use App\Models\CardDetail;
 use App\Models\Lead;
 use App\Models\Package;
@@ -72,6 +73,15 @@ class PaymentController extends Controller
                 'exp_month' => 'required|digits_between:1,2|numeric|between:1,12',
                 'exp_year' => 'required|numeric|digits:4',
                 'cvc' => 'required|numeric|digits_between:3,4',
+                'fullname' => 'required|string',
+                'contact_no' => 'required|string',
+                'email' => 'required|string',
+                'address' => 'required|string',
+                'zip' => 'required|string',
+                'city' => 'required|string',
+                'state' => 'required|string',
+                'country' => 'required|string',
+                'save_card' => 'required|boolean'
             ]
         );
 
@@ -106,6 +116,8 @@ class PaymentController extends Controller
         $amount = intval($package->offer_price);
 
         $input = $request->only(['card_number', 'exp_month', 'exp_year', 'cvc', 'type']);
+        
+        $billingInput = $request->only(['fullname', 'contact_no', 'email', 'address', 'zip', 'city', 'state', 'country']);
 
         // Create payment method using Stripe
         $paymentMethodResponse = $this->stripeController->createPaymentMethod($input);
@@ -136,11 +148,16 @@ class PaymentController extends Controller
 
             DB::beginTransaction();
 
+            $lead->save_card = $request->save_card;
+            
             $account = $this->createAccount($lead);
 
-            $user = $this->createUser($account);
+            $accountId = $account->id;  
 
-            $accountId = $account->id;            
+            $billingAddress = new BillingAddressController();
+            $billingAddress->addData($accountId, $billingInput); 
+
+            $user = $this->createUser($account);
 
             $this->saveCard($request, $accountId);
 
@@ -159,7 +176,7 @@ class PaymentController extends Controller
             ];
 
             // Send mail to account holder with invoice
-            Mail::to($account->email)->send(new NewUserMail($userCredentials));
+            // Mail::to($account->email)->send(new NewUserMail($userCredentials));
 
             DB::commit();
 
