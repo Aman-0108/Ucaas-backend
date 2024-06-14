@@ -12,6 +12,7 @@ use Illuminate\Http\Response;
 
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class PaymentController extends Controller
@@ -169,10 +170,10 @@ class PaymentController extends Controller
                 'cvc' => $request->cvc
             ];
             $cardController = new CardController();
-            $cardController->saveCard($accountId, $cardInput);
+            $card = $cardController->saveCard($accountId, $cardInput);
 
             // Add Payments
-            $payment = $this->addPayment($accountId, $amount, $transactionId, $package->subscription_type);
+            $payment = $this->addPayment($accountId, $card->id, $amount, $transactionId, $package->subscription_type);
 
             // Add Subscription
             $subscriptionController = new SubscriptionController();
@@ -224,11 +225,12 @@ class PaymentController extends Controller
      * @param $subscriptionType string The type of subscription associated with the payment.
      * @return Payment The newly created payment object.
      */
-    public function addPayment($accountId, $amount, $transactionId, $subscriptionType)
+    public function addPayment($accountId, $cardId, $amount, $transactionId, $subscriptionType)
     {
         // Record transaction details in the database
         $inputData = [
             'account_id' => $accountId,
+            'card_id' => $cardId,
             'amount_total' => $amount,
             'amount_subtotal' => $amount,
             'stripe_session_id' => $transactionId,
