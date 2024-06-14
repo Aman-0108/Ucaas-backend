@@ -45,8 +45,8 @@ class AccountController extends Controller
         // Check if the request contains an 'company_status' parameter
         if ($request->has('company_status')) {
             // If 'company_status' parameter is provided, filter domains by company_status
-            if($request->company_status == 'document') {
-                $filter = [2,3];
+            if ($request->company_status == 'document') {
+                $filter = [2, 3];
                 $accountQuery->whereIn('company_status', $filter);
             } else {
                 $accountQuery->where('company_status', $request->company_status);
@@ -784,5 +784,19 @@ class AccountController extends Controller
 
         // Return a JSON response with HTTP status code 201 (Created)
         return response()->json($response, Response::HTTP_CREATED);
+    }
+
+    /**
+     * Creates a new account using input information.
+     * @param $input object The input object containing information for creating the account.
+     * @return Account The newly created account object.
+     */
+    public function createAccount($input)
+    {
+        // Create a new account using input information
+        $account = Account::create($input);
+
+        // Return the newly created account
+        return $account;
     }
 }

@@ -13,8 +13,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Laravel\Sanctum\PersonalAccessToken;
-use WebSocket\Client;
 
 class UserController extends Controller
 {
@@ -458,5 +456,40 @@ class UserController extends Controller
         }
 
         UserPermission::insert($formattedData);
+    }
+
+    /**
+     * Creates a new user associated with the provided account.
+     *
+     * This function extracts the name and email from the account's email address,
+     * generates user credentials based on the account information, and then creates a new user.
+     * The user's password is hashed using the company name of the account.
+     *
+     * @param $account object The account object to associate the new user with.
+     * @return void
+     */
+    public function createUser($account)
+    {
+        // Extract name from email address
+        $parts = explode('@', $account->email);
+        $name = $parts[0]; // 'test'
+
+        // Generate user credentials
+        $userCredentials = [
+            'name' => $name,
+            'email' => $account->email,
+            'username' => $account->company_name,
+            'password' => Hash::make($account->company_name),
+            'timezone_id' => $account->timezone_id,
+            'status' => 'E',
+            'usertype' => 'Company',
+            'socket_status' => 'offline',
+            'account_id' => $account->id
+        ];
+
+        // Create a new user with the generated credentials
+        $user = User::create($userCredentials);
+
+        return $user;
     }
 }
