@@ -16,6 +16,7 @@ class CreatePaymentsTable extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('account_id')->references('id')->on('accounts');
+            $table->foreignId('card_id')->nullable()->references('id')->on('card_details')->onUpdate('cascade')->onDelete('cascade');          
             $table->decimal('amount_total', 10, 2)->nullable();
             $table->decimal('amount_subtotal', 10, 2)->nullable();
             $table->string('stripe_session_id')->nullable();
