@@ -29,7 +29,7 @@ class TfnController extends Controller
     public function searchTfn(Request $request)
     {
 
-
+        $createdBy = $request->user()->id;
         $validator = Validator::make(
             $request->all(),
             [
