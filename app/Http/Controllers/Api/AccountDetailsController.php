@@ -148,7 +148,7 @@ class AccountDetailsController extends Controller
                 'message' => 'Your payment is under verification.'
             ];
 
-            // Return a JSON response with HTTP status code 
+            // Return a JSON response with HTTP status code 424
             return response()->json($response, Response::HTTP_FAILED_DEPENDENCY);
         }
 
@@ -165,8 +165,8 @@ class AccountDetailsController extends Controller
                 'message' => 'already submitted.'
             ];
 
-            // Return a JSON response with HTTP status code 201 (Created)
-            return response()->json($response, Response::HTTP_CREATED);
+            // Return a JSON response with HTTP status code 302 (found)
+            return response()->json($response, Response::HTTP_FOUND);
         }
 
         // Retrieve validated input
