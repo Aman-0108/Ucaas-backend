@@ -42,6 +42,8 @@ class AccountController extends Controller
     {
         $accountQuery = Account::query();
 
+        // $accountQuery->select('id','email','package_id','timezone_id');
+
         // Check if the request contains an 'company_status' parameter
         if ($request->has('company_status')) {
             // If 'company_status' parameter is provided, filter domains by company_status
@@ -54,7 +56,23 @@ class AccountController extends Controller
         }
 
         // Retrieve filtered accounts with their details and timezone
-        $accounts = $accountQuery->with(['details', 'timezone'])->get();
+        $accounts = $accountQuery->with([
+            'details',
+            'balance',
+            'payments' => function ($query) {
+                $query->select('account_id', 'billing_address_id', 'card_id', 'transaction_id', 'currency', 'payment_status', 'transaction_date', 'invoice_url', 'subscription_type');
+            },
+            'payments.billingAddress:id,fullname,contact_no,email,address,zip,city,state,country',
+            'payments.cardDetails' => function ($query) {
+                $query->select('id', 'name', 'card_number', 'exp_month', 'exp_year', 'cvc');
+            },
+            'payments.subscription:transaction_id,start_date,end_date',
+            'package' => function ($query) {
+                $query->select('id', 'name', 'number_of_user', 'description', 'subscription_type', 'regular_price', 'offer_price');
+            },
+            'package.features:package_id,name',
+            'timezone:id,name,value'
+        ])->get();
 
         foreach ($accounts as $account) {
             if (!empty($account->details)) {
@@ -65,15 +83,11 @@ class AccountController extends Controller
             }
         }
 
-        // Prepare a success response with the list of accounts
-        $response = [
-            'status' => true,
-            'data' => $accounts,
-            'message' => 'Successfully fetched all accounts'
-        ];
+        $type = config('enums.RESPONSE.SUCCESS');
+        $status = true;
+        $msg = 'Successfully fetched all accounts.';
 
-        // Return a JSON response with the list of accounts with status(200)
-        return response()->json($response, Response::HTTP_OK);
+        return responseHelper($type, $status, $msg, Response::HTTP_OK, $accounts);
     }
 
     /**
@@ -89,17 +103,32 @@ class AccountController extends Controller
     public function show($id)
     {
         // Find the account by ID
-        $account = Account::with(['details', 'balance', 'payments.billingAddress', 'payments.cardDetails', 'payments.subscription', 'package.features', 'timezone'])->find($id);
+        $account = Account::with([
+            'details',
+            'balance',
+            'payments' => function ($query) {
+                $query->select('account_id', 'billing_address_id', 'card_id', 'transaction_id', 'currency', 'payment_status', 'transaction_date', 'invoice_url', 'subscription_type');
+            },
+            'payments.billingAddress:id,fullname,contact_no,email,address,zip,city,state,country',
+            'payments.cardDetails' => function ($query) {
+                $query->select('id', 'name', 'card_number', 'exp_month', 'exp_year', 'cvc');
+            },
+            'payments.subscription:transaction_id,start_date,end_date',
+            'package' => function ($query) {
+                $query->select('id', 'name', 'number_of_user', 'description', 'subscription_type', 'regular_price', 'offer_price');
+            },
+            'package.features:package_id,name',
+            'timezone:id,name,value'
+        ])->find($id);
 
         // Find the account by ID
         if (!$account) {
             // If the account is not found, return a 404 Not Found response
-            $response = [
-                'status' => false,
-                'error' => 'Account not found'
-            ];
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'Account not found';
 
-            return response()->json($response, Response::HTTP_NOT_FOUND);
+            return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
         }
 
         // Mapped full url
@@ -111,14 +140,14 @@ class AccountController extends Controller
         }
 
         // Prepare a success response with the account data
-        $response = [
-            'status' => true,
-            'data' => ($account) ? $account : '',
-            'message' => 'Successfully fetched'
-        ];
+        $type = config('enums.RESPONSE.SUCCESS');
+        $status = true;
+        $msg = 'Successfully fetched';
+
+        $data = ($account) ? $account : '';
 
         // Return a JSON response with the account data with status(200)
-        return response()->json($response, Response::HTTP_OK);
+        return responseHelper($type, $status, $msg, Response::HTTP_OK, $data);
     }
 
     /**
@@ -156,13 +185,11 @@ class AccountController extends Controller
         // Check if validation fails
         if ($validator->fails()) {
             // If validation fails, return a 403 Forbidden response with validation errors
-            $response = [
-                'status' => false,
-                'message' => 'validation error',
-                'errors' => $validator->errors()
-            ];
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = $validator->errors();
 
-            return response()->json($response, Response::HTTP_FORBIDDEN);
+            return responseHelper($type, $status, $msg, Response::HTTP_FORBIDDEN);
         }
 
         // Retrieve the validated input
@@ -173,12 +200,6 @@ class AccountController extends Controller
 
         // default company status set as 'new'
         $validated['company_status'] = 'new';
-
-        // generate temporary password
-        $validated['temp_password'] = generateTemporaryPassword();
-
-        // set password in encrypted format
-        $validated['passkey'] = Hash::make($validated['temp_password']);
 
         // Create a new account with the validated input
         $data = Account::create($validated);
@@ -201,15 +222,12 @@ class AccountController extends Controller
         // Notify 
         $data->notify(new NewAccountRegistered($eventData));
 
-        // Prepare a success response with the stored account data
-        $response = [
-            'status' => true,
-            'data' => $data,
-            'message' => 'Successfully stored'
-        ];
+        $type = config('enums.RESPONSE.SUCCESS');
+        $status = true;
+        $msg = 'Successfully stored';
 
         // Return a JSON response with the success message and stored account data
-        return response()->json($response, Response::HTTP_CREATED);
+        return responseHelper($type, $status, $msg, Response::HTTP_CREATED, $data);
     }
 
     /**
@@ -231,13 +249,12 @@ class AccountController extends Controller
 
         // Check if the account exists
         if (!$account) {
-            // If the account is not found, return a 404 Not Found response
-            $response = [
-                'status' => false,
-                'error' => 'Account not found'
-            ];
+            // If the account is not found, return a 404 Not Found response          
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'Account not found';
 
-            return response()->json($response, Response::HTTP_NOT_FOUND);
+            return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
         }
 
         // Perform validation on the request data
@@ -262,13 +279,11 @@ class AccountController extends Controller
         // Check if validation fails
         if ($validator->fails()) {
             // If validation fails, return a 403 Forbidden response with validation errors
-            $response = [
-                'status' => false,
-                'message' => 'validation error',
-                'errors' => $validator->errors()
-            ];
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = $validator->errors();
 
-            return response()->json($response, Response::HTTP_FORBIDDEN);
+            return responseHelper($type, $status, $msg, Response::HTTP_FORBIDDEN);
         }
 
         // Retrieve the validated input
@@ -277,15 +292,12 @@ class AccountController extends Controller
         // Update the account with the validated input
         $account->update($validated);
 
-        // Prepare a success response with updated account data
-        $response = [
-            'status' => true,
-            'data' => $account,
-            'message' => 'Successfully updated Account',
-        ];
+        $type = config('enums.RESPONSE.SUCCESS');
+        $status = true;
+        $msg = 'Successfully updated Account';
 
         // Return a JSON response with the success message and updated account data with status(200)
-        return response()->json($response, Response::HTTP_OK);
+        return responseHelper($type, $status, $msg, Response::HTTP_OK, $account);
     }
 
     /**
@@ -306,81 +318,22 @@ class AccountController extends Controller
         // Check if the account exists
         if (!$account) {
             // If the account is not found, return a 404 Not Found response
-            $response = [
-                'status' => false,
-                'error' => 'Account not found'
-            ];
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'Account not found';
 
-            return response()->json($response, Response::HTTP_NOT_FOUND);
+            return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
         }
 
         // Delete the account
         $account->delete();
 
-        // Prepare a success message
-        $response = [
-            'status' => true,
-            'message' => 'Successfully deleted account'
-        ];
+        $type = config('enums.RESPONSE.SUCCESS');
+        $status = true;
+        $msg = 'Successfully deleted account';
 
         // Return a JSON response with HTTP status code 200 (OK)
-        return response()->json($response, Response::HTTP_OK);
-    }
-
-    /**
-     * Authenticate a user by email and password, and generate an access token upon successful login.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function login(Request $request)
-    {
-        try {
-            // Validate user input
-            $validateUser = Validator::make(
-                $request->all(),
-                [
-                    'email' => 'required|email',
-                    'password' => 'required'
-                ]
-            );
-
-            // Check if validation fails
-            if ($validateUser->fails()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'validation error',
-                    'errors' => $validateUser->errors()
-                ], 401);
-            }
-
-            // Retrieve the account by email
-            $account = Account::where('email', $request->email)->first();
-
-            // Check if account exists and password matches
-            if (!$account || !Hash::check($request->password, $account->passkey)) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Email & Password does not match with our record.',
-                ], 401);
-            }
-
-            // Generate token for the account holder
-            $token = $account->createToken($account->email, ['role:account'])->plainTextToken;
-
-            // Return a JSON response indicating successful login along with the token
-            return response()->json([
-                'status' => true,
-                'message' => 'User Logged In Successfully',
-                'token' => $token
-            ], Response::HTTP_OK);
-        } catch (\Throwable $th) {
-            // Return a JSON response indicating an error occurred during login
-            return response()->json([
-                'status' => false,
-                'message' => $th->getMessage()
-            ], 500);
-        }
+        return responseHelper($type, $status, $msg, Response::HTTP_OK);
     }
 
     /**
@@ -398,23 +351,6 @@ class AccountController extends Controller
         $account = $request->user();
 
         return $this->show($account->id);
-    }
-
-    /**
-     * Invalidate the user's access tokens to log them out.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function logout(Request $request)
-    {
-        // Delete all access tokens associated with the authenticated user
-        $request->user()->tokens()->delete();
-
-        // Return a JSON response with success message
-        return response()->json([
-            'message' => 'Successfully logged out'
-        ], Response::HTTP_OK);
     }
 
     /**
@@ -438,14 +374,12 @@ class AccountController extends Controller
 
         // Check if validation fails
         if ($validator->fails()) {
-            // If validation fails, return a 403 Forbidden response with validation errors
-            $response = [
-                'status' => false,
-                'message' => 'validation error',
-                'errors' => $validator->errors()
-            ];
+            // If validation fails, return a 403 Forbidden response with validation errors          
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = $validator->errors();
 
-            return response()->json($response, Response::HTTP_FORBIDDEN);
+            return responseHelper($type, $status, $msg, Response::HTTP_FORBIDDEN);
         }
 
         $account = Account::find($request->account_id);
@@ -453,45 +387,40 @@ class AccountController extends Controller
         // Find the account by ID
         if (!$account) {
             // If the account is not found, return a 404 Not Found response
-            $response = [
-                'status' => false,
-                'error' => 'Account not found'
-            ];
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'Account not found';
 
-            return response()->json($response, Response::HTTP_NOT_FOUND);
+            return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
         }
 
         if (intval($account->company_status) === 1 || intval($account->company_status) === 2) {
             // If the account is not found, return a 404 Not Found response
-            $response = [
-                'status' => false,
-                'error' => 'Either document is not uploaded or payment not verified'
-            ];
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'Either document is not uploaded or payment not verified';
 
-            return response()->json($response, Response::HTTP_EXPECTATION_FAILED);
+            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
         }
 
         if (intval($account->company_status) === 4) {
             // If the account status is already applied, return a response indicating it's already verified
-            $response = [
-                'status' => false,
-                'message' => 'Document already verified.',
-            ];
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'Document already verified.';
 
-            return response()->json($response, Response::HTTP_IM_USED);
+            return responseHelper($type, $status, $msg, Response::HTTP_IM_USED);
         }
 
         $account->company_status = 4;
         $account->document_approved_by = $userId;
         $account->save();
 
-        $response = [
-            'status' => true,
-            'message' => 'success.',
-            'data' => $account,
-        ];
+        $type = config('enums.RESPONSE.SUCCESS');
+        $status = true;
+        $msg = 'success.';
 
-        return response()->json($response, Response::HTTP_ACCEPTED);
+        return responseHelper($type, $status, $msg, Response::HTTP_ACCEPTED, $account);
     }
 
     // After Payment change company status
@@ -511,13 +440,11 @@ class AccountController extends Controller
         // Check if validation fails
         if ($validator->fails()) {
             // If validation fails, return a 403 Forbidden response with validation errors
-            $response = [
-                'status' => false,
-                'message' => 'validation error',
-                'errors' => $validator->errors()
-            ];
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = $validator->errors();
 
-            return response()->json($response, Response::HTTP_FORBIDDEN);
+            return responseHelper($type, $status, $msg, Response::HTTP_FORBIDDEN);
         }
 
         $account = Account::find($request->account_id);
@@ -525,34 +452,31 @@ class AccountController extends Controller
         // Find the account by ID
         if (!$account) {
             // If the account is not found, return a 404 Not Found response
-            $response = [
-                'status' => false,
-                'error' => 'Account not found'
-            ];
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'Account not found';
 
-            return response()->json($response, Response::HTTP_NOT_FOUND);
+            return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
         }
 
         if (intval($account->company_status) === 2) {
             // If the account status is already approved, return a response indicating it's already approved
-            $response = [
-                'status' => false,
-                'message' => 'payment already verified.',
-            ];
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'payment already verified.';
 
-            return response()->json($response, Response::HTTP_IM_USED);
+            return responseHelper($type, $status, $msg, Response::HTTP_IM_USED);
         }
 
         $account->company_status = 2;
         $account->payment_approved_by = $userId;
         $account->save();
 
-        $response = [
-            'status' => true,
-            'message' => 'Payment successfully verified.',
-        ];
+        $type = config('enums.RESPONSE.SUCCESS');
+        $status = true;
+        $msg = 'Payment successfully verified.';
 
-        return response()->json($response, Response::HTTP_ACCEPTED);
+        return responseHelper($type, $status, $msg, Response::HTTP_ACCEPTED);
     }
 
     // Initiate Recharge

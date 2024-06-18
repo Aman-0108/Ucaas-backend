@@ -141,7 +141,6 @@ class PaymentController extends Controller
 
             DB::beginTransaction();
 
-            $lead->save_card = $request->save_card;
             $lead->company_status = 1;
             // Remove unnecessary properties from the lead object
             unset($lead->id, $lead->created_at, $lead->updated_at);
@@ -166,8 +165,13 @@ class PaymentController extends Controller
                 'card_number' => $request->card_number,
                 'exp_month' => $request->exp_month,
                 'exp_year' => $request->exp_year,
-                'cvc' => $request->cvc
+                'cvc' => $request->cvc,
             ];
+
+            if($request->save_card == 1) {                
+                $cardInput['save_card'] = 1;
+            } 
+
             $cardController = new CardController();
             $card = $cardController->saveCard($accountId, $cardInput);
 

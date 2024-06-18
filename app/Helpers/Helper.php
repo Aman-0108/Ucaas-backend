@@ -308,3 +308,38 @@ if (!function_exists('is_valid_email')) {
         return (checkdnsrr($domain, 'MX')) ? true : false;
     }
 }
+
+/**
+ * Helper function to generate consistent JSON responses.
+ *
+ * @param string $type       Type of response ('error' or 'success').
+ * @param string $status     Status message for the response.
+ * @param string $message    Message describing the response.
+ * @param int    $statusCode HTTP status code for the response.
+ * @param mixed  $data       Additional data to include in the response (optional).
+ * @return \Illuminate\Http\JsonResponse JSON response.
+ */
+if (!function_exists('responseHelper')) {
+    function responseHelper($type, $status, $message, $statusCode, $data = null)
+    {
+        // Initialize the response array with status and message
+        $response = [
+            'status' => $status,
+            'message' => $message,
+        ];
+
+        // Add data to the response if provided and if the response type is 'success'
+        if ($type === config('enums.RESPONSE.SUCCESS') && isset($data)) {
+            $response['data'] = $data;
+        }
+
+        if ($type === config('enums.RESPONSE.ERROR')) {
+            // If the type of response is 'error', construct the error response structure
+            $response['error'] = $message;
+            unset($response['message']);
+        }
+
+        // Return the JSON response with the constructed response array and HTTP status code
+        return response()->json($response, $statusCode);
+    }
+}
