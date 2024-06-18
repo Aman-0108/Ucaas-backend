@@ -89,7 +89,7 @@ class AccountController extends Controller
     public function show($id)
     {
         // Find the account by ID
-        $account = Account::with(['details', 'balance', 'payments', 'package.features', 'timezone'])->find($id);
+        $account = Account::with(['details', 'balance', 'payments.billingAddress', 'payments.cardDetails', 'payments.subscription', 'package.features', 'timezone'])->find($id);
 
         // Find the account by ID
         if (!$account) {
@@ -101,9 +101,6 @@ class AccountController extends Controller
 
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
-
-        // set passkey to null
-        $account->passkey = null;
 
         // Mapped full url
         if (!empty($account->details)) {
