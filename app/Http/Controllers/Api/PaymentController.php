@@ -154,7 +154,7 @@ class PaymentController extends Controller
 
             // Add Billing Address
             $billingAddress = new BillingAddressController();
-            $billingAddress->addData($accountId, $billingInput);
+            $billingResult = $billingAddress->addData($accountId, $billingInput);
 
             // Add user
             $userController = new UserController();
@@ -172,7 +172,7 @@ class PaymentController extends Controller
             $card = $cardController->saveCard($accountId, $cardInput);
 
             // Add Payments
-            $payment = $this->addPayment($accountId, $card->id, $amount, $transactionId, $package->subscription_type);
+            $payment = $this->addPayment($billingResult->id, $accountId, $card->id, $amount, $transactionId, $package->subscription_type);
 
             // Add Subscription
             $subscriptionController = new SubscriptionController();
@@ -224,12 +224,13 @@ class PaymentController extends Controller
      * @param $subscriptionType string The type of subscription associated with the payment.
      * @return Payment The newly created payment object.
      */
-    public function addPayment($accountId, $cardId, $amount, $transactionId, $subscriptionType)
+    public function addPayment($billingAddressId, $accountId, $cardId, $amount, $transactionId, $subscriptionType)
     {
         // Record transaction details in the database
         $inputData = [
             'account_id' => $accountId,
             'card_id' => $cardId,
+            'billing_address_id' => $billingAddressId,
             'amount_total' => $amount,
             'amount_subtotal' => $amount,
             'stripe_session_id' => $transactionId,
