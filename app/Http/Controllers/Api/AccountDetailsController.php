@@ -138,6 +138,20 @@ class AccountDetailsController extends Controller
 
         $accountId = $request->account_id;
 
+        // Get Account details
+        $account = Account::find($accountId);
+
+        if ($account->company_status == 1) {
+            // Prepare the response data
+            $response = [
+                'status' => false,
+                'message' => 'Your payment is under verification.'
+            ];
+
+            // Return a JSON response with HTTP status code 
+            return response()->json($response, Response::HTTP_FAILED_DEPENDENCY);
+        }
+
         $filePaths = [];
         $files = $request->only(['registration_path', 'tin_path', 'moa_path']);
 
@@ -177,8 +191,7 @@ class AccountDetailsController extends Controller
         // Create a new Account Details record with validated data
         $data = AccountDetail::create($validated);
 
-        // update the company status
-        $account = Account::find($accountId);
+        // update the company status        
         $account->company_status = 3;
         $account->save();
 

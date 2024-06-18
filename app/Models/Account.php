@@ -20,7 +20,7 @@ class Account extends Authenticatable
      */
     public function details()
     {
-        return $this->hasOne(AccountDetail::class);
+        return $this->hasOne(AccountDetail::class, 'account_id', 'id');
     }
 
     /**
