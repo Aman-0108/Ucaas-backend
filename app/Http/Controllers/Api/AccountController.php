@@ -175,6 +175,7 @@ class AccountController extends Controller
                 'unit' => 'required|string',
                 'street' => 'required|string',
                 'city' => 'required|string',
+                'state' => 'required|string',
                 'zip' => 'required|string',
                 'country' => 'required|string',
                 'package_id' => 'required|numeric|exists:packages,id',
@@ -199,7 +200,7 @@ class AccountController extends Controller
         DB::beginTransaction();
 
         // default company status set as 'new'
-        $validated['company_status'] = 'new';
+        $validated['company_status'] = 1;
 
         // Create a new account with the validated input
         $data = Account::create($validated);
@@ -208,7 +209,8 @@ class AccountController extends Controller
         $encryptedId = Crypt::encrypt($data->id);
 
         // Generate dynamic URL with account_id
-        $dynamicUrl = env('FRONTEND_URL', url()) . '/document-upload?id=' . $encryptedId;
+        // $dynamicUrl = env('FRONTEND_URL', url()) . '/document-upload?id=' . $encryptedId;
+        $dynamicUrl = '';
 
         // commit
         DB::commit();

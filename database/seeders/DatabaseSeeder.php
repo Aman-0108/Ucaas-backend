@@ -35,10 +35,12 @@ class DatabaseSeeder extends Seeder
         $this->call(SipProfileDomainSeeder::class);
         $this->call(DialplanSeeder::class);
 
+        $this->call(LeadSeeder::class);
         $this->call(AccountSeeder::class);
         $this->call(DomainSeeder::class);
 
         $this->call(ExtensionSeeder::class);
+        $this->call(AccountDetailsSeeder::class);
 
         // Clear storage/app/public directory
         // Storage::disk('public')->deleteDirectory('pdfs');       

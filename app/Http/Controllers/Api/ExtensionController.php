@@ -16,6 +16,7 @@ use App\Traits\CreateXml;
 use App\Traits\Esl;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ExtensionController extends Controller
 {
@@ -50,7 +51,7 @@ class ExtensionController extends Controller
     public function index(Request $request)
     {
         // Fetch all extensions from the database
-        $extensions = Extension::with(['followmes','domain']);
+        $extensions = Extension::with(['followmes', 'domain']);
 
         // Start building the query to fetch extensions
         // $extensions = Extension::query();
@@ -134,7 +135,7 @@ class ExtensionController extends Controller
                 // Validation rules for each field
                 'account_id' => 'required|exists:accounts,id',
                 'domain' => 'required|string|exists:domains,id',
-                'extension' => 'required|unique:extensions,extension',
+                'extension' => 'required|unique:extensions,extension,NULL,id,account_id,' . $request->account_id,
                 'password' => 'required|string',
                 'voicemail_password' => 'required|string',
 
@@ -219,7 +220,7 @@ class ExtensionController extends Controller
                     $validated['extension'] = $extension + $i;
 
                     // Generate UID and attach it to the validated data
-                    $validated['uid_no'] = createUid($action, $type, $validated, $userId);
+                    createUid($action, $type, $validated, $userId);
 
                     $data = Extension::create($validated);
                     $newArr[] = $validated;
@@ -227,7 +228,7 @@ class ExtensionController extends Controller
             }
         } else {
             // Generate UID and attach it to the validated data
-            $validated['uid_no'] = createUid($action, $type, $validated, $userId);
+            createUid($action, $type, $validated, $userId);
 
             // If 'range' is not provided, create a single extension
             $data = Extension::create($validated);
@@ -367,9 +368,14 @@ class ExtensionController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                'account_id' => 'exists:accounts,id',
+                'account_id' => 'required|exists:accounts,id',
                 'domain' => 'string',
-                'extension' => 'string|unique:extensions,extension,' . $id,
+                // 'extension' => 'string|unique:extensions,extension,' . $id,
+                'extension' => [
+                    'string',
+                    'unique:extensions,extension,' . $id . ',id,account_id,' . $request->account_id,
+                    // Rule::unique('extensions')->where('account_id', $request->account_id)->ignore($id),
+                ],
                 'password' => 'string',
                 'voicemail_password' => 'string',
 
@@ -483,7 +489,7 @@ class ExtensionController extends Controller
         // Retrieve the validated input
         $validated = $validator->validated();
 
-        // // $validated['created_by'] = $userId;
+        // $validated['created_by'] = $userId;
 
         // Call the compareValues function to generate a formatted description based on the extension and validated data
         $formattedDescription = compareValues($extension, $validated);
@@ -493,7 +499,7 @@ class ExtensionController extends Controller
         $type = $this->type;
 
         // Generate UID and attach it to the validated data
-        $validated['uid_no'] = createUid($action, $type, $formattedDescription, $userId);
+        createUid($action, $type, $formattedDescription, $userId);
 
         // Update the extension with the validated data
         $extension->update($validated);
@@ -521,12 +527,12 @@ class ExtensionController extends Controller
 
         // Perform search query using Eloquent ORM
         $extensions = Extension::where('extension', 'like', "%$query%");
-        
-        if($request->get('account')) {
+
+        if ($request->get('account')) {
             $extensions->where('account_id', $request->get('account'));
         }
 
-        $extensions= $extensions->get();
+        $extensions = $extensions->get();
 
         // Prepare success response with search results
         $response = [
@@ -719,6 +725,4 @@ class ExtensionController extends Controller
 
         // return response()->json($result, 201);
     }
-
-   
 }
