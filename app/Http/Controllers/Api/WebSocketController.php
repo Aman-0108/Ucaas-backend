@@ -15,7 +15,5 @@ class WebSocketController extends Controller
 
         // $client->text("Hello WebSocket.org!");
         $client->send(json_encode($data));
-    }
-
-    
+    }    
 }
