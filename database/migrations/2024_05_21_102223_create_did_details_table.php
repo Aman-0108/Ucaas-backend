@@ -16,17 +16,17 @@ class CreateDidDetailsTable extends Migration
         Schema::create('did_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('account_id')->references('id')->on('accounts');
-            $table->string('transaction_id')->index();
-            $table->foreign('transaction_id')->references('transaction_id')->on('payments');
+            //$table->string('transaction_id')->index();
+            //$table->foreign('transaction_id')->references('transaction_id')->on('payments');
             $table->string('domain');
             $table->string('did');
-            $table->string('didSummary');
-            $table->string('tollfreePrefix');
-            $table->string('npanxx');
-            $table->string('ratecenter');
-            $table->string('thinqTier');
-            $table->string('currency');
-            $table->string('price');
+            //$table->string('didSummary');
+            $table->string('tollfreePrefix')->nullable();
+            $table->string('npanxx')->nullable();
+            $table->string('ratecenter')->nullable();
+            $table->string('thinqTier')->nullable();
+            $table->string('currency')->nullable();
+            $table->decimal('price', 10, 2);
             $table->integer('created_by');
             $table->timestamps();
         });

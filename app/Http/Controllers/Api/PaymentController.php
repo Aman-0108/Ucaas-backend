@@ -193,7 +193,7 @@ class PaymentController extends Controller
             ];
 
             // Send mail to account holder with invoice
-            Mail::to($account->email)->send(new NewUserMail($userCredentials));
+            // Mail::to($account->email)->send(new NewUserMail($userCredentials));
 
             DB::commit();
 
