@@ -10,11 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Stripe\PaymentIntent;
 use Stripe\StripeClient;
-use Stripe\Stripe;
-use Stripe\Token;
 use Stripe\Webhook;
-use Stripe\PaymentMethod;
-use Stripe\Checkout\Session;
 
 class StripeController extends Controller
 {

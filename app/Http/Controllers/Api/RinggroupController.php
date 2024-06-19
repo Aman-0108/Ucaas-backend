@@ -10,7 +10,6 @@ use App\Models\Ringgroup;
 use App\Models\Ring_group_destination;
 use Illuminate\support\facades\Validator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class RinggroupController extends Controller
 {

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\Ring_group_destination;
-use Illuminate\Support\Facades\DB;
 
 class RinggroupdestinationController extends Controller
 {

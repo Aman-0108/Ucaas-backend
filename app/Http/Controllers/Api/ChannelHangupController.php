@@ -7,7 +7,6 @@ use App\Models\ChannelHangupComplete;
 use App\Services\SSHService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class ChannelHangupController extends Controller

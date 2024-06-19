@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Extension;
-use App\Models\Followme;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;

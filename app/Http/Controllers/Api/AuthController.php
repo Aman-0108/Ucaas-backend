@@ -2,15 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\Strategy;
-use App\Enums\TokenAbility;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\DefaultPermission;
-use App\Models\Role;
 use App\Models\UserPermission;
-use App\Models\UserRole;
 use App\Notifications\PasswordReset;
 use App\Traits\GetPermission;
 use Carbon\Carbon;

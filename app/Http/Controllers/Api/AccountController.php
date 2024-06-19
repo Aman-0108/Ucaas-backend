@@ -6,20 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\AccountBalance;
 use App\Models\Domain;
-use App\Models\Package;
 use App\Models\Payment;
-use App\Models\User;
-use App\Notifications\AccountCredentialCreated;
 use App\Notifications\NewAccountRegistered;
-use App\Notifications\NewUserNotification;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 
 class AccountController extends Controller
 {

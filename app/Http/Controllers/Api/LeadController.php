@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\UtilityController;
 use App\Models\Lead;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
