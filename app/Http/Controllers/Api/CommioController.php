@@ -284,14 +284,14 @@ class CommioController extends Controller
 
                                         $purchasedDid = $row['did'];
                                         //insert into did detail tbl
-                                        $ordeDetail = [
-                                            'account_id' => $companyId,
-                                            'domain' => $vendorId,
-                                            'did' => $responseData['id'],
-                                            'price' => $responseData['status'],
-                                            'created_by' => $request->user()->id,
-                                        ];
-                                        $ordeDetail = DidOrderStatus::create($ordeDetail);
+                                        // $ordeDetail = [
+                                        //     'account_id' => $companyId,
+                                        //     'domain' => $vendorId,
+                                        //     'did' => $responseData['id'],
+                                        //     'price' => $responseData['status'],
+                                        //     'created_by' => $request->user()->id,
+                                        // ];
+                                        // $ordeDetail = DidOrderStatus::create($ordeDetail);
                                     }
 
                                     //make the order Status Completed in did order statuses tbl
