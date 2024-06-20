@@ -68,13 +68,10 @@ class AccountController extends Controller
             'timezone:id,name,value'
         ])->get();
 
-        foreach ($accounts as $account) {
-            if (!empty($account->details)) {
-                $details = $account->details;
-                $details->registration_path = Storage::url($details->registration_path);
-                $details->tin_path = Storage::url($details->tin_path);
-                $details->moa_path = Storage::url($details->moa_path);
-            }
+        if (!empty($accounts)) {            
+            $accounts->details->each(function ($item) {
+                $item->path = Storage::url($item->path);
+            });
         }
 
         $type = config('enums.RESPONSE.SUCCESS');
