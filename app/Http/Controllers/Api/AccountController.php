@@ -100,7 +100,8 @@ class AccountController extends Controller
     {
         // Find the account by ID
         $account = Account::with([
-            'details',
+            'details:account_id,document_id,path,status',
+            'details.document:id,name',
             'balance',
             'payments' => function ($query) {
                 $query->select('account_id', 'billing_address_id', 'card_id', 'transaction_id', 'currency', 'payment_status', 'transaction_date', 'invoice_url', 'subscription_type');
