@@ -51,7 +51,8 @@ class AccountController extends Controller
 
         // Retrieve filtered accounts with their details and timezone
         $accounts = $accountQuery->with([
-            'details',
+            'details:account_id,document_id,path,status',
+            'details.document:id,name',
             'balance',
             'payments' => function ($query) {
                 $query->select('account_id', 'billing_address_id', 'card_id', 'transaction_id', 'currency', 'payment_status', 'transaction_date', 'invoice_url', 'subscription_type');
@@ -68,9 +69,13 @@ class AccountController extends Controller
             'timezone:id,name,value'
         ])->get();
 
-        if (!empty($accounts) && isset($accounts->details)) {                
-            $accounts->details->each(function ($item) {
-                $item->path = Storage::url($item->path);
+        if (!empty($accounts)) {
+            $accounts->each(function ($account) {
+                if ($account->details) {
+                    $account->details->each(function ($detail) {
+                        $detail->path = Storage::url($detail->path);
+                    });
+                }
             });
         }
 
@@ -123,7 +128,7 @@ class AccountController extends Controller
         }
 
         // Mapped full url
-        if (!empty($account->details)) {            
+        if (!empty($account->details)) {
             $account->details->each(function ($item) {
                 $item->path = Storage::url($item->path);
             });
