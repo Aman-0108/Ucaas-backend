@@ -76,8 +76,8 @@ class CallCentreController extends Controller
                 'moh_sound' => 'string|nullable',
                 'record_template' => 'boolean',
                 'queue_timeout_action' => 'string|nullable',
-                'discard_abandoned_after' => 'numeric',
-                'queue_cid_prefix' => 'string',
+                'discard_abandoned_after' => 'numeric|nullable',
+                'queue_cid_prefix' => 'string|nullable',
                 'created_by' => 'required|exists:users,id'
             ]
         );
