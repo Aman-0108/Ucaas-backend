@@ -68,7 +68,7 @@ class AccountController extends Controller
             'timezone:id,name,value'
         ])->get();
 
-        if (!empty($accounts)) {            
+        if (!empty($accounts) && isset($accounts->details)) {                
             $accounts->details->each(function ($item) {
                 $item->path = Storage::url($item->path);
             });
