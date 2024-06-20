@@ -111,16 +111,16 @@ class AccountDetailsController extends Controller
      */
     public function store(Request $request)
     {
-        $userId = $request->user()->id;
+        // $userId = $request->user()->id;
 
         // Validate incoming request data
         $validator = Validator::make(
             $request->all(),
             [
                 'account_id' => 'required|exists:accounts,id',
-                'registration_path' => 'required|mimes:jpeg,png,jpg,pdf|max:2048',
-                'tin_path' => 'required|mimes:jpeg,png,jpg,pdf|max:2048',
-                'moa_path' => 'required|mimes:jpeg,png,jpg,pdf|max:2048',
+                'documents' => 'required|array',
+                'documents.*.document_id' => 'required|integer|exists:documents,id',
+                'documents.*.path' => 'required|mimes:jpeg,png,jpg,pdf|max:2048',
             ]
         );
 
@@ -152,51 +152,52 @@ class AccountDetailsController extends Controller
             return response()->json($response, Response::HTTP_FAILED_DEPENDENCY);
         }
 
-        $filePaths = [];
-        $files = $request->only(['registration_path', 'tin_path', 'moa_path']);
+        $data = AccountDetail::where(['account_id' => $accountId])->get();
 
-        $data = AccountDetail::where(['account_id' => $accountId])->first();
+        if (!$data->isEmpty()) {
 
-        if (!empty($data)) {
-            // Prepare the response data
-            $response = [
-                'status' => false,
-                'data' => $data,
-                'message' => 'already submitted.'
-            ];
+            $rejectedData = $data->filter(function ($accountDetail) {
+                return $accountDetail->status == 2;
+            });
 
-            // Return a JSON response with HTTP status code 302 (found)
-            return response()->json($response, Response::HTTP_FOUND);
-        }
+            if (!$rejectedData->isEmpty()) {
 
-        // Retrieve validated input
-        $validated = $validator->validated();
+                $rejectedData->each(function ($item) use ($request, $accountId) {
+                    $docId = $item->document_id;
 
-        foreach ($files as $key => $file) {
-            if ($request->hasFile($key)) {
-                $uploadedFile = $request->file($key);
-                $filePath = $uploadedFile->store('company');
-                $filePaths[$key] = $filePath;
+                    foreach ($request->documents as $document) {
+                        if ($document['document_id'] == $docId) {
+                            $this->insertData($accountId, $document);
+                        }
+                    }
+                });
+
+                $response = [
+                    'status' => true,
+                    'message' => 'successfully stored.'
+                ];
+
+                // Return a JSON response with HTTP status code 201 (created)
+                return response()->json($response, Response::HTTP_CREATED);
+            } else {
+                $response = [
+                    'status' => false,
+                    'data' => $data,
+                    'message' => 'already submitted.'
+                ];
+
+                // Return a JSON response with HTTP status code 302 (found)
+                return response()->json($response, Response::HTTP_FOUND);
             }
+        } else {
+            foreach ($request->documents as $document) {
+                $this->insertData($accountId, $document);
+            }
+
+            // update the company status        
+            $account->company_status = 3;
+            $account->save();
         }
-
-        // Begin a database transaction
-        DB::beginTransaction();
-
-        $validated['account_id'] = $accountId;
-        $validated['registration_path'] = $filePaths['registration_path'] ?? null;;
-        $validated['tin_path'] =  $filePaths['tin_path'] ?? null;;
-        $validated['moa_path'] = $filePaths['moa_path'] ?? null;;
-
-        // Create a new Account Details record with validated data
-        $data = AccountDetail::create($validated);
-
-        // update the company status        
-        $account->company_status = 3;
-        $account->save();
-
-        // Commit the database transaction
-        DB::commit();
 
         // Prepare the response data
         $response = [
@@ -370,5 +371,23 @@ class AccountDetailsController extends Controller
 
         // Return the response as JSON with HTTP status code 200 (OK)
         return response()->json($response, Response::HTTP_OK);
+    }
+
+    public function insertData($accountId, $document)
+    {
+        // Get the file from the request
+        $file = $document['path'];
+
+        // Generate a unique filename
+        $filename = uniqid() . '_' . $file->getClientOriginalName();
+
+        $filePath = $file->storeAs('company', $filename);
+
+        AccountDetail::create([
+            'account_id' => $accountId,
+            'document_id' => $document['document_id'],
+            'path' => $filePath,
+            'status' => 3
+        ]);
     }
 }

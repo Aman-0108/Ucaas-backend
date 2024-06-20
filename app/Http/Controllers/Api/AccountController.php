@@ -126,11 +126,10 @@ class AccountController extends Controller
         }
 
         // Mapped full url
-        if (!empty($account->details)) {
-            $details = $account->details;
-            $details->registration_path = Storage::url($details->registration_path);
-            $details->tin_path = Storage::url($details->tin_path);
-            $details->moa_path = Storage::url($details->moa_path);
+        if (!empty($account->details)) {            
+            $account->details->each(function ($item) {
+                $item->path = Storage::url($item->path);
+            });
         }
 
         // Prepare a success response with the account data

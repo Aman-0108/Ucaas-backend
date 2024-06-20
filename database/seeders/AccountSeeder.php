@@ -44,7 +44,7 @@ class AccountSeeder extends Seeder
             'lead_id' => 1,
             'fullname' => 'Tushar Subhra',
             'contact_no' => '7363807606',
-            'email' => 'tushar@appzone.in',
+            'email' => 'webviosystem11@gmail.com',
             'address' => 'New Town',
             'zip' => '700135',
             'city' => 'Kolkata',

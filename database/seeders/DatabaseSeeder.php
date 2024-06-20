@@ -40,9 +40,11 @@ class DatabaseSeeder extends Seeder
         $this->call(DomainSeeder::class);
 
         $this->call(ExtensionSeeder::class);
-        $this->call(AccountDetailsSeeder::class);
+        $this->call(DocumentSeeder::class);
+        // $this->call(AccountDetailsSeeder::class);
 
         // Clear storage/app/public directory
-        // Storage::disk('public')->deleteDirectory('pdfs');       
+        Storage::disk('public')->deleteDirectory('pdfs'); 
+        Storage::disk('public')->deleteDirectory('company');       
     }
 }
