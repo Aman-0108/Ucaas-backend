@@ -44,7 +44,25 @@ class DatabaseSeeder extends Seeder
         // $this->call(AccountDetailsSeeder::class);
 
         // Clear storage/app/public directory
-        Storage::disk('public')->deleteDirectory('pdfs'); 
-        Storage::disk('public')->deleteDirectory('company');       
+        Storage::disk('public')->deleteDirectory('pdfs');
+        Storage::disk('public')->deleteDirectory('company');
+    
+        $htaccessContent = 'Header set Access-Control-Allow-Origin "*"';
+
+        // Ensure the directory exists
+        $companyDirectory = 'company';
+        $pdfDirectory = 'pdfs';
+
+        if (!Storage::exists($companyDirectory)) {
+            Storage::makeDirectory($companyDirectory);
+            $htaccessPath = storage_path('app/public/'.$companyDirectory.'/.htaccess');
+            file_put_contents($htaccessPath, $htaccessContent, FILE_APPEND);
+        }
+
+        if (!Storage::exists($pdfDirectory)) {
+            Storage::makeDirectory($pdfDirectory);
+            $htaccessPath = storage_path('app/public/'.$pdfDirectory.'/.htaccess');
+            file_put_contents($htaccessPath, $htaccessContent, FILE_APPEND);
+        }
     }
 }

@@ -5,7 +5,9 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Uid;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\File;
 
 class UidSeeder extends Seeder
 {
@@ -16,10 +18,10 @@ class UidSeeder extends Seeder
      */
     public function run()
     {
-        $uuid = Str::uuid()->toString();
+        // $uuid = Str::uuid()->toString();
 
-        Uid::create([
-            'uid_no' => $uuid,
-        ]);
+        // Uid::create([
+        //     'uid_no' => $uuid,
+        // ]);
     }
 }
