@@ -381,8 +381,9 @@ class AccountController extends Controller
             [
                 'account_id' => 'required|exists:accounts,id',
                 'document_id' => 'required|exists:documents,id',
-                'status' => 'required|in:1,2,3',
-                'row_id' => 'required|integer|exists:account_details,id'
+                'status' => 'required|in:1,2',
+                'row_id' => 'required|integer|exists:account_details,id',
+                'description' => 'string|nullable'
             ]
         );
 
@@ -429,77 +430,48 @@ class AccountController extends Controller
         // check document status
         $documents = Document::where('status', 'active')->get();
 
-        // Uploaded documents
-        $companyDocuments = AccountDetail::where('account_id', $account->id)->get();
-
-        $docStatus = false;
-
-        if ($companyDocuments->isEmpty()) {
+        // If documents not set 
+        if ($documents->isEmpty()) {
             $type = config('enums.RESPONSE.ERROR');
             $status = false;
-            $msg = 'No documents uploaded.';
-            return responseHelper($type, $status, $msg, Response::HTTP_FAILED_DEPENDENCY);
-        }
-
-        $documentId = $request->document_id;
-
-        if (!$documents->isEmpty()) {
-
-            $filteredDocuments = $documents->filter(function ($document) use ($documentId) {
-                return ($document->id == $documentId);
-            });
-
-            if ($filteredDocuments->isEmpty()) {
-                $type = config('enums.RESPONSE.ERROR');
-                $status = false;
-                $msg = 'This document is not accepted.';
-                return responseHelper($type, $status, $msg, Response::HTTP_NOT_ACCEPTABLE);
-            }
-
-            $filterCompanyDocuments = $companyDocuments->filter(function ($doc) use ($documentId) {
-                return ($doc->id == $documentId);
-            });
-
-            if ($filterCompanyDocuments->isEmpty()) {
-                $type = config('enums.RESPONSE.ERROR');
-                $status = false;
-                $msg = 'This document is not uploaded yet.';
-                return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
-            } else {
-                $rejectedResult = $filterCompanyDocuments->filter(function ($fcd) {
-                    return $fcd->status == 2;
-                });
-
-                if (count($rejectedResult) > 0) {
-                    $type = config('enums.RESPONSE.ERROR');
-                    $status = false;
-                    $msg = 'This document is rejected.';
-                    return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
-                }
-
-                $verifiedResult = $filterCompanyDocuments->filter(function ($fcd) {
-                    return $fcd->status == 1;
-                });
-
-                if (count($verifiedResult) > 0) {
-                    $type = config('enums.RESPONSE.ERROR');
-                    $status = false;
-                    $msg = 'This document is already verified.';
-                    return responseHelper($type, $status, $msg, Response::HTTP_IM_USED);
-                } else {
-                    $accountDetail = AccountDetail::find($request->row_id);
-                    $accountDetail->status = $request->status;
-                    $accountDetail->status_by = $userId;
-                    $accountDetail->save();
-                }
-            }
-        } else {
-            $type = config('enums.RESPONSE.ERROR');
-            $status = false;
-            $msg = 'First upload document types.';
+            $msg = 'First upload which documents to be uploaded.';
             return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
         }
 
+        $documentId = $request->document_id;
+        $rowId = $request->row_id;
+
+        // Uploaded documents
+        $companyDocuments = AccountDetail::where([
+            'id' => $rowId,
+            'account_id' => $account->id,
+            'document_id' => $documentId
+        ])->first();
+
+        if (!$companyDocuments) {
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'No documents found.';
+            return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
+        }
+
+        if ($companyDocuments->status == 1) {
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'This document is already verified.';
+            return responseHelper($type, $status, $msg, Response::HTTP_IM_USED);
+        } elseif ($companyDocuments->status == 2) {
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'This document is rejected.';
+            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+        } else {
+            $accountDetail = AccountDetail::find($request->row_id);
+            $accountDetail->status = $request->status;
+            $accountDetail->status_by = $userId;
+            $accountDetail->description = ($request->description) ? ($request->description) : null;
+            $accountDetail->save();
+        }
 
         $ss = [];
         $documents->each(function ($df) use (&$ss) {
