@@ -354,6 +354,8 @@ class UserController extends Controller
 
         $users = User::query();
 
+        $users ->whereNotIn('usertype', ['SuperAdmin', 'Company']);
+
         if ($query) {
             $users->where(function ($q) use ($query) {
                 $q->where('name', 'like', "%$query%")
@@ -362,7 +364,7 @@ class UserController extends Controller
         }
 
         if ($request->get('account')) {
-            $users->where('account_id', $request->account);
+            $users->where('account_id', $request->account);            
         }
 
         $users = $users->get();
