@@ -21,6 +21,7 @@ class CreateAccountDetailsTable extends Migration
             $table->string('path');
             $table->enum('status', ['1','2','3'])->comment('1 for approved and 2 for rejected & 3 for uploaded');
             $table->foreignId('status_by')->nullable()->references('id')->on('users');
+            $table->text('description')->nullable();
          
             $table->timestamps();
         });

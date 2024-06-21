@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\AccountBalance;
+use App\Models\AccountDetail;
+use App\Models\Document;
 use App\Models\Domain;
 use App\Models\Payment;
 use App\Notifications\NewAccountRegistered;
@@ -366,7 +368,10 @@ class AccountController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                'account_id' => 'required|exists:accounts,id'
+                'account_id' => 'required|exists:accounts,id',
+                'document_id' => 'required|exists:documents,id',
+                'status' => 'required|in:1,2,3',
+                'row_id' => 'required|integer|exists:account_details,id'
             ]
         );
 
@@ -410,9 +415,95 @@ class AccountController extends Controller
             return responseHelper($type, $status, $msg, Response::HTTP_IM_USED);
         }
 
-        $account->company_status = 4;
-        $account->document_approved_by = $userId;
-        $account->save();
+        // check document status
+        $documents = Document::where('status', 'active')->get();
+
+        // Uploaded documents
+        $companyDocuments = AccountDetail::where('account_id', $account->id)->get();
+
+        $docStatus = false;
+
+        if ($companyDocuments->isEmpty()) {
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'No documents uploaded.';
+            return responseHelper($type, $status, $msg, Response::HTTP_FAILED_DEPENDENCY);
+        }
+
+        $documentId = $request->document_id;
+
+        if (!$documents->isEmpty()) {
+
+            $filteredDocuments = $documents->filter(function ($document) use ($documentId) {
+                return ($document->id == $documentId);
+            });
+
+            if ($filteredDocuments->isEmpty()) {
+                $type = config('enums.RESPONSE.ERROR');
+                $status = false;
+                $msg = 'This document is not accepted.';
+                return responseHelper($type, $status, $msg, Response::HTTP_NOT_ACCEPTABLE);
+            }
+
+            $filterCompanyDocuments = $companyDocuments->filter(function ($doc) use ($documentId) {
+                return ($doc->id == $documentId);
+            });
+
+            if ($filterCompanyDocuments->isEmpty()) {
+                $type = config('enums.RESPONSE.ERROR');
+                $status = false;
+                $msg = 'This document is not uploaded yet.';
+                return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
+            } else {
+                $rejectedResult = $filterCompanyDocuments->filter(function ($fcd) {
+                    return $fcd->status == 2;
+                });
+
+                if(count($rejectedResult) > 0) {
+                    $type = config('enums.RESPONSE.ERROR');
+                    $status = false;
+                    $msg = 'This document is rejected.';
+                    return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+                }
+
+                $verifiedResult = $filterCompanyDocuments->filter(function ($fcd) {
+                    return $fcd->status == 1;
+                });
+
+                if (count($verifiedResult) > 0) {
+                    $type = config('enums.RESPONSE.ERROR');
+                    $status = false;
+                    $msg = 'This document is already verified.';
+                    return responseHelper($type, $status, $msg, Response::HTTP_IM_USED);
+                } else {
+                    $accountDetail = AccountDetail::find($request->row_id);
+                    $accountDetail->status = $request->status;
+                    $accountDetail->status_by = $userId;
+                    $accountDetail->save();
+                }
+            }
+        } else {
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'First upload document types.';
+            return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
+        }
+
+
+        $ss = [];
+        $documents->each(function ($df) use (&$ss) {
+            $allStatus = AccountDetail::where(['status' => 1, 'document_id' => $df['id']])->get();
+
+            if (!$allStatus->isEmpty()) {
+                $ss[] = 'true';
+            }
+        });
+
+        if (count($documents) == count($ss)) {
+            $account->company_status = 4;
+            $account->document_approved_by = $userId;
+            $account->save();
+        }
 
         $type = config('enums.RESPONSE.SUCCESS');
         $status = true;
