@@ -191,6 +191,17 @@ class AccountController extends Controller
             return responseHelper($type, $status, $msg, Response::HTTP_FORBIDDEN);
         }
 
+        // Additional layer of security to check 
+        if (!is_valid_email($request->email)) {
+
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'Mail exchange is not available';
+
+            // Return a JSON response with the success message and stored account data
+            return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
+        }
+
         // Retrieve the validated input
         $validated = $validator->validated();
 
@@ -459,7 +470,7 @@ class AccountController extends Controller
                     return $fcd->status == 2;
                 });
 
-                if(count($rejectedResult) > 0) {
+                if (count($rejectedResult) > 0) {
                     $type = config('enums.RESPONSE.ERROR');
                     $status = false;
                     $msg = 'This document is rejected.';
