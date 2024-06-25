@@ -20,6 +20,7 @@ class CreateCallCenterAgentsTable extends Migration
             $table->foreignId('call_center_queue_id')->references('id')->on('call_center_queues')->onUpdate('cascade')->onDelete('cascade');
             
             $table->string('agent_name')->nullable();
+            $table->string('password');
 
             $table->enum('type', config('enums.agent.type'))->nullable();
             $table->string('contact')->nullable();

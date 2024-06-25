@@ -22,7 +22,15 @@ class SSHService
     public function __construct(string $host, string $username, string $password)
     {
         $this->sftp = new SFTP($host);
-        $this->sftp->login($username, $password);
+        
+        if (!$this->sftp->login($username, $password)) {
+            // Handle login failure
+            $error = "Failed to login to SFTP server at $host with username $username";
+            throw new \RuntimeException($error);
+        }
+
+        // $this->sftp = new SFTP($host);
+        // $this->sftp->login($username, $password);
     }
 
     /**
