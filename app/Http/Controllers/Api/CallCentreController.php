@@ -123,6 +123,7 @@ class CallCentreController extends Controller
                         'agent_name' => 'required|string|unique:call_center_agents,agent_name,' . $input['agent_name'] . ',id,call_center_queue_id,' . $call_center_queue_id,
                         'password' => 'required',
                         'type' => 'in:' . implode(',', config('enums.agent.type')),
+                        'contact' => 'string',
                         'tier_level' => 'numeric|between:0,9',
                         'tier_position' => 'numeric|between:0,9',
                         'status' => 'in:' . implode(',', config('enums.agent.status')),
@@ -190,8 +191,8 @@ class CallCentreController extends Controller
                 'moh_sound' => 'string|nullable',
                 'record_template' => 'boolean',
                 'queue_timeout_action' => 'string|nullable',
-                'discard_abandoned_after' => 'numeric',
-                'queue_cid_prefix' => 'string',
+                'discard_abandoned_after' => 'numeric|nullable',
+                'queue_cid_prefix' => 'string|nullable',
             ]
         );
 
