@@ -78,7 +78,8 @@ class CallCentreController extends Controller
                 'queue_timeout_action' => 'string|nullable',
                 'discard_abandoned_after' => 'numeric|nullable',
                 'queue_cid_prefix' => 'string|nullable',
-                'created_by' => 'required|exists:users,id'
+                'created_by' => 'required|exists:users,id',
+                'xml' => 'string|nullable'
             ]
         );
 
@@ -103,6 +104,12 @@ class CallCentreController extends Controller
         // Defining action and type for creating UID
         $action = 'create';
         $type = $this->type;
+
+        $xml = '';
+        if($request->has('xml')) {
+            $xml = $request->xml;
+            unset($validated['xml']);
+        }
 
         // Create a new record with validated data
         $data = CallCenterQueue::create($validated);
@@ -157,6 +164,24 @@ class CallCentreController extends Controller
                 CallCenterAgent::create($rvalidated);
             }
         }
+
+        // Store inside dialplan
+        $dialplanData = [
+            "account_id" => $request->account_id,
+            "type" => 'Inbound',
+            "country_code" => '91',
+            "destination" => 'callcenter', 
+            "context" => 'default',
+            "usage" => 'voice',
+            "order" => 230,
+            "dialplan_enabled" => 1,
+            "description" => 'call center queue',
+            "dialplan_xml" => $xml,
+            "call_center_queues_id" => $call_center_queue_id
+        ]; 
+
+        $dailPlanController = new DialplanController();
+        $dailPlanController->insertFromRawData($dialplanData);
 
         // Commit the database transaction
         DB::commit();

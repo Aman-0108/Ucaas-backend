@@ -304,4 +304,11 @@ class DialplanController extends Controller
         // Return the response as JSON with HTTP status code 200 (OK)
         return response()->json($response, Response::HTTP_OK);
     }
+
+    public function insertFromRawData($input)
+    {
+        $data = Dialplan::create($input);
+        
+        return$data;
+    }
 }
