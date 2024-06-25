@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\DefaultPermission;
+use App\Models\Domain;
 use App\Models\UserPermission;
 use App\Notifications\PasswordReset;
 use App\Traits\GetPermission;
@@ -161,7 +162,7 @@ class AuthController extends Controller
         // Check if a user is authenticated
         $user = $request->user();
 
-        $userData = User::with(['extension', 'userRole.roles'])->where('id', $user->id)->first();
+        $userData = User::with(['extension', 'userRole.roles', 'domain'])->where('id', $user->id)->first();
 
         $permissions = [];
         // $permissions = $this->getAllPermissions($user->id);
@@ -178,6 +179,8 @@ class AuthController extends Controller
         }
 
         $userData->permissions = $permissions;
+
+        // $userData->domain = Domain::where('account_id', )
         
         // $userData->roles = $roles;
 
