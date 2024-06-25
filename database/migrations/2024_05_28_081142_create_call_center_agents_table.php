@@ -30,9 +30,9 @@ class CreateCallCenterAgentsTable extends Migration
 
             $table->unsignedBigInteger('busy_delay_time')->nullable();
             $table->unsignedBigInteger('no_answer_delay_time')->nullable();
-            $table->boolean('reserve-agents')->default(false);
-            $table->boolean('truncate-agents-on-load')->default(false);
-            $table->boolean('truncate-tiers-on-load')->default(false);
+            $table->boolean('reserve_agents')->default(false);
+            $table->boolean('truncate_agents_on_load')->default(false);
+            $table->boolean('truncate_tiers_on_load')->default(false);
 
             $table->string('tier_level')->nullable();
             $table->string('tier_position')->nullable();
