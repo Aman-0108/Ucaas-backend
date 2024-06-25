@@ -179,8 +179,6 @@ class AuthController extends Controller
         }
 
         $userData->permissions = $permissions;
-
-        // $userData->domain = Domain::where('account_id', )
         
         // $userData->roles = $roles;
 
