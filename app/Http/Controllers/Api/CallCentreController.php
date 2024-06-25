@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\CallCenterAgent;
 use App\Models\CallCenterQueue;
+use App\Models\Dialplan;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -226,6 +227,7 @@ class CallCentreController extends Controller
                 'queue_timeout_action' => 'string|nullable',
                 'discard_abandoned_after' => 'numeric|nullable',
                 'queue_cid_prefix' => 'string|nullable',
+                'xml' => 'string|nullable'
             ]
         );
 
@@ -253,6 +255,16 @@ class CallCentreController extends Controller
 
         // Begin a database transaction
         DB::beginTransaction();
+
+        // 
+        if($request->has('xml')) {
+            
+            $dp = Dialplan::where('call_center_queues_id', $id)->first();
+            $dp->dialplan_xml = $request->xml;
+            $dp->save();
+
+            unset($validated['xml']);
+        }        
 
         // Update the gateway with the validated data
         $call_centre_queue->update($validated);
