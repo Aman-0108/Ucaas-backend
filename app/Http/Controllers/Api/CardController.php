@@ -76,7 +76,7 @@ class CardController extends Controller
     }
 
     /**
-     * Delete an card by ID.
+     * Delete a card by ID.
      *
      * This method finds and deletes a card based on the provided ID.
      * If the card is not found, it returns a 404 Not Found response.
