@@ -16,6 +16,7 @@ class CreateDidDetailsTable extends Migration
         Schema::create('did_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('account_id')->references('id')->on('accounts');
+            $table->string('orderid');
             //$table->string('transaction_id')->index();
             //$table->foreign('transaction_id')->references('transaction_id')->on('payments');
             $table->string('domain');

@@ -16,6 +16,9 @@ use function PHPUnit\Framework\isEmpty;
 
 class TfnController extends Controller
 {
+
+    
+
     public function getActiveDidVendor()
     {
         $vendors = DidVendor::where('status', 'active')->get();
@@ -29,7 +32,7 @@ class TfnController extends Controller
     public function searchTfn(Request $request)
     {
 
-        $createdBy = $request->user()->id;
+       // $createdBy = $request->user()->id;
         $validator = Validator::make(
             $request->all(),
             [
@@ -91,6 +94,7 @@ class TfnController extends Controller
                         ];
                         return response()->json($response, Response::HTTP_FORBIDDEN);
                     } else {
+                        //pass crteated By parameter
                         $rateType = 'random';
                         $CommioController = new CommioController();
                         $vendorDataResponse = $CommioController->searchDidInCommio($request->companyId, $vendorId, $vendorName, $vendorUserName, $vendorToken, $request->searchType, $request->quantity, $request->npa, $rateType);
@@ -112,6 +116,7 @@ class TfnController extends Controller
 
     public function purchaseTfn(Request $request)
     {
+        $createdBy = $request->user()->id;
         $validator = Validator::make(
             $request->all(),
             [
@@ -137,6 +142,7 @@ class TfnController extends Controller
 
         //checking the wallet balance
         $AccountWallet = new WalletTransactionController();
+        //pass created By parameter
         $AccountWalletData = $AccountWallet->useWalletBalance($request->companyId, $request->rate);
         $AccountWalletDataObject = $AccountWalletData->getData();
 
@@ -164,9 +170,9 @@ class TfnController extends Controller
                 //echo $functionDataObject->data->vendor_name; exit;
 
                 if ($functionDataObject->data->vendor_name == 'Commio') {
-
+                    //pass created By parameter
                     $CommioController = new CommioController();
-                    $purchaseDataResponse = $CommioController->purchaseDidInCommio($request->companyId, $request->vendorId, $request->didQty, $request->rate, $request->accountId, $request->dids);
+                    $purchaseDataResponse = $CommioController->purchaseDidInCommio($createdBy,$request->companyId, $request->vendorId, $request->didQty, $request->rate, $request->accountId, $request->dids);
                     //$responseFunctionDataObject = $purchaseDataResponse->getData();
                     //return response()->json($responseFunctionDataObject, Response::HTTP_OK);
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\DidDetail;
 use App\Models\DidVendor;
 use App\Models\DidOrderStatus;
 use Illuminate\Http\Request;
@@ -187,12 +188,12 @@ class CommioController extends Controller
 
     }
 
-    public function purchaseDidInCommio($companyId,$vendorId,$didQty,$rate,$accountId,$dids)
+    public function purchaseDidInCommio($createdBy,$companyId,$vendorId,$didQty,$rate,$accountId,$dids)
     {
         // $completeOrder = $this->completeOrder(1,16130488,1,14642);
         // print_r($completeOrder); exit;
 
-
+        
         $DidController = new DidVendorController();
         $vendorDataResponse = $DidController->show($vendorId);
         $datas = $vendorDataResponse->getData();
@@ -284,22 +285,54 @@ class CommioController extends Controller
 
                                         $purchasedDid = $row['did'];
                                         //insert into did detail tbl
-                                        // $ordeDetail = [
-                                        //     'account_id' => $companyId,
-                                        //     'domain' => $vendorId,
-                                        //     'did' => $responseData['id'],
-                                        //     'price' => $responseData['status'],
-                                        //     'created_by' => $request->user()->id,
-                                        // ];
-                                        // $ordeDetail = DidOrderStatus::create($ordeDetail);
+                                        $ordeDetail = [
+                                            'account_id' => $companyId,
+                                            'orderid' => $responseData['id'],
+                                            'domain' => $vendorId,
+                                            'did' => $row['did'],
+                                            'price' => 100.25,
+                                            'created_by' => $createdBy,
+                                        ];
+                                        $ordeDetail = DidDetail::create($ordeDetail);
                                     }
 
                                     //make the order Status Completed in did order statuses tbl
+                                    $completed = DidOrderStatus::where('order_id', $responseData['id'])->update(['status' => 'Completed']);
+
+                                    if($completed)
+                                    {
+                                        $res = [
+                                            'status' => false,
+                                            'message' => 'Order Completed',
+                                        ];
+                                        return response()->json($res, Response::HTTP_OK);
+                                    }
+                                    else
+                                    {
+                                        $res = [
+                                            'status' => false,
+                                            'message' => 'Order Completion Failed!Please Contact Support.',
+                                        ];
+                                        return response()->json($res, Response::HTTP_FORBIDDEN);
+                                    }
+                                    
                                 }
+                            }
+                            else
+                            {
+                                //notify to tech team , order not completed but order created.
+                                $failed = DidOrderStatus::where('order_id', $responseData['id'])->update(['status' => 'Failed']);
+                                $res = [
+                                    'status' => false,
+                                    'message' => 'Order Created But Completion Failed!Please Contact Support. With Order Id '.$responseData['id']
+                                ];
+                                return response()->json($res, Response::HTTP_OK);
                             }
                         }
                         else
                         {
+                            //notify to tech team , order not completed but order created.
+                            
                             $res = [
                                 'status' => false,
                                 'message' => 'Order Created But Completion Failed!Please Contact Support. With Order Id '.$responseData['id']
@@ -310,6 +343,7 @@ class CommioController extends Controller
                     }
                     else
                     {
+                        //effect in DB to notify to techteam
                         $res = [
                             'status' => false,
                             'message' => 'Order Completion Failed!Please Contact Support.',
