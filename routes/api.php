@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AccountDetailsController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BillingAddressController;
 use App\Http\Controllers\Api\CallCentreController;
+use App\Http\Controllers\Api\CardController;
 use App\Http\Controllers\Api\ChannelHangupController;
 use App\Http\Controllers\Api\DialplanController;
 use App\Http\Controllers\Api\DomainController;
@@ -580,6 +581,14 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::delete('rate/destroy/{id}', 'destroy');
             Route::get('rate/show/{id}/{rateType}', 'show');
         });
+    });
+
+    // Card Controller
+    Route::controller(CardController::class)->group(function () {
+        // To add a new card 
+        Route::post('add-card', 'create');
+        // To destroy the card by Id
+        Route::delete('remove-card/destroy/{id}', 'destroy');
     });
 });
 

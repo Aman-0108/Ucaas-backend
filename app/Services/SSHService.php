@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Log;
 use phpseclib3\Net\SFTP;
 
 class SSHService
@@ -21,16 +22,27 @@ class SSHService
      */
     public function __construct(string $host, string $username, string $password)
     {
-        $this->sftp = new SFTP($host);
-        
-        if (!$this->sftp->login($username, $password)) {
-            // Handle login failure
-            $error = "Failed to login to SFTP server at $host with username $username";
-            throw new \RuntimeException($error);
+        try {
+            $obj = new SFTP($host);
+            if (!$obj->login($username, $password)) {
+                throw new \RuntimeException("Failed to login to SFTP server at $host with username $username");
+            }
+            $this->sftp = $obj;
+        } catch (\RuntimeException $e) {
+            // Handle the exception, log it, or re-throw it as needed
+            $error = $e->getMessage();
+            $this->sftp = [
+                'status' => false,
+                'error' => $error
+            ];
+            // Optionally re-throw the exception if you want the caller to handle it
+            // throw $e;
         }
+    }
 
-        // $this->sftp = new SFTP($host);
-        // $this->sftp->login($username, $password);
+    public function isConnected()
+    {
+        return is_object($this->sftp) && $this->sftp instanceof SFTP;
     }
 
     /**
