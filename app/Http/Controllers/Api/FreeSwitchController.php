@@ -540,15 +540,17 @@ class FreeSwitchController extends Controller
 
     public function callcenter_config_tier_set($queueName, $agentName, $level = null, $position = null)
     {
-        // callcenter_config tier set level/position
-        // ${queue_name} ${agent_name} value_of_level/position
         if ($this->socket->is_connected()) {
 
-            $cmd = "api callcenter_config tier set level/position {$queueName} {$agentName} value_of_level/position";
+            $cmd = "api callcenter_config tier set level/position {$queueName} {$agentName}";
 
-            // if($level && $position) {
-            //     $cmd .= 
-            // }
+            if (!empty($level) && !empty($position)) {
+                $cmd .= " {$level}/$position";
+            } elseif (!empty($level)) {
+                $cmd .= " {$level}";
+            } elseif (!empty($position)) {
+                $cmd .= " {$position}";
+            }
 
             $response = $this->socket->request($cmd);
 

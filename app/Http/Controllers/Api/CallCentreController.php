@@ -169,7 +169,7 @@ class CallCentreController extends Controller
                 CallCenterAgent::create($rvalidated);
 
                 // Call centre agent add
-                $freeSWitch->callcenter_config_agent_add($$input['agent_name']);
+                $freeSWitch->callcenter_config_agent_add($input['agent_name']);
             }
         }
 
@@ -276,6 +276,10 @@ class CallCentreController extends Controller
         // Update the gateway with the validated data
         $call_centre_queue->update($validated);
 
+        $freeSWitch = new FreeSwitchController();
+        // Reload mod call centre
+        $freeSWitch->reload_mod_callcenter();
+
         //data for child table group call_centre_agent
         if ($request->has('agents')) {
             // Retrieve data from the request object
@@ -354,6 +358,15 @@ class CallCentreController extends Controller
 
                     if ($callCenterAgent->call_center_queue_id == $id) {
                         $callCenterAgent->update($rvalidated);
+
+                        if(!empty($input['tier_level']) && !empty($input['tier_position'])) {
+                            $freeSWitch->callcenter_config_tier_set($call_centre_queue->queue_name,$input['agent_name'], $input['tier_level'], $input['tier_position']);
+                        } elseif (!empty($input['tier_level'])) {
+                            $freeSWitch->callcenter_config_tier_set($call_centre_queue->queue_name,$input['agent_name'], $input['tier_level']);
+                        } elseif (!empty($input['tier_position'])) {
+                            $freeSWitch->callcenter_config_tier_set($call_centre_queue->queue_name,$input['agent_name'], null, $input['tier_position']);
+                        }
+                        
                     } else {
                         $response = [
                             'status' => false,
@@ -365,6 +378,8 @@ class CallCentreController extends Controller
                     }
                 } else {
                     CallCenterAgent::create($rvalidated);
+
+                    $freeSWitch->callcenter_config_agent_add($input['agent_name']);
                 }
             }
         }
