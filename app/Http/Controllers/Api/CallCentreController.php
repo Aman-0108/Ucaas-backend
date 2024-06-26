@@ -115,6 +115,10 @@ class CallCentreController extends Controller
         // Create a new record with validated data
         $data = CallCenterQueue::create($validated);
 
+        $freeSWitch = new FreeSwitchController();
+        // Reload mod call centre
+        $freeSWitch->reload_mod_callcenter();
+
         $call_center_queue_id = $data->id;
 
         //data for child table group call_centre_agent
@@ -163,6 +167,9 @@ class CallCentreController extends Controller
                 $rvalidated = $agentValidator->validated();
 
                 CallCenterAgent::create($rvalidated);
+
+                // Call centre agent add
+                $freeSWitch->callcenter_config_agent_add($$input['agent_name']);
             }
         }
 

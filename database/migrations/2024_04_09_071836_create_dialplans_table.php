@@ -24,7 +24,7 @@ class CreateDialplansTable extends Migration
             $table->string('caller_Id_number')->nullable();
             $table->string('caller_Id_name_prefix')->nullable()->comment('set a prefix on a caller id name');
             $table->enum('usage', ['voice', 'fax', 'text', 'emergency'])->default('voice')->comment('Set how the Destination will be used');
-            $table->string('domain');
+            $table->string('domain')->nullable();
             $table->string('order')->nullable();
             $table->boolean('destination_status')->default(false);
             $table->string('description')->nullable();

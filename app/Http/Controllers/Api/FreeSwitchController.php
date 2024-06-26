@@ -500,4 +500,87 @@ class FreeSwitchController extends Controller
         // Otherwise, return false.
         return (!empty($result)) ? true : false;
     }
+
+    public function reload_mod_callcenter()
+    {
+        if ($this->socket->is_connected()) {
+            $response = $this->socket->request('api reload mod_callcenter');
+            // Prepare the response data
+            $response = [
+                'status' => true, // Indicates the success status of the request
+                'data' => $response, // Contains the fetched extensions
+                'message' => 'Successfully reload call center'
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
+        } else {
+            return $this->disconnected();
+        }
+    }
+
+    public function callcenter_config_agent_add($agent_name)
+    {
+        if ($this->socket->is_connected()) {
+            $cmd = "api callcenter_config agent add {$agent_name}";
+            $response = $this->socket->request($cmd);
+            // Prepare the response data
+            $response = [
+                'status' => true, // Indicates the success status of the request
+                'data' => $response, // Contains the fetched extensions
+                'message' => 'Successfully agent add'
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
+        } else {
+            return $this->disconnected();
+        }
+    }
+
+    public function callcenter_config_tier_set($queueName, $agentName, $level = null, $position = null)
+    {
+        // callcenter_config tier set level/position
+        // ${queue_name} ${agent_name} value_of_level/position
+        if ($this->socket->is_connected()) {
+
+            $cmd = "api callcenter_config tier set level/position {$queueName} {$agentName} value_of_level/position";
+
+            // if($level && $position) {
+            //     $cmd .= 
+            // }
+
+            $response = $this->socket->request($cmd);
+
+            // Prepare the response data
+            $response = [
+                'status' => true, // Indicates the success status of the request
+                'data' => $response,                     
+                'message' => 'Successfully updated.'
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
+        } else {
+            return $this->disconnected();
+        }
+    }
+
+    public function callcenter_config_agent_del()
+    {
+        if ($this->socket->is_connected()) {
+            $response = $this->socket->request('api callcenter_config agent del');
+            // Prepare the response data
+            $response = [
+                'status' => true, // Indicates the success status of the request
+                'data' => $response, // Contains the fetched extensions
+                'message' => 'Successfully agent delete'
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
+        } else {
+            return $this->disconnected();
+        }
+    }
 }
