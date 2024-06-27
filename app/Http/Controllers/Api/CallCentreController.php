@@ -9,6 +9,7 @@ use App\Models\Dialplan;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class CallCentreController extends Controller
@@ -278,7 +279,9 @@ class CallCentreController extends Controller
 
         $freeSWitch = new FreeSwitchController();
         // Reload mod call centre
-        $freeSWitch->reload_mod_callcenter();
+        $reloadModCallCenterresponse = $freeSWitch->reload_mod_callcenter();
+        $reloadModCallCenterresponse = $reloadModCallCenterresponse->getData();
+        echo $reloadModCallCenterresponse->status;
 
         //data for child table group call_centre_agent
         if ($request->has('agents')) {

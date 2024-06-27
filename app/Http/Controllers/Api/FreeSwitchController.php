@@ -8,6 +8,7 @@ use App\Traits\Esl;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 use function PHPUnit\Framework\isEmpty;
@@ -501,10 +502,17 @@ class FreeSwitchController extends Controller
         return (!empty($result)) ? true : false;
     }
 
-    public function reload_mod_callcenter()
+    public function reload_mod_callcenter(): JsonResponse
     {
         if ($this->socket->is_connected()) {
             $response = $this->socket->request('api reload mod_callcenter');
+
+            // Check if the string contains "+OK Reloading XML"
+            if (strpos($response, "+OK Reloading XML") !== false) {
+                // If it does, remove this substring
+                $response = 'success';
+            }
+
             // Prepare the response data
             $response = [
                 'status' => true, // Indicates the success status of the request
@@ -519,7 +527,7 @@ class FreeSwitchController extends Controller
         }
     }
 
-    public function callcenter_config_agent_add($agent_name)
+    public function callcenter_config_agent_add($agent_name): JsonResponse
     {
         if ($this->socket->is_connected()) {
             $cmd = "api callcenter_config agent add {$agent_name}";
@@ -538,7 +546,7 @@ class FreeSwitchController extends Controller
         }
     }
 
-    public function callcenter_config_tier_set($queueName, $agentName, $level = null, $position = null)
+    public function callcenter_config_tier_set($queueName, $agentName, $level = null, $position = null): JsonResponse
     {
         if ($this->socket->is_connected()) {
 
@@ -557,7 +565,7 @@ class FreeSwitchController extends Controller
             // Prepare the response data
             $response = [
                 'status' => true, // Indicates the success status of the request
-                'data' => $response,                     
+                'data' => $response,
                 'message' => 'Successfully updated.'
             ];
 
@@ -568,7 +576,7 @@ class FreeSwitchController extends Controller
         }
     }
 
-    public function callcenter_config_agent_del()
+    public function callcenter_config_agent_del(): JsonResponse
     {
         if ($this->socket->is_connected()) {
             $response = $this->socket->request('api callcenter_config agent del');
