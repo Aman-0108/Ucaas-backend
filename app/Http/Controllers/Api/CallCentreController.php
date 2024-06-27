@@ -11,6 +11,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class CallCentreController extends Controller
 {
@@ -73,7 +74,7 @@ class CallCentreController extends Controller
                 'account_id' => 'required|exists:accounts,id',
                 'queue_name' => 'required|unique:call_center_queues,queue_name',
                 'greeting' => 'string|nullable',
-                'extension' => 'string',
+                'extension' => 'string|unique:call_center_queues,extension,NULL,id,account_id,' . $request->account_id,
                 'strategy' => 'in:' . implode(',', config('enums.agent.strategy')),
                 'moh_sound' => 'string|nullable',
                 'record_template' => 'boolean',
@@ -108,7 +109,7 @@ class CallCentreController extends Controller
         $type = $this->type;
 
         $xml = '';
-        if($request->has('xml')) {
+        if ($request->has('xml')) {
             $xml = $request->xml;
             unset($validated['xml']);
         }
@@ -118,7 +119,16 @@ class CallCentreController extends Controller
 
         $freeSWitch = new FreeSwitchController();
         // Reload mod call centre
-        $freeSWitch->reload_mod_callcenter();
+        $reloadModCallCenterresponse = $freeSWitch->reload_mod_callcenter();
+        $reloadModCallCenterresponse = $reloadModCallCenterresponse->getData();
+
+        if (!$reloadModCallCenterresponse->status) {
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'Something went wrong in freeswitch. Please try again later.';
+
+            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+        }
 
         $call_center_queue_id = $data->id;
 
@@ -168,9 +178,6 @@ class CallCentreController extends Controller
                 $rvalidated = $agentValidator->validated();
 
                 CallCenterAgent::create($rvalidated);
-
-                // Call centre agent add
-                $freeSWitch->callcenter_config_agent_add($input['agent_name']);
             }
         }
 
@@ -179,7 +186,7 @@ class CallCentreController extends Controller
             "account_id" => $request->account_id,
             "type" => 'Inbound',
             "country_code" => '91',
-            "destination" => 'callcenter', 
+            "destination" => 'callcenter',
             "context" => 'default',
             "usage" => 'voice',
             "order" => 230,
@@ -187,7 +194,7 @@ class CallCentreController extends Controller
             "description" => 'call center queue',
             "dialplan_xml" => $xml,
             "call_center_queues_id" => $call_center_queue_id
-        ]; 
+        ];
 
         $dailPlanController = new DialplanController();
         $dailPlanController->insertFromRawData($dialplanData);
@@ -228,7 +235,7 @@ class CallCentreController extends Controller
             [
                 'queue_name' => 'unique:call_center_queues,queue_name,' . $id,
                 'greeting' => 'string|nullable',
-                'extension' => 'string',
+                'extension' => 'string|unique:call_center_queues,extension,' . $id . ',id,account_id,' . $call_centre_queue->account_id,                
                 'strategy' => 'in:' . implode(',', config('enums.agent.strategy')),
                 'moh_sound' => 'string|nullable',
                 'record_template' => 'boolean',
@@ -265,14 +272,14 @@ class CallCentreController extends Controller
         DB::beginTransaction();
 
         // 
-        if($request->has('xml')) {
-            
+        if ($request->has('xml')) {
+
             $dp = Dialplan::where('call_center_queues_id', $id)->first();
             $dp->dialplan_xml = $request->xml;
             $dp->save();
 
             unset($validated['xml']);
-        }        
+        }
 
         // Update the gateway with the validated data
         $call_centre_queue->update($validated);
@@ -281,7 +288,14 @@ class CallCentreController extends Controller
         // Reload mod call centre
         $reloadModCallCenterresponse = $freeSWitch->reload_mod_callcenter();
         $reloadModCallCenterresponse = $reloadModCallCenterresponse->getData();
-        echo $reloadModCallCenterresponse->status;
+
+        if (!$reloadModCallCenterresponse->status) {
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'Something went wrong in freeswitch. Please try again later.';
+
+            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+        }
 
         //data for child table group call_centre_agent
         if ($request->has('agents')) {
@@ -360,16 +374,9 @@ class CallCentreController extends Controller
                     $callCenterAgent = CallCenterAgent::find($input['id']);
 
                     if ($callCenterAgent->call_center_queue_id == $id) {
-                        $callCenterAgent->update($rvalidated);
 
-                        if(!empty($input['tier_level']) && !empty($input['tier_position'])) {
-                            $freeSWitch->callcenter_config_tier_set($call_centre_queue->queue_name,$input['agent_name'], $input['tier_level'], $input['tier_position']);
-                        } elseif (!empty($input['tier_level'])) {
-                            $freeSWitch->callcenter_config_tier_set($call_centre_queue->queue_name,$input['agent_name'], $input['tier_level']);
-                        } elseif (!empty($input['tier_position'])) {
-                            $freeSWitch->callcenter_config_tier_set($call_centre_queue->queue_name,$input['agent_name'], null, $input['tier_position']);
-                        }
-                        
+                        $callCenterAgent->update($rvalidated);
+                       
                     } else {
                         $response = [
                             'status' => false,
@@ -380,9 +387,7 @@ class CallCentreController extends Controller
                         return response()->json($response, Response::HTTP_FORBIDDEN);
                     }
                 } else {
-                    CallCenterAgent::create($rvalidated);
-
-                    $freeSWitch->callcenter_config_agent_add($input['agent_name']);
+                    CallCenterAgent::create($rvalidated); 
                 }
             }
         }

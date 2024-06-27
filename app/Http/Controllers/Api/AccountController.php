@@ -106,7 +106,7 @@ class AccountController extends Controller
             'details.document:id,name',
             'balance',
             'payments' => function ($query) {
-                $query->select('account_id', 'billing_address_id', 'card_id', 'transaction_id', 'currency', 'payment_status', 'transaction_date', 'invoice_url', 'subscription_type');
+                $query->select('account_id', 'amount_subtotal', 'billing_address_id', 'card_id', 'transaction_id', 'currency', 'payment_status', 'transaction_date', 'invoice_url', 'subscription_type');
             },
             'payments.billingAddress:id,fullname,contact_no,email,address,zip,city,state,country',
             'payments.cardDetails' => function ($query) {

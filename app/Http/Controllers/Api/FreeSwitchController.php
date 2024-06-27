@@ -507,15 +507,19 @@ class FreeSwitchController extends Controller
         if ($this->socket->is_connected()) {
             $response = $this->socket->request('api reload mod_callcenter');
 
+            // Log::info($response);
+
+            $status = false;
+
             // Check if the string contains "+OK Reloading XML"
             if (strpos($response, "+OK Reloading XML") !== false) {
                 // If it does, remove this substring
-                $response = 'success';
+                $status = true;
             }
 
             // Prepare the response data
             $response = [
-                'status' => true, // Indicates the success status of the request
+                'status' => $status, // Indicates the success status of the request
                 'data' => $response, // Contains the fetched extensions
                 'message' => 'Successfully reload call center'
             ];
@@ -531,10 +535,20 @@ class FreeSwitchController extends Controller
     {
         if ($this->socket->is_connected()) {
             $cmd = "api callcenter_config agent add {$agent_name}";
+            
             $response = $this->socket->request($cmd);
+            
+            $status = false;
+
+            // Check if the string contains "+OK"
+            if (strpos($response, "+OK") !== false) {
+                // If it does, remove this substring
+                $status = true;
+            }
+
             // Prepare the response data
             $response = [
-                'status' => true, // Indicates the success status of the request
+                'status' => $status, // Indicates the success status of the request
                 'data' => $response, // Contains the fetched extensions
                 'message' => 'Successfully agent add'
             ];
@@ -562,11 +576,19 @@ class FreeSwitchController extends Controller
 
             $response = $this->socket->request($cmd);
 
+            $status = false;
+
+            // Check if the string contains "+OK"
+            if (strpos($response, "+OK") !== false) {
+                // If it does, remove this substring
+                $status = true;
+            }
+
             // Prepare the response data
             $response = [
-                'status' => true, // Indicates the success status of the request
+                'status' => $status, // Indicates the success status of the request
                 'data' => $response,
-                'message' => 'Successfully updated.'
+                'message' => 'Successfully tier set.'
             ];
 
             // Return the response as JSON with HTTP status code 200 (OK)
@@ -576,13 +598,22 @@ class FreeSwitchController extends Controller
         }
     }
 
-    public function callcenter_config_agent_del(): JsonResponse
+    public function callcenter_config_agent_del($agent_name): JsonResponse
     {
         if ($this->socket->is_connected()) {
-            $response = $this->socket->request('api callcenter_config agent del');
+            $response = $this->socket->request("api callcenter_config agent del $agent_name");
+
+            $status = false;
+
+            // Check if the string contains "+OK"
+            if (strpos($response, "+OK") !== false) {
+                // If it does, remove this substring
+                $status = true;
+            }
+
             // Prepare the response data
             $response = [
-                'status' => true, // Indicates the success status of the request
+                'status' => $status, // Indicates the success status of the request
                 'data' => $response, // Contains the fetched extensions
                 'message' => 'Successfully agent delete'
             ];

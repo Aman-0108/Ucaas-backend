@@ -585,6 +585,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Card Controller
     Route::controller(CardController::class)->group(function () {
+        Route::get('all-cards', 'index');
         // To add a new card 
         Route::post('add-card', 'create');
         // To destroy the card by Id

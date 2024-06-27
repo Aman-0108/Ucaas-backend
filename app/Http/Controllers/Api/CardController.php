@@ -12,6 +12,36 @@ use Illuminate\Support\Facades\Validator;
 class CardController extends Controller
 {
     /**
+     * Display a listing of the resource.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function index(Request $request)
+    {
+        // Initialize a query builder for the CardDetail model
+        $cardQuery = CardDetail::query();
+
+        // Check if the request contains an 'account_id' parameter
+        if ($request->has('account_id')) {
+            // If 'account_id' parameter is present, filter results by 'account_id'
+            $cardQuery->where('account_id', $request->account_id);
+        }
+
+        // Retrieve data based on the applied filters or no filters
+        $data = $cardQuery->get();
+
+        // Prepare response parameters
+        $type = config('enums.RESPONSE.SUCCESS'); // Assuming SUCCESS is defined in config/enums.php
+        $status = true;
+        $msg = 'Successfully fetched all accounts.';
+
+        // Return a JSON response using a helper function (responseHelper assumed to be defined elsewhere)
+        return responseHelper($type, $status, $msg, Response::HTTP_OK, $data);
+    }
+
+
+    /**
      * Store a new credit card entry for a specific account.
      *
      * @param Request $request
