@@ -112,6 +112,8 @@ Route::middleware(['auth:sanctum', 'company'])->group(function () {
         Route::get('billing-address/show/{id}', 'show');
         Route::put('billing-address/update/{id}', 'update');
         Route::delete('billing-address/destroy/{id}', 'destroy');
+        // Set status
+        Route::post('set-default-address', 'setDefault');
     });
 });
 
@@ -585,11 +587,14 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Card Controller
     Route::controller(CardController::class)->group(function () {
+        // To list all cards
         Route::get('all-cards', 'index');
         // To add a new card 
         Route::post('add-card', 'create');
         // To destroy the card by Id
         Route::delete('remove-card/destroy/{id}', 'destroy');
+        // Set status
+        Route::post('set-default-card', 'setDefault');
     });
 });
 

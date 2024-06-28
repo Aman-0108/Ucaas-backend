@@ -248,4 +248,43 @@ class BillingAddressController extends Controller
         // Return the response from the database operation.
         return $response;
     }
+
+    public function setDefault(Request $request)
+    {
+        // Validate incoming request data
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'id' => 'required|exists:billing_addresses,id',
+                'account_id' => 'required|exists:accounts,id',
+                'default' => 'required|boolean',
+            ]
+        );
+
+        // If validation fails
+        if ($validator->fails()) {
+            // Return a JSON response with validation errors
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = $validator->errors();
+
+            return responseHelper($type, $status, $msg, Response::HTTP_FORBIDDEN);
+        }
+
+        $data = BillingAddress::find($request->id);
+
+        if ($request->default) {
+            BillingAddress::where('account_id', $request->account_id)->update(['default' => false]);
+        }
+
+        $data->default = $request->default;
+        $data->save();
+
+        $type = config('enums.RESPONSE.SUCCESS');
+        $status = true;
+        $msg = 'Successfully updated';
+
+        // Return a JSON response with HTTP status code 200 (OK)
+        return responseHelper($type, $status, $msg, Response::HTTP_OK);
+    }
 }

@@ -22,6 +22,7 @@ class CreateCardDetailsTable extends Migration
             $table->string('exp_year')->nullable();            
             $table->string('cvc')->nullable();
             $table->enum('save_card', config('enums.card.save_card'))->default(config('enums.card.default_save_card'))->comment(config('enums.card.comment_save_card'));
+            $table->boolean('default')->default(false);
             $table->timestamps();
         });
     }
