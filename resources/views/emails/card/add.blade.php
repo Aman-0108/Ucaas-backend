@@ -14,7 +14,7 @@
     
     <p>
         Please review this information to ensure accuracy. If you did not add this credit card or if you have any concerns
-        regarding this update, please contact our support team immediately at [support email or phone number]. We take the
+        regarding this update, please contact our support team immediately at {{ config('globals.support_mail') }}. We take the
         security of your account very seriously and will assist you promptly.
     </p>    
 
