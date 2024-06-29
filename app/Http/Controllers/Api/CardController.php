@@ -3,15 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Mail\CardAdd;
+use App\Jobs\AddCardEmail;
 use App\Models\Account;
 use App\Models\CardDetail;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class CardController extends Controller
@@ -108,15 +106,18 @@ class CardController extends Controller
 
         $mailData = [
             'account_name' => $account->company_name,
+            'email' => $account->email,
             'card' => $maskedCard,
             'expiry' => $data['exp_month'] . '/' . $data['exp_year'],
             'cardType' => ''
         ];
-        
+
         DB::commit();
 
         // Send mail when a new card added
-        Mail::to($account->email)->send(new CardAdd($mailData));
+        // Mail::to($account->email)->send(new CardAdd($mailData));
+        // Dispatch email sending job to the queue
+        AddCardEmail::dispatch($mailData);
 
         // If the card information is saved successfully, prepare success response
         $type = config('enums.RESPONSE.SUCCESS');
@@ -193,6 +194,12 @@ class CardController extends Controller
         return $result;
     }
 
+    /**
+     * Set a card detail as default for a specific account.
+     *
+     * @param  Request  $request  The incoming HTTP request object.
+     * @return \Illuminate\Http\JsonResponse  JSON response indicating success or failure.
+     */
     public function setDefault(Request $request)
     {
         // Validate incoming request data
@@ -215,15 +222,19 @@ class CardController extends Controller
             return responseHelper($type, $status, $msg, Response::HTTP_FORBIDDEN);
         }
 
+        // Find the card detail by ID
         $data = CardDetail::find($request->id);
-        
-        if($request->default) {
+
+        // If setting as default, update other card details for the same account
+        if ($request->default) {
             CardDetail::where('account_id', $request->account_id)->update(['default' => false]);
         }
 
+        // Update the current card detail to set as default
         $data->default = $request->default;
         $data->save();
 
+        // Prepare success response
         $type = config('enums.RESPONSE.SUCCESS');
         $status = true;
         $msg = 'Successfully updated';

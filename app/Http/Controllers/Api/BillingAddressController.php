@@ -249,6 +249,12 @@ class BillingAddressController extends Controller
         return $response;
     }
 
+    /**
+     * Set a billing address as default for an account.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function setDefault(Request $request)
     {
         // Validate incoming request data
@@ -264,25 +270,30 @@ class BillingAddressController extends Controller
         // If validation fails
         if ($validator->fails()) {
             // Return a JSON response with validation errors
-            $type = config('enums.RESPONSE.ERROR');
-            $status = false;
-            $msg = $validator->errors();
+            $type = config('enums.RESPONSE.ERROR'); // Response type (error)
+            $status = false; // Operation status (failed)
+            $msg = $validator->errors(); // Detailed error messages
 
-            return responseHelper($type, $status, $msg, Response::HTTP_FORBIDDEN);
+            return responseHelper($type, $status, $msg, Response::HTTP_FORBIDDEN); // Respond with HTTP 403 (Forbidden)
         }
 
+        // Retrieve the billing address by ID
         $data = BillingAddress::find($request->id);
 
+        // If setting as default
         if ($request->default) {
+            // Update all other addresses for the same account to be non-default
             BillingAddress::where('account_id', $request->account_id)->update(['default' => false]);
         }
 
+        // Update the selected billing address to set as default
         $data->default = $request->default;
         $data->save();
 
-        $type = config('enums.RESPONSE.SUCCESS');
-        $status = true;
-        $msg = 'Successfully updated';
+        // Success response
+        $type = config('enums.RESPONSE.SUCCESS'); // Response type (success)
+        $status = true; // Operation status (success)
+        $msg = 'Successfully updated'; // Success message
 
         // Return a JSON response with HTTP status code 200 (OK)
         return responseHelper($type, $status, $msg, Response::HTTP_OK);
