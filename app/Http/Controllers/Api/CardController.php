@@ -3,10 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\CardAdd;
+use App\Models\Account;
 use App\Models\CardDetail;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class CardController extends Controller
@@ -92,8 +97,26 @@ class CardController extends Controller
             $cardInput['save_card'] = 1;
         }
 
+        DB::beginTransaction();
+
         // Call a method to save the card information
         $data = $this->saveCard($request->account_id, $cardInput);
+
+        $account = Account::find($request->account_id);
+
+        $maskedCard = maskCreditCard($data['card_number']);
+
+        $mailData = [
+            'account_name' => $account->company_name,
+            'card' => $maskedCard,
+            'expiry' => $data['exp_month'] . '/' . $data['exp_year'],
+            'cardType' => ''
+        ];
+        
+        DB::commit();
+
+        // Send mail when a new card added
+        Mail::to($account->email)->send(new CardAdd($mailData));
 
         // If the card information is saved successfully, prepare success response
         $type = config('enums.RESPONSE.SUCCESS');

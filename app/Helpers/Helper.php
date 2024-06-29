@@ -343,3 +343,23 @@ if (!function_exists('responseHelper')) {
         return response()->json($response, $statusCode);
     }
 }
+
+/**
+ * Masks all but the last 4 digits of a credit card number with asterisks.
+ *
+ * @param string $creditCardNumber The credit card number to be masked.
+ * @return string The masked credit card number with asterisks, keeping the last 4 digits visible.
+ */
+if (!function_exists('maskCreditCard')) {
+    function maskCreditCard($creditCardNumber)
+    {
+        // Calculate the length of the credit card number
+        $length = strlen($creditCardNumber);
+
+        // Mask all characters except the last 4 with '*'
+        $masked = str_repeat('*', $length - 4) . substr($creditCardNumber, -4);
+
+        // Return the masked credit card number
+        return $masked;
+    }
+}
