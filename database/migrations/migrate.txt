@@ -1,0 +1,2 @@
+php artisan migrate --path='./database/migrations/2024_05_18_063427_create_card_details_table.php'
+php artisan migrate --path='./database/migrations/2024_05_18_063426_create_billing_addresses_table.php'
