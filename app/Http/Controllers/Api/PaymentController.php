@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\WalletRecharge;
 use App\Mail\NewUserMail;
+use App\Mail\RechargeSuccessfull;
+use App\Models\Account;
 use App\Models\CardDetail;
 use App\Models\Lead;
 use App\Models\Package;
@@ -322,6 +325,8 @@ class PaymentController extends Controller
         $card = CardDetail::find($request->card_id);
 
         $input = [
+            // 'account_id' => $card->account_id,
+            // 'amount' => $amount,
             'card_number' => $card->card_number,
             'exp_month' =>  $card->exp_month,
             'exp_year' =>  $card->exp_year,
@@ -366,18 +371,20 @@ class PaymentController extends Controller
             $accountController = new AccountController($this->stripeController);
             $accountResult = $accountController->addOrUpdateBalance($request->account_id, $amount, $paymentId, $transactionId);
 
-            // $userCredentials = [
-            //     'company_name' => $account->company_name,
-            //     'email' => $account->email,
-            //     'username' => $account->company_name,
-            //     'password' => $account->company_name,
-            //     'dynamicUrl' => '',
-            //     'transactionId' => $transactionId,
-            //     'pdfPath' => $payment->invoice_url
-            // ];
+            $account = Account::find($request->account_id);
+
+            $maildata = [
+                'company_name' => $account->company_name,
+                'email' => $account->email,
+                'amount' => $payment->amount_total,
+                'transactionId' => $transactionId,
+                'pdfPath' => $payment->invoice_url,
+                'transaction_date' => $payment->transaction_date
+            ];
 
             // Send mail to account holder with invoice
-            // Mail::to($account->email)->send(new NewUserMail($userCredentials));
+            WalletRecharge::dispatch($maildata);
+            // Mail::to($account->email)->send(new RechargeSuccessfull($maildata));
 
             // Success response
             $type = config('enums.RESPONSE.SUCCESS'); // Response type (success)
