@@ -46,14 +46,8 @@ class StripeController extends Controller
     }
 
     // live
-    public function createPaymentIntent($leadId, $amount, $paymentId)
+    public function createPaymentIntent($amount, $paymentId, $metadata)
     {
-        // Define metadata
-        $metadata = [
-            'lead_id' => $leadId,
-            // Add more metadata fields as needed
-        ];
-
         $paymentData = [
             'confirm' => true,
             'amount' => $amount * 100, // Amount in cents

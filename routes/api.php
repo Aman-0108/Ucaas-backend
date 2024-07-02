@@ -562,6 +562,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // Payment Controller
     Route::controller(PaymentController::class)->group(function () {
         Route::get('all-payments', 'index');
+        Route::post('wallet-recharge', 'walletRecharge');
     });
 
     // DID Related

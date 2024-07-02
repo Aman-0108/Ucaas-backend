@@ -551,47 +551,6 @@ class AccountController extends Controller
         return responseHelper($type, $status, $msg, Response::HTTP_ACCEPTED);
     }
 
-    // Initiate Recharge
-    // public function initiateRecharge(Request $request)
-    // {
-    //     // Perform validation on the request data
-    //     $validator = Validator::make(
-    //         $request->all(),
-    //         [
-    //             'account_id' => 'required|exists:accounts,id',
-    //             'amount' => 'required|numeric|between:0,9999999.99',
-    //         ]
-    //     );
-
-    //     // Check if validation fails
-    //     if ($validator->fails()) {
-    //         // If validation fails, return a 403 Forbidden response with validation errors
-    //         $response = [
-    //             'status' => false,
-    //             'message' => 'validation error',
-    //             'errors' => $validator->errors()
-    //         ];
-
-    //         return response()->json($response, Response::HTTP_FORBIDDEN);
-    //     }
-
-    //     $type = 'topup';
-    //     $accountId = $request->account_id;
-    //     $amount = $request->amount;
-
-    //     $client_secret = $this->stripeController->createPaymentIntentForClient($type, $accountId, $amount);
-
-    //     // Prepare the response data
-    //     $response = [
-    //         'status' => true,
-    //         'data' => $client_secret,
-    //         'message' => 'Recharge initiated'
-    //     ];
-
-    //     // Return a JSON response with HTTP status code 201 (Created)
-    //     return response()->json($response, Response::HTTP_CREATED);
-    // }
-
     /**
      * Adjust the payment for an account and record the transaction.
      *
