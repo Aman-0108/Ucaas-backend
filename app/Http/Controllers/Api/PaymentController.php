@@ -309,12 +309,6 @@ class PaymentController extends Controller
                 'cvc' => [
                     'required',
                     'digits:3',
-                    Rule::exists('card_details')->where(function ($query) use ($request) {
-                        if($request->has('card_id')) {
-                            $query->where('id', $request->card_id)
-                            ->where('cvc', $request->cvc);
-                        }                        
-                    })
                 ],
                 'save_card' => 'required_unless:card_id,' . $request->card_id . '|boolean'
             ]
@@ -328,6 +322,18 @@ class PaymentController extends Controller
             $msg = $validator->errors();
 
             return responseHelper($type, $status, $msg, Response::HTTP_FORBIDDEN);
+        }
+
+        if ($request->has('card_id')) {
+            $exist = CardDetail::where(['id' => $request->card_id, 'cvc' => $request->cvc])->first();
+
+            if (!$exist) {
+                $type = config('enums.RESPONSE.ERROR'); // Response type (error)
+                $status = false; // Operation status (failed)
+                $msg = 'CVV is invalid.'; // Detailed error messages
+
+                return responseHelper($type, $status, $msg, Response::HTTP_FORBIDDEN);
+            }
         }
 
         // Extract input data
@@ -493,9 +499,9 @@ class PaymentController extends Controller
         // Check if payment intent creation was successful
         if ($transactionId) {
             // Add billing address
-            $billingAddressController = new BillingAddressController();              
+            $billingAddressController = new BillingAddressController();
             $billingResult = $billingAddressController->addData($request->account_id, $request->only(['fullname', 'contact_no', 'email', 'address', 'zip', 'city', 'state', 'country']));
-            
+
             // Save card details if requested
             $cardInput = [
                 'name' => $request->name,
