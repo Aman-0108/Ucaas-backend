@@ -186,8 +186,10 @@ class PaymentController extends Controller
             $cardController = new CardController();
             $card = $cardController->saveCard($accountId, $cardInput);
 
+            $description = 'New Package ordered.';
+
             // Add Payments
-            $payment = $this->addPayment($billingResult->id, $accountId, $card->id, $amount, $transactionId, $package->subscription_type);
+            $payment = $this->addPayment($billingResult->id, $accountId, $card->id, $amount, $transactionId, $description, $package->subscription_type);
 
             // Add Subscription
             $subscriptionController = new SubscriptionController();
@@ -239,7 +241,7 @@ class PaymentController extends Controller
      * @param $subscriptionType string The type of subscription associated with the payment.
      * @return Payment The newly created payment object.
      */
-    public function addPayment($billingAddressId, $accountId, $cardId, $amount, $transactionId, $subscriptionType = null)
+    public function addPayment($billingAddressId, $accountId, $cardId, $amount, $transactionId, $description = null, $subscriptionType = null)
     {
         // Record transaction details in the database
         $inputData = [
@@ -257,6 +259,7 @@ class PaymentController extends Controller
             'currency' => 'usd',
             'payment_status' => 'complete',
             'transaction_date' => date("Y-m-d H:i:s"),
+            'description' => $description
             // 'invoice_url' => $pdfUrl
         ];
 
@@ -413,7 +416,9 @@ class PaymentController extends Controller
                 $card = $cardController->saveCard($request->account_id, $cardInput);
             }
 
-            return $this->dispatchAfterPayment($amount, $paymentId, $transactionId, $request, $card);
+            $description = 'Wallet balance added';
+
+            return $this->dispatchAfterPayment($amount, $paymentId, $transactionId, $request, $card, $description);
         } else {
             // Handle common server error if transaction fails
             return commonServerError();
@@ -513,6 +518,8 @@ class PaymentController extends Controller
             $billingAddressController = new BillingAddressController();
             $billingResult = $billingAddressController->addData($request->account_id, $request->only(['fullname', 'contact_no', 'email', 'address', 'zip', 'city', 'state', 'country']));
 
+            $request->merge(['address_id' => $billingResult->id]);
+
             // Save card details if requested
             $cardInput = [
                 'name' => $request->name,
@@ -529,8 +536,10 @@ class PaymentController extends Controller
             $cardController = new CardController();
             $card = $cardController->saveCard($request->account_id, $cardInput);
 
+            $description = 'Wallet balance added';
+
             // Dispatch tasks after successful payment
-            return $this->dispatchAfterPayment($request->amount, $paymentId, $transactionId, $request, $card);
+            return $this->dispatchAfterPayment($request->amount, $paymentId, $transactionId, $request, $card, $description);
         } else {
             // Handle common server error if payment intent creation failed
             return commonServerError();
@@ -593,10 +602,10 @@ class PaymentController extends Controller
      * @param object $card The card object associated with the payment.
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function dispatchAfterPayment($amount, $paymentId, $transactionId, $request, $card)
+    protected function dispatchAfterPayment($amount, $paymentId, $transactionId, $request, $card, $description)
     {
         // Add payment record
-        $payment = $this->addPayment($request->address_id, $request->account_id, $card->id, $amount, $transactionId);
+        $payment = $this->addPayment($request->address_id, $request->account_id, $card->id, $amount, $transactionId, $description);
 
         // Update account balance
         $accountController = new AccountController($this->stripeController);
