@@ -275,7 +275,12 @@ class PaymentController extends Controller
         return $payment;
     }
 
-    // walletRecharge
+    /**
+     * Initiates wallet recharge process.
+     *
+     * @param Request $request The HTTP request containing recharge details.
+     * @return \Illuminate\Http\JsonResponse JSON response indicating success or failure.
+     */
     public function walletRecharge(Request $request)
     {
         // Perform validation on the request data
@@ -324,6 +329,7 @@ class PaymentController extends Controller
             return responseHelper($type, $status, $msg, Response::HTTP_FORBIDDEN);
         }
 
+        // Validate CVV if card_id is present
         if ($request->has('card_id')) {
             $exist = CardDetail::where(['id' => $request->card_id, 'cvc' => $request->cvc])->first();
 
@@ -332,13 +338,15 @@ class PaymentController extends Controller
                 $status = false; // Operation status (failed)
                 $msg = 'CVV is invalid.'; // Detailed error messages
 
+                // Return CVV validation error response
                 return responseHelper($type, $status, $msg, Response::HTTP_FORBIDDEN);
             }
         }
 
-        // Extract input data
+        // Extract input data for Stripe payment
         $amount = $request->amount;
 
+        // Prepare payment input based on card_id presence
         if ($request->has('card_id')) {
             $card = CardDetail::find($request->card_id);
 
@@ -359,9 +367,10 @@ class PaymentController extends Controller
             ];
         }
 
+        // Create payment method using Stripe
         $paymentMethodResponse = $this->checkPaymentMethod($stripePaymentinput);
 
-        // Create payment method using Stripe
+        // Handle payment method creation failure
         if (!$paymentMethodResponse['status']) {
             $response = [
                 'status' => false,
@@ -372,7 +381,7 @@ class PaymentController extends Controller
 
         $paymentId = $paymentMethodResponse['paymentId'];
 
-        // Define metadata
+        // Define metadata for the transaction
         $metadata = [
             'cause' => 'wallet recharge',
             'account_id' => $request->account_id
@@ -384,7 +393,7 @@ class PaymentController extends Controller
 
         // If transaction is successful
         if ($transactionId) {
-
+            // If card is not saved, save it
             if (!$request->has('card_id')) {
                 $cardInput = [
                     'name' => $request->name,
@@ -394,18 +403,20 @@ class PaymentController extends Controller
                     'cvc' => $request->cvc,
                 ];
 
+                // Optionally save card based on user input
                 if ($request->save_card == 1) {
                     $cardInput['save_card'] = 1;
                 }
 
+                // Save card details using CardController
                 $cardController = new CardController();
                 $card = $cardController->saveCard($request->account_id, $cardInput);
             }
 
             return $this->dispatchAfterPayment($amount, $paymentId, $transactionId, $request, $card);
         } else {
-            // common server error
-            commonServerError();
+            // Handle common server error if transaction fails
+            return commonServerError();
         }
     }
 
