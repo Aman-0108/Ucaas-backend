@@ -307,11 +307,13 @@ class PaymentController extends Controller
                 ],
                 'amount' => 'required|numeric|between:0,9999999.99',
                 'cvc' => [
-                    'required_unless:card_id,' . $request->card_id,
+                    'required',
                     'digits:3',
                     Rule::exists('card_details')->where(function ($query) use ($request) {
-                        $query->where('id', $request->card_id)
+                        if($request->has('card_id')) {
+                            $query->where('id', $request->card_id)
                             ->where('cvc', $request->cvc);
+                        }                        
                     })
                 ],
                 'save_card' => 'required_unless:card_id,' . $request->card_id . '|boolean'
