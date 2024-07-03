@@ -385,7 +385,7 @@ class PaymentController extends Controller
                     'exp_year' => $request->exp_year,
                     'cvc' => $request->cvc,
                 ];
-    
+
                 if ($request->save_card == 1) {
                     $cardInput['save_card'] = 1;
                 }
@@ -401,6 +401,16 @@ class PaymentController extends Controller
         }
     }
 
+    /**
+     * Recharge account with fresh payment details.
+     *
+     * This function validates incoming request data, processes payment method validation,
+     * creates a payment intent, adds billing address and optionally saves card details,
+     * and dispatches tasks after a successful payment.
+     *
+     * @param Illuminate\Http\Request $request The HTTP request object.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function rechargeWithFreshDetails(Request $request)
     {
         // Validate the incoming request data
@@ -423,56 +433,52 @@ class PaymentController extends Controller
                 'state' => 'required|string',
                 'country' => 'required|string',
                 'save_card' => 'boolean',
-                // 'save_address' => 'boolean',
                 'amount' => 'required|numeric|between:0,9999999.99'
             ]
         );
 
         // Check if validation fails
         if ($validator->fails()) {
-            // If validation fails, return a 403 Forbidden response with validation errors
+            // Return a 403 Forbidden response with validation errors
             $response = [
                 'status' => false,
-                'message' => 'validation error',
+                'message' => 'Validation error',
                 'errors' => $validator->errors()
             ];
 
             return response()->json($response, Response::HTTP_FORBIDDEN);
         }
 
-        $accountId = $request->account_id;
-
-        $amount = $request->amount;
-
-        $billingInput = $request->only(['fullname', 'contact_no', 'email', 'address', 'zip', 'city', 'state', 'country']);
-
-        $stripePaymentinput = $request->only(['card_number', 'exp_month', 'exp_year', 'cvc', 'type']);
-
-        // Additional layer of security to check 
+        // Validate email format using custom function
         if (!is_valid_email($request->email)) {
-            // Prepare a success response with the stored account data
+            // Return a 404 Not Found response if email format is invalid
             $response = [
                 'status' => false,
-                'message' => 'Mail exchange is not available'
+                'message' => 'Invalid email format'
             ];
 
-            // Return a JSON response with the success message and stored account data
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
-        $paymentMethodResponse = $this->checkPaymentMethod($stripePaymentinput);
+        // Prepare payment method input for Stripe
+        $stripePaymentInput = $request->only(['card_number', 'exp_month', 'exp_year', 'cvc', 'type']);
+        $paymentMethodResponse = $this->checkPaymentMethod($stripePaymentInput);
 
+        // Check payment method validation response
         if (!$paymentMethodResponse['status']) {
+            // Return a 403 Forbidden response with payment method validation error            
             $response = [
                 'status' => false,
                 'error' => $paymentMethodResponse['error'],
             ];
+
             return response()->json($response, Response::HTTP_FORBIDDEN);
         }
 
+        // Retrieve payment ID from payment method validation response
         $paymentId = $paymentMethodResponse['paymentId'];
 
-        // Define metadata
+        // Define metadata for payment intent        
         $metadata = [
             'cause' => 'wallet recharge',
             'account_id' => $request->account_id
@@ -480,14 +486,15 @@ class PaymentController extends Controller
         ];
 
         // Create payment intent for the recharge transaction
-        $transactionId = $this->stripeController->createPaymentIntent($amount, $paymentId, $metadata);
+        $transactionId = $this->stripeController->createPaymentIntent($request->amount, $paymentId, $metadata);
 
+        // Check if payment intent creation was successful
         if ($transactionId) {
-            // Add Billing Address
-            $billingAddress = new BillingAddressController();
-            $billingResult = $billingAddress->addData($accountId, $billingInput);
+            // Add billing address
+            $billingAddressController = new BillingAddressController();
+            $billingResult = $billingAddressController->addData($request->account_id, $request->only(['fullname', 'contact_no', 'email', 'address', 'zip', 'city', 'state', 'country']));
 
-            // Add Card Details
+            // Save card details if requested
             $cardInput = [
                 'name' => $request->name,
                 'card_number' => $request->card_number,
@@ -496,30 +503,42 @@ class PaymentController extends Controller
                 'cvc' => $request->cvc,
             ];
 
-            if ($request->save_card == 1) {
+            if ($request->save_card) {
                 $cardInput['save_card'] = 1;
             }
 
             $cardController = new CardController();
-            $card = $cardController->saveCard($accountId, $cardInput);
+            $card = $cardController->saveCard($request->account_id, $cardInput);
 
-            return $this->dispatchAfterPayment($amount, $paymentId, $transactionId, $request, $card);
+            // Dispatch tasks after successful payment
+            return $this->dispatchAfterPayment($request->amount, $paymentId, $transactionId, $request, $card);
         } else {
-            // common server error
-            commonServerError();
+            // Handle common server error if payment intent creation failed
+            return commonServerError();
         }
     }
 
+    /**
+     * Check and create payment method using Stripe.
+     *
+     * This function interacts with Stripe through a controller to create a payment method
+     * and handles the response accordingly.
+     *
+     * @param Illuminate\Http\Request $request The HTTP request containing payment method details.
+     * @return array An array containing the status of the operation and relevant data.
+     */
     protected function checkPaymentMethod($request)
     {
-        // Create payment method using Stripe
+        // Create payment method using Stripe        
         $paymentMethodResponse = $this->stripeController->createPaymentMethod($request);
 
+        // Extract content from response
         $paymentMethodContent = $paymentMethodResponse->getContent();
         $responseData = json_decode($paymentMethodContent, true);
 
+        // Check for errors in the response
         if (isset($responseData['error'])) {
-            // Handle the error related to incorrect card number
+            // Handle the error case
             $response = [
                 'status' => false,
                 'error' => $responseData['error'],
@@ -527,29 +546,47 @@ class PaymentController extends Controller
 
             return $response;
         } else {
-            $paaymentMethodSuccess = $responseData['success'];
+            // Handle the success case
+            $paymentMethodSuccess = $responseData['success'];
 
-            // Handle the error related to incorrect card number
             $response = [
                 'status' => true,
-                'paymentId' => $paaymentMethodSuccess['id']
+                'paymentId' => $paymentMethodSuccess['id'], // Assuming 'id' is the key for payment ID
             ];
 
             return $response;
         }
     }
 
+    /**
+     * Dispatch tasks after successful payment.
+     *
+     * This function performs several actions after a successful payment:
+     * - Adds a payment record.
+     * - Updates the account balance.
+     * - Sends an email to the account holder with invoice details.
+     * - Returns a success response.
+     *
+     * @param float $amount The amount of the payment.
+     * @param string $paymentId The ID of the payment.
+     * @param string $transactionId The transaction ID associated with the payment.
+     * @param Illuminate\Http\Request $request The HTTP request object.
+     * @param object $card The card object associated with the payment.
+     * @return \Illuminate\Http\JsonResponse
+     */
     protected function dispatchAfterPayment($amount, $paymentId, $transactionId, $request, $card)
     {
-        // Add payments
+        // Add payment record
         $payment = $this->addPayment($request->address_id, $request->account_id, $card->id, $amount, $transactionId);
 
-        // Add Balance
+        // Update account balance
         $accountController = new AccountController($this->stripeController);
         $accountResult = $accountController->addOrUpdateBalance($request->account_id, $amount, $paymentId, $transactionId);
 
+        // Retrieve account details
         $account = Account::find($request->account_id);
 
+        // Prepare data for email notification
         $maildata = [
             'company_name' => $account->company_name,
             'email' => $account->email,
@@ -562,7 +599,7 @@ class PaymentController extends Controller
         // Send mail to account holder with invoice
         WalletRecharge::dispatch($maildata);
 
-        // Success response
+        // Prepare success response
         $type = config('enums.RESPONSE.SUCCESS'); // Response type (success)
         $status = true; // Operation status (success)
         $msg = 'You have added balance successfully'; // Success message

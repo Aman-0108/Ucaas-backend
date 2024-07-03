@@ -364,13 +364,29 @@ if (!function_exists('maskCreditCard')) {
     }
 }
 
+/**
+ * Returns a standardized internal server error response.
+ *
+ * This function is used to generate a consistent response format for internal server errors.
+ *
+ * @return \Illuminate\Http\JsonResponse
+ */
 if (!function_exists('commonServerError')) {
     function commonServerError()
     {
-        $type = config('enums.RESPONSE.ERROR'); // Response type (error)
-        $status = false; // Operation status (failed)
-        $msg = 'Something went wrong.'; // Detailed error messages
+        // Response type (error)
+        $type = config('enums.RESPONSE.ERROR');
 
-        return responseHelper($type, $status, $msg, Response::HTTP_INTERNAL_SERVER_ERROR);
+        // Operation status (failed)
+        $status = false;
+
+        // Detailed error messages
+        $msg = 'Something went wrong.';
+
+        // HTTP status code for internal server error
+        $httpStatusCode = \Illuminate\Http\Response::HTTP_INTERNAL_SERVER_ERROR;
+
+        // Call helper function to create the response
+        return responseHelper($type, $status, $msg, $httpStatusCode);
     }
 }
