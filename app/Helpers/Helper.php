@@ -363,3 +363,14 @@ if (!function_exists('maskCreditCard')) {
         return $masked;
     }
 }
+
+if (!function_exists('commonServerError')) {
+    function commonServerError()
+    {
+        $type = config('enums.RESPONSE.ERROR'); // Response type (error)
+        $status = false; // Operation status (failed)
+        $msg = 'Something went wrong.'; // Detailed error messages
+
+        return responseHelper($type, $status, $msg, Response::HTTP_INTERNAL_SERVER_ERROR);
+    }
+}
