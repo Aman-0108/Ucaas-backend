@@ -491,9 +491,9 @@ class PaymentController extends Controller
         // Check if payment intent creation was successful
         if ($transactionId) {
             // Add billing address
-            $billingAddressController = new BillingAddressController();
+            $billingAddressController = new BillingAddressController();              
             $billingResult = $billingAddressController->addData($request->account_id, $request->only(['fullname', 'contact_no', 'email', 'address', 'zip', 'city', 'state', 'country']));
-
+            
             // Save card details if requested
             $cardInput = [
                 'name' => $request->name,
