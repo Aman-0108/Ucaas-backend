@@ -671,8 +671,16 @@ class PaymentController extends Controller
         return responseHelper($type, $status, $msg, Response::HTTP_OK);
     }
 
+    /**
+     * Add a new transaction detail entry.
+     *
+     * @param array $input The input data to create the transaction detail.
+     * Should contain necessary fields such as 'amount', 'description', etc.
+     * @return void
+     */
     public function addToTransactionDetails($input)
     {
+        // Create a new transaction detail entry using the TransactionDetail model.       
         TransactionDetail::create($input);
     }
 }
