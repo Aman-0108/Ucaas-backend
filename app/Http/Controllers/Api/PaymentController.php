@@ -7,10 +7,12 @@ use App\Jobs\WalletRecharge;
 use App\Mail\NewUserMail;
 use App\Mail\RechargeSuccessfull;
 use App\Models\Account;
+use App\Models\BillingAddress;
 use App\Models\CardDetail;
 use App\Models\Lead;
 use App\Models\Package;
 use App\Models\Payment;
+use App\Models\TransactionDetail;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -117,6 +119,8 @@ class PaymentController extends Controller
 
         $billingInput = $request->only(['fullname', 'contact_no', 'email', 'address', 'zip', 'city', 'state', 'country']);
 
+        $paymentMode = 'card';
+
         // Create payment method using Stripe
         $paymentMethodResponse = $this->stripeController->createPaymentMethod($stripePaymentinput);
 
@@ -189,7 +193,7 @@ class PaymentController extends Controller
             $description = 'New Package ordered.';
 
             // Add Payments
-            $payment = $this->addPayment($billingResult->id, $accountId, $card->id, $amount, $transactionId, $description, $package->subscription_type);
+            $payment = $this->addPayment($billingResult, $accountId, $card, $paymentMode, $amount, $transactionId, $description, $package->subscription_type);
 
             // Add Subscription
             $subscriptionController = new SubscriptionController();
@@ -241,13 +245,11 @@ class PaymentController extends Controller
      * @param $subscriptionType string The type of subscription associated with the payment.
      * @return Payment The newly created payment object.
      */
-    public function addPayment($billingAddressId, $accountId, $cardId, $amount, $transactionId, $description = null, $subscriptionType = null)
+    public function addPayment($billingAddress, $accountId, $card, $paymentMode, $amount, $transactionId, $description = null, $subscriptionType = null)
     {
         // Record transaction details in the database
         $inputData = [
             'account_id' => $accountId,
-            'card_id' => $cardId,
-            'billing_address_id' => $billingAddressId,
             'amount_total' => $amount,
             'amount_subtotal' => $amount,
             'stripe_session_id' => $transactionId,
@@ -255,9 +257,9 @@ class PaymentController extends Controller
             'payment_gateway' => 'Stripe',
             'transaction_type' => 'new',
             'subscription_type' => $subscriptionType,
-            'payment_method_options' => 'card',
+            'payment_method_options' => $paymentMode,
             'currency' => 'usd',
-            'payment_status' => 'complete',
+            'payment_status' => 'completed',
             'transaction_date' => date("Y-m-d H:i:s"),
             'description' => $description
             // 'invoice_url' => $pdfUrl
@@ -265,6 +267,33 @@ class PaymentController extends Controller
 
         // Create a new payment record
         $payment = Payment::create($inputData);
+
+        $transactionDetails = [
+            'payment_id' => $payment->id,
+            'transaction_id' => $payment->transaction_id,
+            'amount_total' => $payment->amount_total,
+            'amount_subtotal' => $payment->amount_subtotal,
+            'payment_status' => $payment->payment_status,
+            'transaction_date' => $payment->transaction_date,
+            'name' => $card->name,
+            'card_number' => $card->card_number,
+            'exp_month' => $card->exp_month,
+            'exp_year' => $card->exp_year,
+            'cvc' => $card->cvc,
+            'fullname' => $billingAddress->fullname,
+            'contact_no' => $billingAddress->contact_no,
+            'email' => $billingAddress->email,
+            'address' => $billingAddress->address,
+            'zip' => $billingAddress->zip,
+            'city' => $billingAddress->city,
+            'state' => $billingAddress->state,
+            'country' => $billingAddress->country,
+            'description' => $description,
+            'payment_mode' => $paymentMode,
+
+        ];
+
+        $this->addToTransactionDetails($transactionDetails);
 
         // Generate Invoice
         $invoice = new InvoiceController();
@@ -370,6 +399,8 @@ class PaymentController extends Controller
             ];
         }
 
+        $paymentMode = 'card';
+
         // Create payment method using Stripe
         $paymentMethodResponse = $this->checkPaymentMethod($stripePaymentinput);
 
@@ -418,7 +449,9 @@ class PaymentController extends Controller
 
             $description = 'Wallet balance added';
 
-            return $this->dispatchAfterPayment($amount, $paymentId, $transactionId, $request, $card, $description);
+            $billingAddress = BillingAddress::find($request->address_id);
+
+            return $this->dispatchAfterPayment($billingAddress, $amount, $paymentId, $transactionId, $request, $card, $paymentMode, $description);
         } else {
             // Handle common server error if transaction fails
             return commonServerError();
@@ -484,6 +517,8 @@ class PaymentController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
+        $paymentMode = 'card';
+
         // Prepare payment method input for Stripe
         $stripePaymentInput = $request->only(['card_number', 'exp_month', 'exp_year', 'cvc', 'type']);
         $paymentMethodResponse = $this->checkPaymentMethod($stripePaymentInput);
@@ -539,7 +574,7 @@ class PaymentController extends Controller
             $description = 'Wallet balance added';
 
             // Dispatch tasks after successful payment
-            return $this->dispatchAfterPayment($request->amount, $paymentId, $transactionId, $request, $card, $description);
+            return $this->dispatchAfterPayment($billingResult, $request->amount, $paymentId, $transactionId, $request, $card, $paymentMode, $description);
         } else {
             // Handle common server error if payment intent creation failed
             return commonServerError();
@@ -602,10 +637,10 @@ class PaymentController extends Controller
      * @param object $card The card object associated with the payment.
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function dispatchAfterPayment($amount, $paymentId, $transactionId, $request, $card, $description)
+    protected function dispatchAfterPayment($billingAddress, $amount, $paymentId, $transactionId, $request, $card, $paymentMode, $description)
     {
         // Add payment record
-        $payment = $this->addPayment($request->address_id, $request->account_id, $card->id, $amount, $transactionId, $description);
+        $payment = $this->addPayment($billingAddress, $request->account_id, $card, $paymentMode, $amount, $transactionId, $description);
 
         // Update account balance
         $accountController = new AccountController($this->stripeController);
@@ -634,5 +669,10 @@ class PaymentController extends Controller
 
         // Return a JSON response with HTTP status code 200 (OK)
         return responseHelper($type, $status, $msg, Response::HTTP_OK);
+    }
+
+    public function addToTransactionDetails($input)
+    {
+        TransactionDetail::create($input);
     }
 }

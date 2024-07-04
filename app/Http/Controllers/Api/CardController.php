@@ -242,4 +242,28 @@ class CardController extends Controller
         // Return a JSON response with HTTP status code 200 (OK)
         return responseHelper($type, $status, $msg, Response::HTTP_OK);
     }
+
+    public function cardUpdate(Request $request)
+    {
+        // Validate incoming request data
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'id' => 'required|exists:card_details,id',
+                'account_id' => 'required|exists:accounts,id,' . $request->id,
+                'save_card' => 'required|boolean',
+            ]
+        );
+
+        // If validation fails
+        if ($validator->fails()) {
+            // Return a JSON response with validation errors
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = $validator->errors();
+
+            return responseHelper($type, $status, $msg, Response::HTTP_FORBIDDEN);
+        }
+
+    }
 }
