@@ -53,17 +53,20 @@ class AccountController extends Controller
 
         // Retrieve filtered accounts with their details and timezone
         $accounts = $accountQuery->with([
-            'details:account_id,document_id,path,status',
+            'details:id,account_id,document_id,path,status',
             'details.document:id,name',
             'balance',
+            'subscription',
             'payments' => function ($query) {
-                $query->select('account_id', 'billing_address_id', 'card_id', 'transaction_id', 'currency', 'payment_status', 'transaction_date', 'invoice_url', 'subscription_type');
+                $query->select('account_id', 'amount_subtotal', 'transaction_id', 'currency', 'payment_status', 'transaction_date', 'invoice_url', 'subscription_type')
+                    ->orderBy('transaction_date', 'desc')
+                    ->take(5);
             },
-            'payments.billingAddress:id,fullname,contact_no,email,address,zip,city,state,country',
-            'payments.cardDetails' => function ($query) {
-                $query->select('id', 'name', 'card_number', 'exp_month', 'exp_year', 'cvc');
+            'billingAddress:account_id,id,fullname,contact_no,email,address,zip,city,state,country',
+            'cardDetails' => function ($query) {
+                $query->select('account_id', 'id', 'name', 'card_number', 'exp_month', 'exp_year', 'cvc');
             },
-            'payments.subscription:transaction_id,start_date,end_date',
+            'payments.paymentDetails',
             'package' => function ($query) {
                 $query->select('id', 'name', 'number_of_user', 'description', 'subscription_type', 'regular_price', 'offer_price');
             },
@@ -105,16 +108,17 @@ class AccountController extends Controller
             'details:id,account_id,document_id,path,status',
             'details.document:id,name',
             'balance',
+            'subscription',
             'payments' => function ($query) {
                 $query->select('account_id', 'amount_subtotal', 'transaction_id', 'currency', 'payment_status', 'transaction_date', 'invoice_url', 'subscription_type')
-                ->orderBy('transaction_date', 'desc')
-                ->take(5);
+                    ->orderBy('transaction_date', 'desc')
+                    ->take(5);
             },
-            'payments.billingAddress:id,fullname,contact_no,email,address,zip,city,state,country',
-            'payments.cardDetails' => function ($query) {
-                $query->select('id', 'name', 'card_number', 'exp_month', 'exp_year', 'cvc');
+            'billingAddress:account_id,id,fullname,contact_no,email,address,zip,city,state,country',
+            'cardDetails' => function ($query) {
+                $query->select('account_id', 'id', 'name', 'card_number', 'exp_month', 'exp_year', 'cvc');
             },
-            'payments.subscription:transaction_id,start_date,end_date',
+            'payments.paymentDetails',
             'package' => function ($query) {
                 $query->select('id', 'name', 'number_of_user', 'description', 'subscription_type', 'regular_price', 'offer_price');
             },

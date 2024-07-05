@@ -54,4 +54,28 @@ class Account extends Authenticatable
     {
         return $this->hasMany(Payment::class, 'account_id', 'id');
     }
+
+    /**
+     * Get the billing address associated with the payment.
+     */
+    public function billingAddress()
+    {
+        return $this->hasMany(BillingAddress::class, 'account_id', 'id');
+    }
+
+    /**
+     * Get the card details associated with the payment.
+     */
+    public function cardDetails()
+    {
+        return $this->hasMany(CardDetail::class, 'account_id', 'id');
+    }
+
+    /**
+     * Get the subscription details associated with the payment.
+     */
+    public function subscription()
+    {
+        return $this->hasMany(Subscription::class, 'account_id', 'id');
+    }
 }
