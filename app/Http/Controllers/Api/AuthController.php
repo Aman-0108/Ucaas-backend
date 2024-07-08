@@ -211,7 +211,8 @@ class AuthController extends Controller
             User::where('id', $user->id)->update(['socket_session_id' => NULL, 'socket_status' => 'offline']);
         }
 
-        $request->user()->tokens()->delete();
+        // $request->user()->tokens()->delete();
+        $request->user()->currentAccessToken()->delete();
 
         return response()->json([
             'message' => 'Successfully logged out'
