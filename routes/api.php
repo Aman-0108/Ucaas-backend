@@ -493,6 +493,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::get('freeswitch/reloadXml', 'reloadXml');
         Route::post('freeswitch/call', 'call');
         // Route::get('freeswitch/shutDown', 'shutDown');
+
+        Route::get('freeswitch/checkActiveExtensionOnServer', 'checkActiveExtensionOnServer');
     });
 
     // CDR

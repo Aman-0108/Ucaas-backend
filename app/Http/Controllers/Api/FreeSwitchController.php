@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Domain;
 use App\Models\Extension;
 use App\Traits\Esl;
 use Illuminate\Http\JsonResponse;
@@ -303,32 +304,45 @@ class FreeSwitchController extends Controller
         }
     }
 
+    /**
+     * Checks the status of ongoing calls.
+     *
+     * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
+     */
     public function checkCallStatus(): JsonResponse
     {
+        // Check if the socket is connected
         if ($this->socket->is_connected()) {
-            // Check call state
+            // Send an API request to fetch call events
             $response = $this->socket->request('event json ALL');
 
             // Prepare the response data
-            $response = [
+            $responseData = [
                 'status' => true, // Indicates the success status of the request
-                'data' => $response, // Contains the fetched extensions
-                'message' => 'Successfully fetched'
+                'data' => $response, // Contains the response from the server
+                'message' => 'Successfully fetched call status'
             ];
 
             // Return the response as JSON with HTTP status code 200 (OK)
-            return response()->json($response, Response::HTTP_OK);
+            return response()->json($responseData, Response::HTTP_OK);
         } else {
+            // If the socket is not connected, return a disconnected response
             return $this->disconnected();
         }
     }
 
-    // To make call 
+    /**
+     * Initiates a call between two extensions.
+     *
+     * @param  Request  $request  HTTP request containing src, destination, and account_id
+     * @return \Illuminate\Http\JsonResponse JSON response with status and message
+     */
     public function call(Request $request)
     {
         // Check if a user is authenticated
         $user = $request->user();
 
+        // Check if the socket is connected
         if ($this->socket->is_connected()) {
 
             // Perform validation on the request data
@@ -353,8 +367,10 @@ class FreeSwitchController extends Controller
                 return response()->json($response, Response::HTTP_FORBIDDEN);
             }
 
+            // Get user's ID
             $srcUserId = $user->id;
 
+            // Extract data from request
             $account_id = $request->account_id;
             $src = $request->src;
             $destination = $request->destination;
@@ -374,7 +390,7 @@ class FreeSwitchController extends Controller
                 return response()->json($response, Response::HTTP_UNPROCESSABLE_ENTITY);
             }
 
-            // check user is same or not while making call
+            // Check if the user is allowed to make the call
             if ($srcUserId !== $srcCheck->user) {
                 $response = [
                     'status' => false, // Indicates the success status of the request
@@ -385,7 +401,7 @@ class FreeSwitchController extends Controller
                 return response()->json($response, Response::HTTP_UNPROCESSABLE_ENTITY);
             }
 
-            // check extensions are online or not
+            // Check if source and destination extensions are online
             $srcCheckExtensionActive = $this->CheckExtensionActive($account_id, $src);
             $destinationCheckExtensionActive = $this->CheckExtensionActive($account_id, $destination);
 
@@ -399,11 +415,14 @@ class FreeSwitchController extends Controller
                 return response()->json($response, Response::HTTP_UNPROCESSABLE_ENTITY);
             }
 
+            // Construct the command to initiate the call
             $destination = 'user/' . $destination;
             $cmd_add = "api originate {origination_caller_id_number=$src}$destination $src default XML\n\n";
 
+            // Send the command to the server via socket
             $response = $this->socket->request($cmd_add);
 
+            // Prepare success response
             $response = [
                 'status' => true, // Indicates the success status of the request
                 'message' => 'success.'
@@ -502,31 +521,40 @@ class FreeSwitchController extends Controller
         return (!empty($result)) ? true : false;
     }
 
+    /**
+     * Reloads the mod_callcenter module via API and returns status.
+     *
+     * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
+     */
     public function reload_mod_callcenter(): JsonResponse
     {
+        // Check if the socket is connected
         if ($this->socket->is_connected()) {
+            // Send API request to reload mod_callcenter
             $response = $this->socket->request('api reload mod_callcenter');
 
+            // Uncomment the line below to log the response for debugging
             // Log::info($response);
 
             $status = false;
 
-            // Check if the string contains "+OK Reloading XML"
+            // Check if the response contains "+OK Reloading XML"
             if (strpos($response, "+OK Reloading XML") !== false) {
-                // If it does, remove this substring
+                // If it does, set status to true indicating success
                 $status = true;
             }
 
             // Prepare the response data
-            $response = [
+            $responseData = [
                 'status' => $status, // Indicates the success status of the request
-                'data' => $response, // Contains the fetched extensions
-                'message' => 'Successfully reload call center'
+                'data' => $response, // Contains the response from the server
+                'message' => 'Successfully reloaded call center'
             ];
 
             // Return the response as JSON with HTTP status code 200 (OK)
-            return response()->json($response, Response::HTTP_OK);
+            return response()->json($responseData, Response::HTTP_OK);
         } else {
+            // If the socket is not connected, return a disconnected response
             return $this->disconnected();
         }
     }
@@ -535,9 +563,9 @@ class FreeSwitchController extends Controller
     {
         if ($this->socket->is_connected()) {
             $cmd = "api callcenter_config agent add {$agent_name}";
-            
+
             $response = $this->socket->request($cmd);
-            
+
             $status = false;
 
             // Check if the string contains "+OK"
@@ -621,6 +649,114 @@ class FreeSwitchController extends Controller
             // Return the response as JSON with HTTP status code 200 (OK)
             return response()->json($response, Response::HTTP_OK);
         } else {
+            return $this->disconnected();
+        }
+    }
+
+    /**
+     * Check active extensions on the server and update database accordingly.
+     *
+     * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
+     */
+    public function checkActiveExtensionOnServer(): JsonResponse
+    {
+        // Check if the socket is connected
+        if ($this->connected) {
+            // Make a request to the server API to show registrations
+            $response = $this->socket->request('api show registrations');
+
+            // Check if the response indicates no registrations found
+            if (strpos($response, '0 total') !== false) { // No registrations found, return an empty response
+                $response = [
+                    'status' => true, // Indicates the success status of the request
+                    'data' => [], // Contains the fetched extensions (empty in this case)
+                    'message' => 'Successfully fetched',
+                ];
+
+                // Return the response as JSON with HTTP status code 200 (OK)
+                return response()->json($response, Response::HTTP_OK);
+            }
+
+            // Split the output by lines
+            $lines = explode("\n", $response);
+
+            // Extract column names from the first line
+            $columns = explode(",", trim($lines[0], '"'));
+
+            $parsedData = [];
+
+            // Loop through the data lines (excluding the last two lines)
+            for ($i = 1; $i < count($lines) - 2; $i++) {
+                // Split the line by commas
+                $values = explode(",", $lines[$i]);
+
+                if (count($columns) == count($values)) {
+                    // Combine column names with values to create key-value pairs
+                    $entry = array_combine($columns, $values);
+
+                    // Add the entry to the parsed data
+                    $parsedData[] = $entry;
+                }
+            }
+
+            // Fetch active extensions from the database
+            $activeExts = Extension::select('extension', 'domain', 'account_id')->where('sofia_status', true)->get()->toArray();
+
+            $formattedArray = [];
+
+            // Format parsed data for comparison
+            foreach ($parsedData as $ext) {
+                $extension = $ext['reg_user'];
+                $realm = $ext['realm'];
+
+                // Fetch domain ID from the database
+                $domain = Domain::where('domain_name', $realm)->first();
+
+                $formattedArray[] = ['extension' => $extension, 'domain' => json_encode($domain->id), 'account_id' => $domain->account_id];
+            }
+
+            // Find differences between active extensions and formatted array
+            $differences = array_filter($activeExts, function ($item) use ($formattedArray) {
+                $accId = $item['account_id'];
+                $domain = $item['domain'];
+                $extension = $item['extension'];
+
+                // Check if there exists an item in $formattedArray that matches the current $item
+                $matches = collect($formattedArray)->filter(function ($formattedItem) use ($accId, $domain, $extension) {
+                    return $formattedItem['account_id'] == $accId
+                        && $formattedItem['domain'] == $domain
+                        && $formattedItem['extension'] == $extension;
+                })->isEmpty();
+
+                return $matches;
+            });
+
+            // Update database records for extensions that are not active
+            foreach ($differences as $difference) {
+                $extension = $difference['extension'];
+                $account_id = $difference['account_id'];
+                $domain = $difference['domain'];
+
+                Extension::where([
+                    'extension' => $extension,
+                    'account_id' => $account_id,
+                    'domain' => $domain
+                ])->update(['sofia_status' => false]);
+            }
+
+            // Prepare final response
+            $response = [
+                'status' => true, // Indicates the success status of the request
+                'data' => $activeExts, // Contains the fetched extensions
+                'new' => $formattedArray, // Contains the formatted new data
+                'result' => $differences, // Contains the differences found
+                'message' => 'Successfully updated',
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
+        } else {
+            // If the socket is not connected, return a disconnected response
             return $this->disconnected();
         }
     }
