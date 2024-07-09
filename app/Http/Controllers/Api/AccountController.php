@@ -53,6 +53,9 @@ class AccountController extends Controller
 
         // Retrieve filtered accounts with their details and timezone
         $accounts = $accountQuery->with([
+            'users',
+            'extensions',
+            'dids',
             'details:id,account_id,document_id,path,status,description',
             'details.document:id,name',
             'balance',
@@ -63,9 +66,9 @@ class AccountController extends Controller
                     ->take(5);
             },
             'payments.paymentDetails',
-            'billingAddress:account_id,id,fullname,contact_no,email,address,zip,city,state,country',
+            'billingAddress:account_id,id,fullname,contact_no,email,address,zip,city,state,country,default',
             'cardDetails' => function ($query) {
-                $query->select('account_id', 'id', 'name', 'card_number', 'exp_month', 'exp_year', 'cvc');
+                $query->select('account_id', 'id', 'name', 'card_number', 'exp_month', 'exp_year', 'cvc', 'default');
             },
             'package' => function ($query) {
                 $query->select('id', 'name', 'number_of_user', 'description', 'subscription_type', 'regular_price', 'offer_price');
@@ -105,6 +108,9 @@ class AccountController extends Controller
     {
         // Find the account by ID
         $account = Account::with([
+            'users',
+            'extensions',
+            'dids',
             'details:id,account_id,document_id,path,status,description',
             'details.document:id,name',
             'balance',
@@ -115,9 +121,9 @@ class AccountController extends Controller
                     ->take(5);
             },
             'payments.paymentDetails',
-            'billingAddress:account_id,id,fullname,contact_no,email,address,zip,city,state,country',
+            'billingAddress:account_id,id,fullname,contact_no,email,address,zip,city,state,country,default',
             'cardDetails' => function ($query) {
-                $query->select('account_id', 'id', 'name', 'card_number', 'exp_month', 'exp_year', 'cvc');
+                $query->select('account_id', 'id', 'name', 'card_number', 'exp_month', 'exp_year', 'cvc', 'default');
             },
             'package' => function ($query) {
                 $query->select('id', 'name', 'number_of_user', 'description', 'subscription_type', 'regular_price', 'offer_price');

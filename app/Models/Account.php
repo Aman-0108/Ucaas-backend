@@ -78,4 +78,28 @@ class Account extends Authenticatable
     {
         return $this->hasMany(Subscription::class, 'account_id', 'id');
     }
+
+    /**
+     * Get the extensions associated with the account.
+     */
+    public function extensions()
+    {
+        return $this->hasMany(Extension::class, 'account_id', 'id');
+    }
+
+    /**
+     * Get the users associated with the account.
+     */
+    public function users()
+    {
+        return $this->hasMany(User::class, 'account_id', 'id');
+    }
+
+    /**
+     * Get the DID's associated with the account.
+     */
+    public function dids()
+    {
+        return $this->hasMany(DidDetail::class, 'account_id', 'id');
+    }
 }
