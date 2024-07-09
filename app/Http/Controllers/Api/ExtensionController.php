@@ -61,6 +61,13 @@ class ExtensionController extends Controller
             $extensions->where('account_id', $request->account);
         }
 
+        // Check if the request contains a 'search' parameter
+        if ($request->has('search')) {
+            // If 'search' parameter is provided, filter extensions by extension name
+            $searchTerm = $request->search;
+            $extensions->where('extension', 'like', "%$searchTerm%");
+        }
+
         // COMING FROM GLOBAL CONFIG
         $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
 

@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Hash;
 class UserController extends Controller
 {
     use GetPermission;
+
     /**
      * Creates a new user.
      *
@@ -190,6 +191,21 @@ class UserController extends Controller
             $users->where('account_id', $request->user()->account_id);
         } else {
             $users->where('created_by', $userId);
+        }
+
+        // Check if the request contains a 'search' parameter
+        if ($request->has('search')) {
+            // If 'search' parameter is provided, filter extensions by extension name
+            $searchTerm = $request->search;
+
+            if ($searchTerm) {
+                $users->where(function ($q) use ($searchTerm) {
+                    $q->where('name', 'like', "%$searchTerm%")
+                        ->orWhere('email', 'like', "%$searchTerm%")
+                        ->orWhere('username', 'like', "%$searchTerm%")
+                        ->orWhere('contact', 'like', "%$searchTerm%");
+                });
+            }
         }
 
         // COMING FROM GLOBAL CONFIG
