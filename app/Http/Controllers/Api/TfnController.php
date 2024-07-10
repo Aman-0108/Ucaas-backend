@@ -116,7 +116,8 @@ class TfnController extends Controller
 
     public function purchaseTfn(Request $request)
     {
-        $createdBy = $request->user()->id;
+        // $createdBy = $request->user()->id;
+        $createdBy = 2;
         $validator = Validator::make(
             $request->all(),
             [
@@ -173,8 +174,8 @@ class TfnController extends Controller
                     //pass created By parameter
                     $CommioController = new CommioController();
                     $purchaseDataResponse = $CommioController->purchaseDidInCommio($createdBy,$request->companyId, $request->vendorId, $request->didQty, $request->rate, $request->accountId, $request->dids);
-                    //$responseFunctionDataObject = $purchaseDataResponse->getData();
-                    //return response()->json($responseFunctionDataObject, Response::HTTP_OK);
+                    $responseFunctionDataObject = $purchaseDataResponse->getData();
+                    return response()->json($responseFunctionDataObject, Response::HTTP_OK);
 
                 } else {
                     $response = [

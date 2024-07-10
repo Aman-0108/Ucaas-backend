@@ -200,9 +200,11 @@ class CommioController extends Controller
         $username = $datas->data->username;
         $password = $datas->data->token;
         
+
         $tnsarray = [];
         if (!empty($dids)) {
             $inputs = $dids;
+            
             foreach ($inputs as $input) 
             {
                 $tnsarray[] = array(
@@ -229,37 +231,38 @@ class CommioController extends Controller
 
             $jsondata = json_encode($issuedata);
 
-            //print_r($issuedata); exit;
+            // $curl = curl_init();
+            // curl_setopt_array($curl, array(
+            // CURLOPT_URL => 'https://api.thinq.com/account/'.$accountId.'/origination/order/create',
+            // CURLOPT_RETURNTRANSFER => true,
+            // CURLOPT_ENCODING => '',
+            // CURLOPT_MAXREDIRS => 10,
+            // CURLOPT_TIMEOUT => 0,
+            // CURLOPT_FOLLOWLOCATION => true,
+            // CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            // CURLOPT_CUSTOMREQUEST => 'POST',
+            // CURLOPT_POSTFIELDS => $jsondata,
+            // CURLOPT_HTTPHEADER => array(
+            //     'Authorization: Basic '. base64_encode("$username:$password"),
+            //     'Content-Type: application/json'
+            // ),
+            // ));
 
-            $curl = curl_init();
-            curl_setopt_array($curl, array(
-            CURLOPT_URL => 'https://api.thinq.com/account/'.$accountId.'/origination/order/create',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => $jsondata,
-            CURLOPT_HTTPHEADER => array(
-                'Authorization: Basic '. base64_encode("$username:$password"),
-                'Content-Type: application/json'
-            ),
-            ));
+            // $response = curl_exec($curl);
 
-            $response = curl_exec($curl);
-
-            curl_close($curl);
+            // curl_close($curl);
 
             //print_r($response);   exit;
             //echo $response['status'];
-            $responseData = json_decode($response, true); 
+            // $responseData = json_decode($response, true); 
             //echo $responseData['message'] ;  exit;
+
+            $responseData['status'] = 'created';
+            $responseData['id'] = 54698;
+
             if (isset($responseData['status'])) {
                 if($responseData['status'] == 'created')
                 {
-
                     //add param like order created but not Completed order as per commio
                     $ordeDetail = [
                         'account_id' => $companyId,
@@ -267,6 +270,7 @@ class CommioController extends Controller
                         'order_id' => $responseData['id'],
                         'status' => $responseData['status'],
                     ];
+
                     $ordeDetail = DidOrderStatus::create($ordeDetail);
 
                     if($ordeDetail){
@@ -302,7 +306,7 @@ class CommioController extends Controller
                                     if($completed)
                                     {
                                         $res = [
-                                            'status' => false,
+                                            'status' => true,
                                             'message' => 'Order Completed',
                                         ];
                                         return response()->json($res, Response::HTTP_OK);
@@ -377,6 +381,20 @@ class CommioController extends Controller
     //params = companyid , orderid, vendorId , commio account id
     public function completeOrder($accountId,$orderId,$vendorId,$commioAccountId)
     {
+
+        $response['type'] = 'origination_order';
+        $response['status'] = 'completed';
+        $response['tns'] = [
+                [                    
+                    "did" => "18559046202"
+                ],
+                [                   
+                    "did" => "18557391599"
+                ]
+        ];
+        
+        return $response;
+        exit;
 
         $DidController = new DidVendorController();
         $vendorDataResponse = $DidController->show($vendorId);
