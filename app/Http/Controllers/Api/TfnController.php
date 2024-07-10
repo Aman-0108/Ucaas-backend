@@ -144,7 +144,21 @@ class TfnController extends Controller
         //checking the wallet balance
         $AccountWallet = new WalletTransactionController();
         //pass created By parameter
-        $AccountWalletData = $AccountWallet->useWalletBalance($request->companyId, $request->rate);
+
+        //date preparing for wallet controller
+        //`created_by`, `account_id`, `amount`, `transaction_type`, `payment_gateway_session_id`, `payment_gateway_transaction_id`, `payment_gateway`, `invoice_url`, `descriptor`,
+        $walletData['created_by']                       = $createdBy;
+        $walletData['accountId']                        = $request->companyId;
+        $walletData['amount']                           = $request->rate;
+        $walletData['transaction_type']                 = 'debit';
+        $walletData['descriptor']                       = 'DID Purchase';
+        $walletData['payment_gateway_session_id']       = '';
+        $walletData['payment_gateway_transaction_id']   = '';
+        $walletData['payment_gateway']                  = '';
+        $walletData['invoice_url']                      = '';
+
+        //$AccountWalletData = $AccountWallet->useWalletBalance($request->companyId, $request->rate);
+        $AccountWalletData = $AccountWallet->useWalletBalance($walletData);
         $AccountWalletDataObject = $AccountWalletData->getData();
 
         if ($AccountWalletDataObject->status == false) {
