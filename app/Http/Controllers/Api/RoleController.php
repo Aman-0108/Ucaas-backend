@@ -100,6 +100,30 @@ class RoleController extends Controller
         $userId = $request->user()->id;
         $request->merge(['created_by' => $userId]);
 
+        if ($request->has('name') && $request->has('created_by')) {
+            // Check if a soft-deleted record with the same attributes exists
+            $existingRecord = Role::withTrashed()
+                ->where(['name' => $request->name, 'created_by' => $request->created_by]) // Replace 'attribute' with your actual attribute name
+                ->first();
+
+            if ($existingRecord) {
+                // Restore the soft-deleted record (optional)
+                $existingRecord->restore();
+
+                // Optionally, you may choose to update the attributes of the restored record
+                $existingRecord->update($request->only('name'));
+
+                $response = [
+                    'status' => true,
+                    'data' => $existingRecord,
+                    'message' => 'Successfully restored'
+                ];
+        
+                // Return a JSON response indicating successful storage and 201 status code
+                return response()->json($response, Response::HTTP_CREATED);
+            }
+        }
+
         // Validate incoming request data
         $validator = Validator::make(
             $request->all(),

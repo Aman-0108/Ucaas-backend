@@ -115,15 +115,26 @@ class DomainController extends Controller
         // Retrieve the ID of the authenticated user making the request
         $userId = $request->user()->id;
 
-        // Validate the request data
-        $validator = Validator::make(
-            $request->all(),
-            [
-                'account_id' => 'required|exists:accounts,id',
-                'domain_name' => 'required|unique:domains,domain_name',
-                'created_by' => 'required|exists:users,id',
-            ]
-        );
+        if ($request->user()->usertype == 'SuperAdmin') {
+            // Validate the request data
+            $validator = Validator::make(
+                $request->all(),
+                [
+                    'domain_name' => 'required|unique:domains,domain_name',
+                    'created_by' => 'required|exists:users,id',
+                ]
+            );
+        } else {
+            // Validate the request data
+            $validator = Validator::make(
+                $request->all(),
+                [
+                    'account_id' => 'required|exists:accounts,id',
+                    'domain_name' => 'required|unique:domains,domain_name',
+                    'created_by' => 'required|exists:users,id',
+                ]
+            );
+        }
 
         // Check if validation fails
         if ($validator->fails()) {
@@ -151,7 +162,7 @@ class DomainController extends Controller
         $type = $this->type;
 
         // Generate UID and attach it to the validated data
-        $validated['uid_no'] = createUid($action, $type, $validated, $userId);
+        // $validated['uid_no'] = createUid($action, $type, $validated, $userId);
 
         // Create a new domain record in the database
         $data = Domain::create($validated);
@@ -249,7 +260,7 @@ class DomainController extends Controller
         $type = $this->type;
 
         // Generate UID and attach it to the validated data
-        $validated['uid_no'] = createUid($action, $type, $formattedDescription, $userId);
+        // $validated['uid_no'] = createUid($action, $type, $formattedDescription, $userId);
 
         // Update the domain with the validated data
         $domain->update($validated);
@@ -326,12 +337,12 @@ class DomainController extends Controller
 
         // Perform search query using Eloquent ORM
         $domains = Domain::where('domain_name', 'like', "%$query%");
-        
-        if($request->get('account')) {
+
+        if ($request->get('account')) {
             $domains->where('account_id', $request->get('account'));
         }
 
-        $domains= $domains->get();
+        $domains = $domains->get();
 
         // Prepare success response with search results
         $response = [
