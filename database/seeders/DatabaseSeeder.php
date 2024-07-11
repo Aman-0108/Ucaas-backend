@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
         $this->call(PaymentGatewaySeeder::class);
         $this->call(UserSeeder::class);
 
-        $this->call(RoleSeeder::class);
+        // $this->call(RoleSeeder::class);
         $this->call(PermissionSeeder::class);
         $this->call(DefaultPermissionSeeder::class);
         // $this->call(RolePermissionSeeder::class);
@@ -37,10 +37,10 @@ class DatabaseSeeder extends Seeder
 
         $this->call(LeadSeeder::class);
         $this->call(AccountSeeder::class);
-        $this->call(DomainSeeder::class);
+        // $this->call(DomainSeeder::class);
 
-        $this->call(ExtensionSeeder::class);
-        $this->call(DocumentSeeder::class);
+        // $this->call(ExtensionSeeder::class);
+        // $this->call(DocumentSeeder::class);
         // $this->call(AccountDetailsSeeder::class);
 
         // Clear storage/app/public directory

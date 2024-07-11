@@ -99,24 +99,6 @@ Route::group(['middleware' => 'guest'], function () {
     });
 });
 
-// Only for account
-Route::middleware(['auth:sanctum', 'company'])->group(function () {
-    Route::group(['prefix' => 'auth'], function () {
-        Route::get('account', [AccountController::class, 'account']);
-        Route::get('account-logout', [AccountController::class, 'logout']);
-    });
-
-    Route::controller(BillingAddressController::class)->group(function () {
-        Route::get('billing-address', 'index');
-        Route::post('billing-address/store', 'store');
-        Route::get('billing-address/show/{id}', 'show');
-        Route::put('billing-address/update/{id}', 'update');
-        Route::delete('billing-address/destroy/{id}', 'destroy');
-        // Set status
-        Route::post('set-default-address', 'setDefault');
-    });
-});
-
 Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Auth
@@ -136,43 +118,111 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // User
     Route::controller(UserController::class)->group(function () {
-        // search
-        Route::get('user/search/{query?}', 'search');
+        Route::prefix('user')->middleware('permission')->name('user.')->group(function () {
+            // search
+            Route::get('search/{query?}', 'search')->name('search');
 
-        // To create user
-        Route::post('user/create', 'create');
+            // To create user
+            Route::post('create', 'create')->name('add');
 
-        // To check username is available or not
-        Route::post('check/username', 'checkUserName');
+            // To check username is available or not
+            Route::post('check/username', 'checkUserName');
 
-        // All users
-        Route::get('user/all', 'users');
+            // All users
+            Route::get('all', 'users')->name('browse');
 
-        // Get user Data by Id
-        Route::get('user/{id}', 'show');
+            // Get user Data by Id
+            Route::get('{id}', 'show')->name('read');
 
-        // To update the particular user by Id
-        Route::put('user/{id}', 'update');
+            // To update the particular user by Id
+            Route::put('{id}', 'update')->name('edit');
+        });
+    });
+
+    // Account
+    Route::controller(AccountController::class)->group(function () {
+
+        Route::prefix('account')->middleware('permission')->name('account.')->group(function () {
+            // To get all the accounts
+            Route::get('all', 'index')->name('browse');
+
+            // To get the particular account by Id
+            Route::get('{id}', 'show')->name('read');
+
+            // To update the particular account by Id
+            Route::put('{id}', 'update')->name('edit');
+
+            // To store new account
+            Route::post('store', 'store')->name('add');
+
+            // To destroy the account by Id
+            Route::delete('{id}', 'destroy')->name('delete');
+        });
+
+        // Payment Verification
+        Route::post('payment-verify', 'postPaymentVerify');
+
+        // document verification
+        Route::post('document-verify', 'postDocumentVerify');
+    });
+
+    // Billing Address
+    Route::controller(BillingAddressController::class)->group(function () {
+        Route::prefix('billing-address')->middleware('permission')->name('billingaddress.')->group(function () {
+            // To get all the addresses
+            Route::get('all', 'index')->name('browse');
+
+            // To get the particular address by Id
+            Route::get('show/{id}', 'show')->name('read');
+
+            // To update the particular address by Id
+            Route::put('update/{id}', 'update')->name('edit');
+
+            // To store new address
+            Route::post('store', 'store')->name('add');
+
+            // To destroy the address by Id
+            Route::delete('destroy/{id}', 'destroy')->name('delete');
+            // Set status
+            Route::post('set-default-address', 'setDefault');
+        });
+    });
+
+    // Card Controller
+    Route::controller(CardController::class)->group(function () {
+        Route::prefix('card')->middleware('permission')->name('carddetail.')->group(function () {
+            // To list all cards
+            Route::get('all', 'index')->name('browse');
+
+            // Set status
+            Route::post('set-default-card', 'setDefault')->name('edit');
+
+            // To add a new card 
+            Route::post('add', 'create')->name('add');
+
+            // To destroy the card by Id
+            Route::delete('destroy/{id}', 'destroy')->name('delete');
+        });
     });
 
     // Role
     Route::controller(RoleController::class)->group(function () {
-        // To get all the roles
-        Route::get('roles', 'index');
+        Route::prefix('role')->middleware('permission')->name('role.')->group(function () {
+            // To get all the roles
+            Route::get('all', 'index')->name('browse');
 
-        Route::middleware(['adminOrCompany'])->group(function () {
-            // To store new role
-            Route::post('role/store', 'store');
+            // To get the particular role by Id
+            Route::get('{id}', 'show')->name('read');
 
             // To update the particular role by Id
-            Route::put('role/{id}', 'update');
+            Route::put('{id}', 'update')->name('edit');
+
+            // To store new role
+            Route::post('store', 'store')->name('add');
+
+            // To destroy the role by Id
+            Route::delete('{id}', 'destroy')->name('delete');
         });
-
-        // To destroy the role by Id
-        Route::delete('role/{id}', 'destroy')->middleware('admin');
-
-        // To get the particular role by Id
-        Route::get('role/{id}', 'show');
     });
 
     // Domain
@@ -200,56 +250,42 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Gateway
     Route::controller(GatewayController::class)->group(function () {
-        // To get all the gateways
-        Route::get('gateways', 'index');
+        Route::prefix('gateway')->middleware('permission')->name('gateway.')->group(function () {
+            // To get all the gateways
+            Route::get('all', 'index')->name('browse');
 
-        // To store new gateway
-        Route::post('gateway/store', 'store');
+            // To get the particular gateway by Id
+            Route::get('{id}', 'show')->name('read');
 
-        // To get the particular gateway by Id
-        Route::get('gateway/{id}', 'show');
+            // To update the particular gateway by Id
+            Route::put('{id}', 'update')->name('edit');
 
-        // To update the particular gateway by Id
-        Route::put('gateway/{id}', 'update');
+            // To store new gateway
+            Route::post('store', 'store')->name('add');
 
-        // To destroy the getway by Id
-        Route::delete('gateway/{id}', 'destroy');
-    });
-
-    // Groups
-    Route::controller(GroupController::class)->group(function () {
-        // To get all the groups
-        Route::get('groups', 'index');
-
-        // To store new group
-        Route::post('group/store', 'store');
-
-        // To get the particular group by Id
-        Route::get('group/{id}', 'show');
-
-        // To update the particular group by Id
-        Route::put('group/{id}', 'update');
-
-        // To destroy the group by Id
-        Route::delete('group/{id}', 'destroy');
+            // To destroy the getway by Id
+            Route::delete('{id}', 'destroy')->name('delete');
+        });
     });
 
     // Timezone
     Route::controller(TimezoneController::class)->group(function () {
-        // To get all the timezones
-        Route::get('auth/timezones/{Account?}', 'index');
+        Route::prefix('timezone')->middleware('permission')->name('timezone.')->group(function () {
+            // To get all the timezones
+            Route::get('all/{Account?}', 'index')->name('browse');
 
-        // To store new timezone
-        Route::post('timezone/store', 'store');
+            // To get the particular timezone by Id
+            Route::get('{id}', 'show')->name('read');
 
-        // To get the particular timezone by Id
-        Route::get('timezone/{id}', 'show');
+            // To update the particular timezone by Id
+            Route::put('{id}', 'update')->name('edit');
 
-        // To update the particular timezone by Id
-        Route::put('timezone/{id}', 'update');
+            // To store new timezone
+            Route::post('store', 'store')->name('add');
 
-        // To destroy the timezone by Id
-        Route::delete('timezone/{id}', 'destroy');
+            // To destroy the timezone by Id
+            Route::delete('{id}', 'destroy')->name('delete');
+        });
     });
 
     // UID
@@ -268,30 +304,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
         // To destroy the Uid by Id
         Route::delete('uid/{id}', 'destroy');
-    });
-
-    // Account
-    Route::controller(AccountController::class)->group(function () {
-        // To get all the accounts
-        Route::get('accounts', 'index');
-
-        // To store new account
-        Route::post('account/store', 'store');
-
-        // To get the particular account by Id
-        Route::get('account/{id}', 'show');
-
-        // To update the particular account by Id
-        Route::put('account/{id}', 'update');
-
-        // To destroy the account by Id
-        Route::delete('account/{id}', 'destroy');
-
-        // Payment Verification
-        Route::post('payment-verify', 'postPaymentVerify');
-
-        // document verification
-        Route::post('document-verify', 'postDocumentVerify');
     });
 
     // Account Details
@@ -317,23 +329,25 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Extension
     Route::controller(ExtensionController::class)->group(function () {
-        // search
-        Route::get('extension/search/{query?}', 'search');
+        Route::prefix('extension')->middleware('permission')->name('extension.')->group(function () {
+            // search
+            Route::get('search/{query?}', 'search')->name('search');
 
-        // To get all the accounts
-        Route::get('extensions', 'index');
+            // To get all the accounts
+            Route::get('all', 'index')->name('browse');
 
-        // To store new account
-        Route::post('extension/store', 'store');
+            // To store new account
+            Route::post('assign', 'assign');
 
-        // To store new account
-        Route::post('extension/assign', 'assign');
+            // To get the particular extension by Id
+            Route::get('{id}', 'show')->name('read');
 
-        // To get the particular extension by Id
-        Route::get('extension/{id}', 'show');
+            // To update the particular extension by Id
+            Route::put('{id}', 'update')->name('edit');
 
-        // To update the particular extension by Id
-        Route::put('extension/{id}', 'update');
+            // To store new account
+            Route::post('store', 'store')->name('add');
+        });
     });
 
     Route::controller(RinggroupController::class)->group(function () {
@@ -362,38 +376,42 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Dialplan
     Route::controller(DialplanController::class)->group(function () {
-        // To get all the dialplans
-        Route::get('dialplans', 'index');
+        Route::prefix('dialplan')->middleware('permission')->name('dialplan.')->group(function () {
+            // To get all the dialplans
+            Route::get('all', 'index')->name('browse');
 
-        // To store new dialplan
-        Route::post('dialplan/store', 'store');
+            // To get the particular dialplan by Id
+            Route::get('{id}', 'show')->name('read');
 
-        // To get the particular dialplan by Id
-        Route::get('dialplan/{id}', 'show');
+            // To update the particular dialplan by Id
+            Route::put('{id}', 'update')->name('edit');
 
-        // To update the particular dialplan by Id
-        Route::put('dialplan/{id}', 'update');
+            // To store new dialplan
+            Route::post('store', 'store')->name('add');
 
-        // To destroy the dialplan by Id
-        Route::delete('dialplan/{id}', 'destroy');
+            // To destroy the dialplan by Id
+            Route::delete('{id}', 'destroy')->name('delete');
+        });
     });
 
     // Sip Profile
     Route::controller(SipProfileController::class)->group(function () {
-        // To get all the sip profiles
-        Route::get('sip-profile', 'index');
+        Route::prefix('sip-profile')->middleware('permission')->name('sipprofile.')->group(function () {
+            // To get all the sip profiles
+            Route::get('all', 'index')->name('browse');
 
-        // To store new sip profiles
-        //  Route::post('sip-profile/store', 'store');
+            // To get the particular sip profile by Id
+            Route::get('{id}', 'show')->name('read');
 
-        // To get the particular sip profile by Id
-        Route::get('sip-profile/{id}', 'show');
+            // To update the particular sip profile by Id
+            //  Route::put('{id}', 'update')->name('edit');
 
-        // To update the particular sip profile by Id
-        //  Route::put('sip-profile/{id}', 'update');
+            // To store new sip profiles
+            //  Route::post('store', 'store')->name('add');
 
-        // To destroy the sip profile by Id
-        Route::delete('sip-profile/{id}', 'destroy');
+            // To destroy the sip profile by Id
+            Route::delete('{id}', 'destroy')->name('delete');
+        });
     });
 
     // Sip Profile Domain
@@ -589,18 +607,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::delete('rate/destroy/{id}', 'destroy');
             Route::get('rate/show/{id}/{rateType}', 'show');
         });
-    });
-
-    // Card Controller
-    Route::controller(CardController::class)->group(function () {
-        // To list all cards
-        Route::get('all-cards', 'index');
-        // To add a new card 
-        Route::post('add-card', 'create');
-        // To destroy the card by Id
-        Route::delete('remove-card/destroy/{id}', 'destroy');
-        // Set status
-        Route::post('set-default-card', 'setDefault');
     });
 });
 

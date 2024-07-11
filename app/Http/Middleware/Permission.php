@@ -25,7 +25,7 @@ class Permission
 
         $userType = $request->user()->usertype;
 
-        if ($userType == 'SuperAdmin') {
+        if ($userType == 'SuperAdmin' || empty($routeName)) {
             return $next($request);
         }
 
@@ -79,7 +79,7 @@ class Permission
         $action = $parts[1];
 
         // Step 3: Check if specific permissions exist for the user and route
-        $permissions = AllPermissions::whereIn('id', $permissionIds)->where('model', $model)->where('action', $action)->exists();
+        $permissions = AllPermissions::whereIn('id', $permissionIds)->where('type', $model)->where('action', $action)->exists();
 
         return $permissions;
     }
@@ -102,7 +102,7 @@ class Permission
 
         // Step 3: Check if specific permissions exist for the new company and route
         $permissions = AllPermissions::whereIn('id', $permissionIds)
-            ->where('model', $model)
+            ->where('type', $model)
             ->where('action', $action)
             ->exists();
             

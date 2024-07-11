@@ -27,18 +27,19 @@ class PermissionSeeder extends Seeder
             $modelFiles[] = pathinfo($file, PATHINFO_FILENAME);
             // Extract file name without the extension
             $modelName = pathinfo($file, PATHINFO_FILENAME);
+            
 
             // Use preg_replace with a regular expression to add a space before every capital letter except the first one
             $slug = preg_replace('/(?<=\p{Ll})(?=\p{Lu})/', ' ', $modelName);
 
             // Check if the model exists
             if (class_exists('App\\Models\\' . $modelName)) {
-                $actions = ['browse','read','edit','add','delete'];
+                $actions = ['browse','read','edit','add','delete', 'search'];
 
                 foreach($actions as $action) {
                     Permission::create([
                         'model' => $modelName,
-                        'type' => $modelName,
+                        'type' => strtolower($modelName),
                         'action' => $action,
                         'slug' => $slug
                     ]);
