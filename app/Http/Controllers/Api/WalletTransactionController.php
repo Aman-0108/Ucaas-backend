@@ -14,8 +14,13 @@ use App\Models\AccountBalance;
 class WalletTransactionController extends Controller
 {
 
-    public function useWalletBalance($accountId, $deductValue)
-    {
+    //public function useWalletBalance($accountId, $deductValue)
+    public function useWalletBalance($walletData)
+    {   
+        //echo '<pre>';print_r($walletData); exit;
+
+        $accountId      = $walletData['accountId'];
+        $deductValue    =   $walletData['amount'];
 
         $chkWalletBalance = AccountBalance::where('account_id', $accountId)->first();
 
@@ -28,11 +33,29 @@ class WalletTransactionController extends Controller
         } else {
             // return ($chkWalletBalance->amount >= $deductValue) ? true : false;
 
-            if ($chkWalletBalance->amount) {
+           
+                
                 if ($chkWalletBalance->amount >= $deductValue) {
+
+                    //echo "balance".$chkWalletBalance->amount." rate".$deductValue;  exit;
+
                     $inputData = $chkWalletBalance->amount - $deductValue;
 
                     AccountBalance::where('id', $accountId)->update(['amount' => $inputData]);
+
+                    //`created_by`, `account_id`, `amount`, `transaction_type`, `payment_gateway_session_id`, `payment_gateway_transaction_id`, `payment_gateway`, `invoice_url`, `descriptor`,
+                    $walletDataDetail = [
+                        'created_by'                        => !empty($walletData['created_by']) ? $walletData['created_by'] : "",
+                        'account_id'                        => !empty($walletData['accountId']) ? $walletData['accountId'] : "",
+                        'amount'                            => !empty($walletData['amount']) ? $walletData['amount'] : "",
+                        'transaction_type'                  => !empty($walletData['transaction_type']) ? $walletData['transaction_type'] : "",
+                        'payment_gateway_session_id'        => !empty($walletData['payment_gateway_session_id']) ? $walletData['payment_gateway_session_id'] : "",
+                        'payment_gateway_transaction_id'    => !empty($walletData['payment_gateway_transaction_id']) ? $walletData['payment_gateway_transaction_id'] : "",
+                        'payment_gateway'                   => !empty($walletData['payment_gateway']) ? $walletData['payment_gateway'] : "",
+                        'invoice_url'                       => !empty($walletData['invoice_url']) ? $walletData['invoice_url'] : "",
+                        'descriptor'                        => !empty($walletData['descriptor']) ? $walletData['descriptor'] : "",
+                    ];
+                    WalletTransaction::create($walletDataDetail);
 
                     $response = [
                         'status' => true,
@@ -43,20 +66,12 @@ class WalletTransactionController extends Controller
 
                 } else {
                     $response = [
-                        'status' => true,
+                        'status' => false,
                         'message' => 'Low Wallet Balance'
                     ];
                     return response()->json($response, Response::HTTP_NOT_FOUND);
                 }
-            } else {
-
-                $response = [
-                    'status' => true,
-                    'message' => 'Something went Wrong ! Contact to Support'
-                ];
-
-                return response()->json($response, Response::HTTP_NOT_FOUND);
-            }
+            
         }
     }
 }
