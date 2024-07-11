@@ -163,6 +163,7 @@ class CommioController extends Controller
                 $resp[] = [
                     "vendorId" => $vendorId,
                     "carrierName" => $numbersData->carrierName,
+                    "vendorAccountId" => 14642,
                     "didSummary" => $numbersData->didSummary,
                     "id" => $numbersData->id,
                     "npanxx" => $numbersData->npanxx,
