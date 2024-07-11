@@ -712,7 +712,9 @@ class FreeSwitchController extends Controller
                 // Fetch domain ID from the database
                 $domain = Domain::where('domain_name', $realm)->first();
 
-                $formattedArray[] = ['extension' => $extension, 'domain' => json_encode($domain->id), 'account_id' => $domain->account_id];
+                if($domain) {
+                    $formattedArray[] = ['extension' => $extension, 'domain' => json_encode($domain->id), 'account_id' => $domain->account_id];
+                }                
             }
 
             // Find differences between active extensions and formatted array

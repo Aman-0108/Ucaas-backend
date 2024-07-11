@@ -125,9 +125,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             // To create user
             Route::post('create', 'create')->name('add');
 
-            // To check username is available or not
-            Route::post('check/username', 'checkUserName');
-
             // All users
             Route::get('all', 'users')->name('browse');
 
@@ -137,6 +134,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             // To update the particular user by Id
             Route::put('{id}', 'update')->name('edit');
         });
+
+        // To check username is available or not
+        Route::post('check/username', 'checkUserName');
     });
 
     // Account
@@ -182,10 +182,11 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::post('store', 'store')->name('add');
 
             // To destroy the address by Id
-            Route::delete('destroy/{id}', 'destroy')->name('delete');
-            // Set status
-            Route::post('set-default-address', 'setDefault');
+            Route::delete('destroy/{id}', 'destroy')->name('delete');            
         });
+
+        // Set status
+        Route::post('billing-address/set-default-address', 'setDefault');
     });
 
     // Card Controller

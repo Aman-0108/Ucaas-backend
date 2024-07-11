@@ -385,7 +385,7 @@ class ExtensionController extends Controller
                 'password' => 'string',
                 'voicemail_password' => 'string',
 
-                'user' => 'numeric|exists:users,id',
+                'user' => 'numeric|exists:users,id|nullable',
                 'account_code' => 'string|nullable',
                 'effectiveCallerIdName' => 'string|nullable',
                 'effectiveCallerIdNumber' => 'numeric|nullable',

@@ -16,7 +16,7 @@ class DefaultPermissionSeeder extends Seeder
     public function run()
     {
         $filter = [
-            'Account', 'User', 'Role', 'RolePermission', 'Extension', 'ChannelHangupComplete', 'WalletTransaction'
+            'Account', 'User', 'Role', 'RolePermission', 'Extension', 'ChannelHangupComplete', 'WalletTransaction', 'BillingAddress', 'CardDetail', 'Domain'
         ];
 
         $Permissions = Permission::whereIn('model', $filter)->get();
