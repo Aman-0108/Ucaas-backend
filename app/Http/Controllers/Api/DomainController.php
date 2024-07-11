@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Domain;
+use App\Models\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -354,4 +355,6 @@ class DomainController extends Controller
         // Return a JSON response with domain data and success message
         return response()->json($response, Response::HTTP_OK);
     }
+
+    
 }

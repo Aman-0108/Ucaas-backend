@@ -177,23 +177,25 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Domain
     Route::controller(DomainController::class)->group(function () {
-        // search
-        Route::get('domain/search/{query?}', 'search');
+        Route::prefix('domain')->middleware('permission')->name('domain.')->group(function () {
+            // search
+            Route::get('search/{query?}', 'search')->name('search');
 
-        // To get all the domians
-        Route::get('domains/{Account?}', 'index');
+            // To get all the domians
+            Route::get('domains/{Account?}', 'index')->name('browse');
 
-        // To store new domain
-        Route::post('domain/store', 'store');
+            // To store new domain
+            Route::post('store', 'store')->name('add');
 
-        // To get the particular domian by Id
-        Route::get('domain/{id}', 'show');
+            // To get the particular domian by Id
+            Route::get('{id}', 'show')->name('read');
 
-        // To update the particular domain by Id
-        Route::put('domain/{id}', 'update');
+            // To update the particular domain by Id
+            Route::put('{id}', 'update')->name('edit');
 
-        // To destroy the domain by Id
-        Route::delete('domain/{id}', 'destroy');
+            // To destroy the domain by Id
+            Route::delete('{id}', 'destroy')->name('delete');
+        });
     });
 
     // Gateway
