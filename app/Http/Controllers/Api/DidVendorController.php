@@ -174,7 +174,7 @@ class DidVendorController extends Controller
             $vendors = DidVendor::where('status', 'active')->get();
 
             // $vendors is not empty
-            if (!$vendors->isEmpty()) {                
+            if (!$vendors->isEmpty()) {
                 // Update status of all active vendors to inactive directly using the query
                 DidVendor::where('status', 'active')->update(['status' => 'inactive']);
             }
@@ -207,12 +207,12 @@ class DidVendorController extends Controller
 
     public function show($id)
     {
-        // Find the domain with the given ID
+        // Find the vendor with the given ID
         $vendor = DidVendor::find($id);
 
-        // Check if the domain exists
+        // Check if the vendor exists
         if (!$vendor) {
-            // If domain is not found, prepare error response
+            // If vendor is not found, prepare error response
             $response = [
                 'status' => false,
                 'error' => 'Vendor not found'
@@ -221,14 +221,14 @@ class DidVendorController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
-        // Prepare success response with domain details
+        // Prepare success response with vendor details
         $response = [
             'status' => true,
-            'data' => ($vendor) ? $vendor : '', // Include domain details if found
+            'data' => ($vendor) ? $vendor : '', // Include vendor details if found
             'message' => 'Successfully fetched'
         ];
 
-        // Return a JSON response containing the domain details
+        // Return a JSON response containing the vendor details
         return response()->json($response, Response::HTTP_OK);
     }
 

@@ -4,17 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\DidDetail;
-use App\Models\DidVendor;
 use App\Models\DidOrderStatus;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\DB;
 
 class CommioController extends Controller
 {
-    
     public function searchDid_commio(Request $request)
     {
         $validator = Validator::make(
@@ -22,8 +18,7 @@ class CommioController extends Controller
             [
                 'searchType' => 'required',
                 'quantity' => 'required|integer',
-                'npa' => 'required|integer',
-                
+                'npa' => 'required|integer'
             ]
         );
 
@@ -37,19 +32,16 @@ class CommioController extends Controller
             return response()->json($response, Response::HTTP_FORBIDDEN);
         }
 
+        $searchType = $request->searchType; //tollfree  //domestic
+        $quantity   = $request->quantity;
+        $npa   = $request->npa; //855 
 
-            //$searchType = !empty($request->searchType) ? $request->searchType : "";
-            $searchType = $request->searchType; //tollfree  //domestic
-            $quantity   = $request->quantity;
-            $npa   = $request->npa; //855 
-           
+        $authToken = 'b0297d1b8199f7516500a3544bfde67bf13748a4';
+        $username = 'Natty';
+        $curl = curl_init();
 
-            $authToken = 'b0297d1b8199f7516500a3544bfde67bf13748a4';
-            $username = 'Natty';
-            $curl = curl_init();
-
-            curl_setopt_array($curl, array(
-            CURLOPT_URL => 'https://api.thinq.com/inbound/get-numbers?searchType='.$searchType.'&searchBy=&quantity='.$quantity.'&contiguous=false&npa='.$npa.'&related=true',
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => 'https://api.thinq.com/inbound/get-numbers?searchType=' . $searchType . '&searchBy=&quantity=' . $quantity . '&contiguous=false&npa=' . $npa . '&related=true',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -59,68 +51,58 @@ class CommioController extends Controller
             CURLOPT_CUSTOMREQUEST => 'GET',
             CURLOPT_HTTPHEADER => array(
                 //'Authorization: Basic '.$authToken,
-                'Authorization: Basic '. base64_encode("$username:$authToken"),
+                'Authorization: Basic ' . base64_encode("$username:$authToken"),
                 'Content-Type: application/json'
             ),
-            ));
+        ));
 
-            $response = curl_exec($curl);
-            curl_close($curl);
-            //echo $response; 
-           
-            $arr = json_decode($response);
-           
-            if (isset($arr->dids) && empty($arr->dids)) 
-            {
-                
-                $res = [
-                    'status' => false,
-                    'message' => 'Data Not Available',
-                    'data' => [],
-                    
-                ];
-        
-                return response()->json($res, Response::HTTP_OK);
-            }
-            
+        $response = curl_exec($curl);
+        curl_close($curl);
 
-            foreach ($arr->dids as $numbersData) {
-                $resp[] = [
-                    "carrierName" => $numbersData->carrierName,
-                    "didSummary" => $numbersData->didSummary,
-                    "id" => $numbersData->id,
-                    "npanxx" => $numbersData->npanxx,
-                    "ratecenter" => $numbersData->ratecenter,
-                    "thinqTier" => $numbersData->thinqTier,
-                    "tollfreePrefix" => $numbersData->tollfreePrefix,
-                    "match" => $numbersData->match,
-                    "currency" => "USD",
-                    "price" => 05.50,
-                ];
-            }
+        $arr = json_decode($response);
 
+        if (isset($arr->dids) && empty($arr->dids)) {
             $res = [
-                'status' => true,
-                'message' => 'Please Select Available TFN',
-                'data' => ($resp) ? $resp : '',
-                
+                'status' => false,
+                'message' => 'Data Not Available',
+                'data' => [],
             ];
-    
-            return response()->json($res, Response::HTTP_OK);
-    
-            
 
+            return response()->json($res, Response::HTTP_OK);
+        }
+
+        foreach ($arr->dids as $numbersData) {
+            $resp[] = [
+                "carrierName" => $numbersData->carrierName,
+                "didSummary" => $numbersData->didSummary,
+                "id" => $numbersData->id,
+                "npanxx" => $numbersData->npanxx,
+                "ratecenter" => $numbersData->ratecenter,
+                "thinqTier" => $numbersData->thinqTier,
+                "tollfreePrefix" => $numbersData->tollfreePrefix,
+                "match" => $numbersData->match,
+                "currency" => "USD",
+                "price" => 05.50,
+            ];
+        }
+
+        $res = [
+            'status' => true,
+            'message' => 'Please Select Available TFN',
+            'data' => ($resp) ? $resp : '',
+        ];
+
+        return response()->json($res, Response::HTTP_OK);
     }
 
-    public function searchDidInCommio($companyId,$vendorId,$vendorName,$vendorUserName,$vendorToken,$searchType,$quantity,$npa,$rateType)
+    public function searchDidInCommio($companyId, $vendorId, $vendorName, $vendorUserName, $vendorToken, $searchType, $quantity, $npa, $rateType)
     {
-       
-            $authToken = $vendorToken;
-            $username = $vendorUserName;
-            $curl = curl_init();
+        $authToken = $vendorToken;
+        $username = $vendorUserName;
+        $curl = curl_init();
 
-            curl_setopt_array($curl, array(
-            CURLOPT_URL => 'https://api.thinq.com/inbound/get-numbers?searchType='.$searchType.'&searchBy=&quantity='.$quantity.'&contiguous=false&npa='.$npa.'&related=true',
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => 'https://api.thinq.com/inbound/get-numbers?searchType=' . $searchType . '&searchBy=&quantity=' . $quantity . '&contiguous=false&npa=' . $npa . '&related=true',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -130,96 +112,84 @@ class CommioController extends Controller
             CURLOPT_CUSTOMREQUEST => 'GET',
             CURLOPT_HTTPHEADER => array(
                 //'Authorization: Basic '.$authToken,
-                'Authorization: Basic '. base64_encode("$username:$authToken"),
+                'Authorization: Basic ' . base64_encode("$username:$authToken"),
                 'Content-Type: application/json'
             ),
-            ));
+        ));
 
-            $response = curl_exec($curl);
-            curl_close($curl);
-            //echo $response; 
-           
-            $arr = json_decode($response);
-           
-            if (isset($arr->dids) && empty($arr->dids)) 
-            {
-                
-                $res = [
-                    'status' => false,
-                    'message' => 'Data Not Available',
-                    'data' => [],
-                    
-                ];
-        
-                return response()->json($res, Response::HTTP_OK);
-            }
+        $response = curl_exec($curl);
+        curl_close($curl);
 
-            $DidrateController = new DidRateController();
-            $vendorDataResponse = $DidrateController->show($vendorId,$rateType);
-            $functionDataObject = $vendorDataResponse->getData();
-            //$functionDataObject->data->rate; 
+        $arr = json_decode($response);
 
-            foreach ($arr->dids as $numbersData) {
-                $resp[] = [
-                    "vendorId" => $vendorId,
-                    "carrierName" => $numbersData->carrierName,
-                    "vendorAccountId" => 14642,
-                    "didSummary" => $numbersData->didSummary,
-                    "id" => $numbersData->id,
-                    "npanxx" => $numbersData->npanxx,
-                    "ratecenter" => $numbersData->ratecenter,
-                    "thinqTier" => $numbersData->thinqTier,
-                    "tollfreePrefix" => $numbersData->tollfreePrefix,
-                    "match" => $numbersData->match,
-                    "currency" => "USD",
-                    "price" => !empty($functionDataObject->data->rate) ? $functionDataObject->data->rate : "",
-                ];
-            }
-
+        if (isset($arr->dids) && empty($arr->dids)) {
             $res = [
-                'status' => true,
-                'message' => 'Please Select Available TFN',
-                'data' => ($resp) ? $resp : '',
-                
-            ];
-    
-            return response()->json($res, Response::HTTP_OK);
-    
-            
+                'status' => false,
+                'message' => 'Data Not Available',
+                'data' => [],
 
+            ];
+
+            return response()->json($res, Response::HTTP_OK);
+        }
+
+        $DidrateController = new DidRateController();
+        $vendorDataResponse = $DidrateController->show($vendorId, $rateType);
+        $functionDataObject = $vendorDataResponse->getData();
+        //$functionDataObject->data->rate; 
+
+        foreach ($arr->dids as $numbersData) {
+            $resp[] = [
+                "vendorId" => $vendorId,
+                "carrierName" => $numbersData->carrierName,
+                "vendorAccountId" => 14642,
+                "didSummary" => $numbersData->didSummary,
+                "id" => $numbersData->id,
+                "npanxx" => $numbersData->npanxx,
+                "ratecenter" => $numbersData->ratecenter,
+                "thinqTier" => $numbersData->thinqTier,
+                "tollfreePrefix" => $numbersData->tollfreePrefix,
+                "match" => $numbersData->match,
+                "currency" => "USD",
+                "price" => !empty($functionDataObject->data->rate) ? $functionDataObject->data->rate : "",
+            ];
+        }
+
+        $res = [
+            'status' => true,
+            'message' => 'Please Select Available TFN',
+            'data' => ($resp) ? $resp : '',
+        ];
+
+        return response()->json($res, Response::HTTP_OK);
     }
 
-    public function purchaseDidInCommio($createdBy,$companyId,$vendorId,$didQty,$rate,$accountId,$dids)
+    public function purchaseDidInCommio($createdBy, $companyId, $vendorId, $didQty, $rate, $accountId, $dids)
     {
-        // $completeOrder = $this->completeOrder(1,16130488,1,14642);
-        // print_r($completeOrder); exit;
-
-        
         $DidController = new DidVendorController();
         $vendorDataResponse = $DidController->show($vendorId);
         $datas = $vendorDataResponse->getData();
         $username = $datas->data->username;
         $password = $datas->data->token;
-        
+
 
         $tnsarray = [];
         if (!empty($dids)) {
             $inputs = $dids;
-            
-            foreach ($inputs as $input) 
-            {
+
+            foreach ($inputs as $input) {
                 $tnsarray[] = array(
-                    "caller_id"=>null,
-                    "caller_id"=> null,
-                    "account_location_id"=> null,
-                    "sms_routing_profile_id"=> null,
-                    "route_id"=> null,
+                    "caller_id" => null,
+                    "caller_id" => null,
+                    "account_location_id" => null,
+                    "sms_routing_profile_id" => null,
+                    "route_id" => null,
                     "features" => array(
-                    "cnam"=> false,
-                    "sms"=> false,
-                    "e911"=> false
+                        "cnam" => false,
+                        "sms" => false,
+                        "e911" => false
                     ),
-                    "did"=> $input['dids']
+                    "did" => $input['dids']
                 );
             }
 
@@ -262,8 +232,7 @@ class CommioController extends Controller
             $responseData['id'] = 54698;
 
             if (isset($responseData['status'])) {
-                if($responseData['status'] == 'created')
-                {
+                if ($responseData['status'] == 'created') {
                     //add param like order created but not Completed order as per commio
                     $ordeDetail = [
                         'account_id' => $companyId,
@@ -274,19 +243,13 @@ class CommioController extends Controller
 
                     $ordeDetail = DidOrderStatus::create($ordeDetail);
 
-                    if($ordeDetail){
-                        //params = companyid , orderid, vendorId , commio account id
-                        $completeOrder = $this->completeOrder($companyId,$responseData['id'],$vendorId,$accountId);
-                        //echo $completeOrder['status'];
-                        if (isset($completeOrder['status']) && isset($completeOrder['type'])) 
-                        {
+                    if ($ordeDetail) {
+                        $completeOrder = $this->completeOrder($companyId, $responseData['id'], $vendorId, $accountId);
+                        if (isset($completeOrder['status']) && isset($completeOrder['type'])) {
                             //origination_order
-                            if($completeOrder['status'] == 'completed')
-                            {
-                                if($completeOrder['type'] == 'origination_order')
-                                {
-                                    foreach($completeOrder['tns'] as $row)
-                                    {
+                            if ($completeOrder['status'] == 'completed') {
+                                if ($completeOrder['type'] == 'origination_order') {
+                                    foreach ($completeOrder['tns'] as $row) {
 
                                         $purchasedDid = $row['did'];
                                         //insert into did detail tbl
@@ -295,7 +258,7 @@ class CommioController extends Controller
                                             'orderid' => $responseData['id'],
                                             'domain' => $vendorId,
                                             'did' => $row['did'],
-                                            'price' => 100.25,
+                                            'price' => $rate,
                                             'created_by' => $createdBy,
                                         ];
                                         $ordeDetail = DidDetail::create($ordeDetail);
@@ -304,50 +267,38 @@ class CommioController extends Controller
                                     //make the order Status Completed in did order statuses tbl
                                     $completed = DidOrderStatus::where('order_id', $responseData['id'])->update(['status' => 'Completed']);
 
-                                    if($completed)
-                                    {
+                                    if ($completed) {
                                         $res = [
                                             'status' => true,
                                             'message' => 'Order Completed',
                                         ];
                                         return response()->json($res, Response::HTTP_OK);
-                                    }
-                                    else
-                                    {
+                                    } else {
                                         $res = [
                                             'status' => false,
                                             'message' => 'Order Completion Failed!Please Contact Support.',
                                         ];
                                         return response()->json($res, Response::HTTP_FORBIDDEN);
                                     }
-                                    
                                 }
-                            }
-                            else
-                            {
+                            } else {
                                 //notify to tech team , order not completed but order created.
                                 $failed = DidOrderStatus::where('order_id', $responseData['id'])->update(['status' => 'Failed']);
                                 $res = [
                                     'status' => false,
-                                    'message' => 'Order Created But Completion Failed!Please Contact Support. With Order Id '.$responseData['id']
+                                    'message' => 'Order Created But Completion Failed!Please Contact Support. With Order Id ' . $responseData['id']
                                 ];
                                 return response()->json($res, Response::HTTP_OK);
                             }
-                        }
-                        else
-                        {
+                        } else {
                             //notify to tech team , order not completed but order created.
-                            
                             $res = [
                                 'status' => false,
-                                'message' => 'Order Created But Completion Failed!Please Contact Support. With Order Id '.$responseData['id']
+                                'message' => 'Order Created But Completion Failed!Please Contact Support. With Order Id ' . $responseData['id']
                             ];
                             return response()->json($res, Response::HTTP_OK);
                         }
-
-                    }
-                    else
-                    {
+                    } else {
                         //effect in DB to notify to techteam
                         $res = [
                             'status' => false,
@@ -355,45 +306,39 @@ class CommioController extends Controller
                         ];
                         return response()->json($res, Response::HTTP_OK);
                     }
-                }
-                else
-                {
+                } else {
                     $res = [
                         'status' => false,
                         'message' => $responseData['message'],
                     ];
-            
+
                     return response()->json($res, Response::HTTP_OK);
                 }
             } else {
-                
                 $res = [
                     'status' => false,
                     'message' => $responseData['message'],
                 ];
-        
+
                 return response()->json($res, Response::HTTP_OK);
             }
-
-
         }
     }
 
     //params = companyid , orderid, vendorId , commio account id
-    public function completeOrder($accountId,$orderId,$vendorId,$commioAccountId)
+    public function completeOrder($accountId, $orderId, $vendorId, $commioAccountId)
     {
-
         $response['type'] = 'origination_order';
         $response['status'] = 'completed';
         $response['tns'] = [
-                [                    
-                    "did" => "18559046202"
-                ],
-                [                   
-                    "did" => "18557391599"
-                ]
+            [
+                "did" => "18559046202"
+            ],
+            [
+                "did" => "18557391599"
+            ]
         ];
-        
+
         return $response;
         exit;
 
@@ -406,27 +351,25 @@ class CommioController extends Controller
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-        CURLOPT_URL => 'https://api.thinq.com/account/'.$commioAccountId.'/origination/order/complete/'.$orderId,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => '',
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => 'POST',
-        CURLOPT_HTTPHEADER => array(
-            'Authorization: Basic '. base64_encode("$username:$password"),
-            'Content-Type: application/json'
-        ),
+            CURLOPT_URL => 'https://api.thinq.com/account/' . $commioAccountId . '/origination/order/complete/' . $orderId,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_HTTPHEADER => array(
+                'Authorization: Basic ' . base64_encode("$username:$password"),
+                'Content-Type: application/json'
+            ),
         ));
 
         $response = curl_exec($curl);
 
         curl_close($curl);
         //echo $response;
-        $responseData = json_decode($response, true); 
+        $responseData = json_decode($response, true);
         return $responseData;
-
-
     }
 }

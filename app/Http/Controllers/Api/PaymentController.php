@@ -58,8 +58,8 @@ class PaymentController extends Controller
         return response()->json($response, Response::HTTP_OK);
     }
 
-    // payment
-    public function pay(Request $request)
+    // payment for new account
+    public function paymentForNewAccount(Request $request)
     {
         // Validate the incoming request data
         $validator = Validator::make(
@@ -233,81 +233,6 @@ class PaymentController extends Controller
     }
 
     /**
-     * Adds a new payment record for an account.
-     *
-     * This function records payment details in the database, including the amount, transaction ID,
-     * subscription type, and other relevant information. It then generates an invoice for the payment
-     * and updates the payment record with the generated invoice URL.
-     *
-     * @param $accountId int The ID of the account for which the payment is added.
-     * @param $amount float The total amount of the payment.
-     * @param $transactionId int|string The ID of the transaction associated with the payment.
-     * @param $subscriptionType string The type of subscription associated with the payment.
-     * @return Payment The newly created payment object.
-     */
-    public function addPayment($billingAddress, $accountId, $card, $paymentMode, $amount, $transactionId, $description = null, $subscriptionType = null)
-    {
-        // Record transaction details in the database
-        $inputData = [
-            'account_id' => $accountId,
-            'amount_total' => $amount,
-            'amount_subtotal' => $amount,
-            'stripe_session_id' => $transactionId,
-            'transaction_id' => $transactionId,
-            'payment_gateway' => 'Stripe',
-            'transaction_type' => 'new',
-            'subscription_type' => $subscriptionType,
-            'payment_method_options' => $paymentMode,
-            'currency' => 'usd',
-            'payment_status' => 'completed',
-            'transaction_date' => date("Y-m-d H:i:s"),
-            'description' => $description
-            // 'invoice_url' => $pdfUrl
-        ];
-
-        // Create a new payment record
-        $payment = Payment::create($inputData);
-
-        $transactionDetails = [
-            'payment_id' => $payment->id,
-            'transaction_id' => $payment->transaction_id,
-            'amount_total' => $payment->amount_total,
-            'amount_subtotal' => $payment->amount_subtotal,
-            'payment_status' => $payment->payment_status,
-            'transaction_date' => $payment->transaction_date,
-            'name' => $card->name,
-            'card_number' => $card->card_number,
-            'exp_month' => $card->exp_month,
-            'exp_year' => $card->exp_year,
-            'cvc' => $card->cvc,
-            'fullname' => $billingAddress->fullname,
-            'contact_no' => $billingAddress->contact_no,
-            'email' => $billingAddress->email,
-            'address' => $billingAddress->address,
-            'zip' => $billingAddress->zip,
-            'city' => $billingAddress->city,
-            'state' => $billingAddress->state,
-            'country' => $billingAddress->country,
-            'description' => $description,
-            'payment_mode' => $paymentMode,
-
-        ];
-
-        $this->addToTransactionDetails($transactionDetails);
-
-        // Generate Invoice
-        $invoice = new InvoiceController();
-        $invoiceData = $invoice->generateInvoice($transactionId);
-
-        // Update payment record with invoice URL
-        $payment->invoice_url = $invoiceData['pdfPath'];
-        $payment->save();
-
-        // Return the newly created payment object
-        return $payment;
-    }
-
-    /**
      * Initiates wallet recharge process.
      *
      * @param Request $request The HTTP request containing recharge details.
@@ -347,7 +272,8 @@ class PaymentController extends Controller
                     'required',
                     'digits:3',
                 ],
-                'save_card' => 'required_unless:card_id,' . $request->card_id . '|boolean'
+                'save_card' => 'required_unless:card_id,' . $request->card_id . '|boolean',
+                'paymentfor' => 'string'
             ]
         );
 
@@ -363,32 +289,34 @@ class PaymentController extends Controller
 
         // Validate CVV if card_id is present
         if ($request->has('card_id')) {
-            $exist = CardDetail::where(['id' => $request->card_id, 'cvc' => $request->cvc])->first();
+            $card = CardDetail::where(['id' => $request->card_id, 'cvc' => $request->cvc])->first();
 
-            if (!$exist) {
+            if (!$card) {
                 $type = config('enums.RESPONSE.ERROR'); // Response type (error)
                 $status = false; // Operation status (failed)
                 $msg = 'CVV is invalid.'; // Detailed error messages
 
                 // Return CVV validation error response
-                return responseHelper($type, $status, $msg, Response::HTTP_FORBIDDEN);
+                return responseHelper($type, $status, $msg, Response::HTTP_BAD_REQUEST);
+            } else {
+                if ($card->default) {
+                    // Prepare payment input based on card_id presence
+                    $stripePaymentinput = [
+                        'card_number' => $card->card_number,
+                        'exp_month' =>  $card->exp_month,
+                        'exp_year' =>  $card->exp_year,
+                        'cvc' =>  $card->cvc,
+                        'type' => 'card'
+                    ];
+                } else {
+                    $type = config('enums.RESPONSE.ERROR'); // Response type (error)
+                    $status = false; // Operation status (failed)
+                    $msg = 'Your card is inactive.'; // Detailed error messages
+
+                    // Return CVV validation error response
+                    return responseHelper($type, $status, $msg, Response::HTTP_BAD_REQUEST);
+                }
             }
-        }
-
-        // Extract input data for Stripe payment
-        $amount = $request->amount;
-
-        // Prepare payment input based on card_id presence
-        if ($request->has('card_id')) {
-            $card = CardDetail::find($request->card_id);
-
-            $stripePaymentinput = [
-                'card_number' => $card->card_number,
-                'exp_month' =>  $card->exp_month,
-                'exp_year' =>  $card->exp_year,
-                'cvc' =>  $card->cvc,
-                'type' => 'card'
-            ];
         } else {
             $stripePaymentinput = [
                 'card_number' => $request->card_number,
@@ -398,6 +326,9 @@ class PaymentController extends Controller
                 'type' => 'card'
             ];
         }
+
+        // Extract input data for Stripe payment
+        $amount = $request->amount;
 
         $paymentMode = 'card';
 
@@ -417,7 +348,7 @@ class PaymentController extends Controller
 
         // Define metadata for the transaction
         $metadata = [
-            'cause' => 'wallet recharge',
+            'cause' => ($request->has('paymentfor')) ? 'New Did Buy' : 'wallet recharge',
             'account_id' => $request->account_id
             // Add more metadata fields as needed
         ];
@@ -447,11 +378,15 @@ class PaymentController extends Controller
                 $card = $cardController->saveCard($request->account_id, $cardInput);
             }
 
-            $description = 'Wallet balance added';
+            $description = ($request->has('paymentfor')) ? 'New Did Buy' : 'Wallet balance added';
 
             $billingAddress = BillingAddress::find($request->address_id);
 
-            return $this->dispatchAfterPayment($billingAddress, $amount, $paymentId, $transactionId, $request, $card, $paymentMode, $description);
+            if (!$request->has('paymentfor')) {
+                return $this->dispatchAfterPayment($billingAddress, $amount, $paymentId, $transactionId, $request, $card, $paymentMode, $description);
+            }
+
+            return $this->dispatchAfterDidPayment($billingAddress, $amount, $paymentId, $transactionId, $request, $card, $paymentMode, $description);
         } else {
             // Handle common server error if transaction fails
             return commonServerError();
@@ -672,15 +607,95 @@ class PaymentController extends Controller
     }
 
     /**
-     * Add a new transaction detail entry.
+     * Adds a new payment record for an account.
      *
-     * @param array $input The input data to create the transaction detail.
-     * Should contain necessary fields such as 'amount', 'description', etc.
-     * @return void
+     * This function records payment details in the database, including the amount, transaction ID,
+     * subscription type, and other relevant information. It then generates an invoice for the payment
+     * and updates the payment record with the generated invoice URL.
+     *
+     * @param $accountId int The ID of the account for which the payment is added.
+     * @param $amount float The total amount of the payment.
+     * @param $transactionId int|string The ID of the transaction associated with the payment.
+     * @param $subscriptionType string The type of subscription associated with the payment.
+     * @return Payment The newly created payment object.
      */
-    public function addToTransactionDetails($input)
+    public function addPayment($billingAddress, $accountId, $card, $paymentMode, $amount, $transactionId, $description = null, $subscriptionType = null)
     {
+        // Record transaction details in the database
+        $inputData = [
+            'account_id' => $accountId,
+            'amount_total' => $amount,
+            'amount_subtotal' => $amount,
+            'stripe_session_id' => $transactionId,
+            'transaction_id' => $transactionId,
+            'payment_gateway' => 'Stripe',
+            'transaction_type' => 'new',
+            'subscription_type' => $subscriptionType,
+            'payment_method_options' => $paymentMode,
+            'currency' => 'usd',
+            'payment_status' => 'completed',
+            'transaction_date' => date("Y-m-d H:i:s"),
+            'description' => $description
+            // 'invoice_url' => $pdfUrl
+        ];
+
+        // Create a new payment record
+        $payment = Payment::create($inputData);
+
+        $transactionDetails = [
+            'payment_id' => $payment->id,
+            'transaction_id' => $payment->transaction_id,
+            'amount_total' => $payment->amount_total,
+            'amount_subtotal' => $payment->amount_subtotal,
+            'payment_status' => $payment->payment_status,
+            'transaction_date' => $payment->transaction_date,
+            'name' => $card->name,
+            'card_number' => $card->card_number,
+            'exp_month' => $card->exp_month,
+            'exp_year' => $card->exp_year,
+            'cvc' => $card->cvc,
+            'fullname' => $billingAddress->fullname,
+            'contact_no' => $billingAddress->contact_no,
+            'email' => $billingAddress->email,
+            'address' => $billingAddress->address,
+            'zip' => $billingAddress->zip,
+            'city' => $billingAddress->city,
+            'state' => $billingAddress->state,
+            'country' => $billingAddress->country,
+            'description' => $description,
+            'payment_mode' => $paymentMode,
+
+        ];
+
         // Create a new transaction detail entry using the TransactionDetail model.       
-        TransactionDetail::create($input);
+        TransactionDetail::create($transactionDetails);
+
+        // Generate Invoice
+        $invoice = new InvoiceController();
+        $invoiceData = $invoice->generateInvoice($transactionId);
+
+        // Update payment record with invoice URL
+        $payment->invoice_url = $invoiceData['pdfPath'];
+        $payment->save();
+
+        // Return the newly created payment object
+        return $payment;
+    }
+
+    protected function dispatchAfterDidPayment($billingAddress, $amount, $paymentId, $transactionId, $request, $card, $paymentMode, $description)
+    {
+        // Add payment record
+        $payment = $this->addPayment($billingAddress, $request->account_id, $card, $paymentMode, $amount, $transactionId, $description);
+
+        // Prepare success response
+        $type = config('enums.RESPONSE.SUCCESS'); // Response type (success)
+        $status = true; // Operation status (success)
+        $msg = 'success'; // Success message
+        $data = $payment;
+
+        // mail send 
+
+        // Return a JSON response with HTTP status code 200 (OK)
+        return responseHelper($type, $status, $msg, Response::HTTP_OK, $data);
     }
 }

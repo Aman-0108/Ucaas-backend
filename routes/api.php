@@ -90,7 +90,7 @@ Route::group(['middleware' => 'guest'], function () {
 
     // Payment Controller
     Route::controller(PaymentController::class)->group(function () {
-        Route::post('pay', 'pay')->name('company.pay');
+        Route::post('pay', 'paymentForNewAccount')->name('company.pay');
     });
 
     // Invoice

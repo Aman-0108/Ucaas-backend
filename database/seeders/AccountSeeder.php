@@ -54,6 +54,6 @@ class AccountSeeder extends Seeder
         ];
 
         // Call the payment processing method with the prepared data
-        $pc->pay(new Request($paymentData));
+        $pc->paymentForNewAccount(new Request($paymentData));
     }
 }
