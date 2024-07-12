@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\DidDetail;
 use App\Models\DidOrderStatus;
+use App\Models\Account;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
@@ -268,6 +269,11 @@ class CommioController extends Controller
                                     $completed = DidOrderStatus::where('order_id', $responseData['id'])->update(['status' => 'Completed']);
 
                                     if ($completed) {
+
+                                        //update account status to 5 
+                                        Account::where('id', $companyId)->update(['company_status' => 5]);
+
+
                                         $res = [
                                             'status' => true,
                                             'message' => 'Order Completed',
