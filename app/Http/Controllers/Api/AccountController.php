@@ -486,8 +486,8 @@ class AccountController extends Controller
         }
 
         $ss = [];
-        $documents->each(function ($df) use (&$ss) {
-            $allStatus = AccountDetail::where(['status' => 1, 'document_id' => $df['id']])->get();
+        $documents->each(function ($df) use (&$ss, $request) {
+            $allStatus = AccountDetail::where(['status' => 1, 'document_id' => $df['id'], 'account_id' => $request->account_id])->get();
 
             if (!$allStatus->isEmpty()) {
                 $ss[] = 'true';

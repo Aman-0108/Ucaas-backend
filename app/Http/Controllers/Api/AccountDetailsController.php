@@ -162,19 +162,22 @@ class AccountDetailsController extends Controller
 
             if (!$rejectedData->isEmpty()) {
 
-                $rejectedData->each(function ($item) use ($request, $accountId) {
-                    $docId = $item->document_id;
+                $unique = $rejectedData->unique('document_id');
 
+                $unique->each(function ($item) use ($request, $accountId) { 
+                    $docId = $item->document_id;
                     foreach ($request->documents as $document) {
                         if ($document['document_id'] == $docId) {
                             $this->insertData($accountId, $document);
                         }
-                    }
+                    }                    
                 });
 
                 $response = [
                     'status' => true,
-                    'message' => 'successfully stored.'
+                    'data' => $rejectedData,
+                    'message' => 'successfully stored.',
+                    'unique' => $unique
                 ];
 
                 // Return a JSON response with HTTP status code 201 (created)
