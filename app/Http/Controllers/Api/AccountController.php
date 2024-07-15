@@ -68,7 +68,8 @@ class AccountController extends Controller
             'payments.paymentDetails',
             'billingAddress:account_id,id,fullname,contact_no,email,address,zip,city,state,country,default',
             'cardDetails' => function ($query) {
-                $query->select('account_id', 'id', 'name', 'card_number', 'exp_month', 'exp_year', 'cvc', 'default');
+                $query->select('account_id', 'id', 'name', 'card_number', 'exp_month', 'exp_year', 'cvc', 'default')
+                ->where('save_card', 1);
             },
             'package' => function ($query) {
                 $query->select('id', 'name', 'number_of_user', 'description', 'subscription_type', 'regular_price', 'offer_price');
@@ -123,7 +124,8 @@ class AccountController extends Controller
             'payments.paymentDetails',
             'billingAddress:account_id,id,fullname,contact_no,email,address,zip,city,state,country,default',
             'cardDetails' => function ($query) {
-                $query->select('account_id', 'id', 'name', 'card_number', 'exp_month', 'exp_year', 'cvc', 'default');
+                $query->select('account_id', 'id', 'name', 'card_number', 'exp_month', 'exp_year', 'cvc', 'default')
+                ->where('save_card', 1);
             },
             'package' => function ($query) {
                 $query->select('id', 'name', 'number_of_user', 'description', 'subscription_type', 'regular_price', 'offer_price');
