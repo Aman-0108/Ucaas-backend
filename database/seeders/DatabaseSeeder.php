@@ -40,7 +40,7 @@ class DatabaseSeeder extends Seeder
         // $this->call(DomainSeeder::class);
 
         // $this->call(ExtensionSeeder::class);
-        // $this->call(DocumentSeeder::class);
+        $this->call(DocumentSeeder::class);
         // $this->call(AccountDetailsSeeder::class);
 
         // Clear storage/app/public directory

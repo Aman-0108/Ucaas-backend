@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\DidRateChart;
+use App\Models\CardDetail;
+use App\Models\BillingAddress;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
@@ -110,6 +112,7 @@ class TfnController extends Controller
     public function purchaseTfn(Request $request)
     {
         $createdBy = $request->user()->id;
+
         // $createdBy = 1;
 
         $validator = Validator::make(
@@ -160,6 +163,9 @@ class TfnController extends Controller
             'account_id' => $request->account_id
             // Add more metadata fields as needed
         ];
+
+        $paymentMode = 'card';
+        $description = 'New DID Buy.';
 
         // DB::beginTransaction();
 
@@ -214,10 +220,63 @@ class TfnController extends Controller
 
             if ($responseData['status']) {
                 $response = $this->purchaseViaCommio($createdBy, $request->companyId, $request->vendorId, $qty, $rate, $request->accountId, $request->dids);
+                
+                $transactionId = $responseData['transactionId'];
 
-                return $paymentResponse;
+                if ($request->has('card_id')) {
+                    // card details
+                    $card = CardDetail::where(['id' => $request->card_id, 'account_id' => $request->account_id, 'cvc' => $request->cvc])->first();
+                    
+                    if (!$card) {
+                        $type = config('enums.RESPONSE.ERROR'); // Response type (error)
+                        $status = false; // Operation status (failed)
+                        $msg = 'CVV is invalid.'; // Detailed error messages
+        
+                        // Return CVV validation error response
+                        return responseHelper($type, $status, $msg, Response::HTTP_BAD_REQUEST);
+                    }
+                } else {
+                    $card = [
+                        'name' => $request->name,
+                        'card_number' => $request->card_number,
+                        'exp_month' => $request->exp_month,
+                        'exp_year' => $request->exp_year,
+                        'cvc' => $request->cvc,
+                    ];
+    
+                    $card = json_decode(json_encode($card));
+                }
+    
+                if($request->has('address_id')) {
+                    $billingAddress = BillingAddress::find($request->address_id);
+                } else {               
+                    $billingAddresInputs = [
+                        'fullname' => $request->fullname,
+                        'contact_no' => $request->contact_no,
+                        'email' => $request->email,
+                        'address' => $request->address,
+                        'zip' => $request->zip,
+                        'city' => $request->city,
+                        'state' => $request->state,
+                        'country' => $request->country
+                    ];
+    
+                    $billingAddress = json_decode(json_encode($billingAddresInputs));
+                }
+    
+                // Add payment record
+                $paymentController->addPayment($billingAddress, $request->account_id, $card, $paymentMode, $rate, $transactionId, $description);
+
+                return $response;
             } else {
-                return commonServerError();
+                if(isset($responseData['error'])) {
+                    return response()->json([
+                        'status' => false,
+                        'error' => $responseData['error']
+                    ], 400);
+                }
+
+                return  commonServerError();
             }
             
         }

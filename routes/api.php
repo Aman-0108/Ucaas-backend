@@ -609,6 +609,12 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::get('rate/show/{id}/{rateType}', 'show');
         });
     });
+
+    Route::controller(TfnController::class)->group(function () {
+        Route::post('getActiveDidVendor', 'getActiveDidVendor');
+        Route::post('searchTfn', 'searchTfn');
+        Route::post('purchaseTfn', 'purchaseTfn');
+    });
 });
 
 Route::controller(CallCentreController::class)->group(function () {
@@ -658,11 +664,7 @@ Route::controller(CommioController::class)->group(function () {
     Route::post('searchDid', 'searchDid_commio');
 });
 
-Route::controller(TfnController::class)->group(function () {
-    Route::post('getActiveDidVendor', 'getActiveDidVendor');
-    Route::post('searchTfn', 'searchTfn');
-    Route::post('purchaseTfn', 'purchaseTfn');
-});
+
 
 Route::controller(PermissionController::class)->group(function () {
     Route::get('permission', 'index');

@@ -374,7 +374,7 @@ class PaymentController extends Controller
         }
     }
 
-    protected function pay(Request $request, $metadata)
+    public function pay(Request $request, $metadata)
     {    
         // Perform validation on the request data
         $validator = Validator::make(
@@ -484,7 +484,7 @@ class PaymentController extends Controller
         if (empty($transactionId)) {
             $response = [
                 'status' => false,
-                'error' => 'something went wrong',
+                'error' => 'something went wrong.ff.',
             ];
             return response()->json($response);
         }
@@ -530,10 +530,63 @@ class PaymentController extends Controller
         $response = [
             'status' => true,
             'transactionId' => $transactionId,
+            'message' => 'Payment successfull.'
         ];
 
         return response()->json($response);
     }
+
+    // public function tfnBuy($request, $metadata)
+    // {
+    //     $paymentResponse = $this->pay($request, $metadata);
+
+    //     // Extract content from response
+    //     $paymentResponse = $paymentResponse->getContent();
+    //     $responseData = json_decode($paymentResponse, true);
+
+    //     if ($responseData['status']) {
+
+    //         $transactionId = $responseData['transactionId'];
+
+    //         if ($request->has('card_id')) {
+    //             // card details
+    //             $card = CardDetail::where(['id' => $request->card_id, 'account_id' => $request->account_id, 'cvc' => $request->cvc])->first();
+    //         } else {
+    //             $card = [
+    //                 'name' => $request->name,
+    //                 'card_number' => $request->card_number,
+    //                 'exp_month' => $request->exp_month,
+    //                 'exp_year' => $request->exp_year,
+    //                 'cvc' => $request->cvc,
+    //             ];
+
+    //             $card = json_decode(json_encode($card));
+    //         }
+
+    //         if($request->has('address_id')) {
+    //             $billingAddress = BillingAddress::find($request->address_id);
+    //         } else {               
+    //             $billingAddresInputs = [
+    //                 'fullname' => $request->fullname,
+    //                 'contact_no' => $request->contact_no,
+    //                 'email' => $request->email,
+    //                 'address' => $request->address,
+    //                 'zip' => $request->zip,
+    //                 'city' => $request->city,
+    //                 'state' => $request->state,
+    //                 'country' => $request->country
+    //             ];
+
+    //             $billingAddress = json_decode(json_encode($billingAddresInputs));
+    //         }
+
+    //         $payment = $this->addPayment($billingAddress, $accountId, $card, $paymentMode, $amount, $transactionId, $description = null, $subscriptionType = null);
+
+    //         return $payment;
+    //     } else {
+    //         return commonServerError();
+    //     }
+    // }
 
     /**
      * Adds a new payment record for an account.
