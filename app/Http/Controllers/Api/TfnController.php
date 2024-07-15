@@ -109,8 +109,8 @@ class TfnController extends Controller
 
     public function purchaseTfn(Request $request)
     {
-        // $createdBy = $request->user()->id;
-        $createdBy = 1;
+        $createdBy = $request->user()->id;
+        // $createdBy = 1;
 
         $validator = Validator::make(
             $request->all(),
@@ -140,9 +140,6 @@ class TfnController extends Controller
             return response()->json($response, Response::HTTP_FORBIDDEN);
         }
 
-        // if ($request->has('type') == 'card') {
-        // }
-
         $rateCard = DidRateChart::where(['vendor_id' => $request->vendorId, 'rate_type' => $request->didType])->first();
 
         // Check Rate is defined or not
@@ -158,64 +155,78 @@ class TfnController extends Controller
         $qty = count($request->dids);
         $rate = $qty * $rateCard->rate;
 
+        $metadata = [
+            'cause' => 'Did Buy',
+            'account_id' => $request->account_id
+            // Add more metadata fields as needed
+        ];
+
         // DB::beginTransaction();
 
         $vendor = DidVendor::find($request->vendorId);
 
-        if ($vendor->vendor_name == 'Commio') {
-
-            // use wallet
-            if ($request->type == 'wallet') {
-
-                $walletResponse = $this->useWallet($createdBy, $request->companyId, $rate);
-
-                if (!$walletResponse->status) {
-
-                    $response = [
-                        'status' => false,
-                        'errors' => $walletResponse->message
-                    ];
-
-                    return response()->json($response, Response::HTTP_FORBIDDEN);
-                }
-
-                $response = $this->purchaseViaCommio($createdBy, $request->companyId, $request->vendorId, $qty, $rate, $request->accountId, $request->dids);
-
-                return $response;
-            }
-
-            if ($request->type == 'card') {
-                
-                $paymentController = new PaymentController($this->stripeController);
-                
-                $request->merge([
-                    'amount' => $rate,
-                    'account_id' => $request->companyId,
-                    'paymentfor' => 'New Did buy'
-                ]);
-                
-                $paymentResponse = $paymentController->walletRecharge($request);
-
-                $response = $this->purchaseViaCommio($createdBy, $request->companyId, $request->vendorId, $qty, $rate, $request->accountId, $request->dids);
-
-                return $paymentResponse;
-            }
-
-            if($request->type == 'configure') {
-                $response = $this->purchaseViaCommio($createdBy, $request->companyId, $request->vendorId, $qty, $rate, $request->accountId, $request->dids);
-
-                return $response;
-            }
-
-
-        } else {
-
+        if (empty($vendor->vendor_name)) {
             $response = [
                 'status' => false,
                 'error' => 'Active Vendor is not Properly Configure',
             ];
 
             return response()->json($response, Response::HTTP_NOT_FOUND);
+        }
+
+        // use wallet
+        if ($request->type == 'wallet') {
+
+            $walletResponse = $this->useWallet($createdBy, $request->companyId, $rate);
+
+            if (!$walletResponse->status) {
+
+                $response = [
+                    'status' => false,
+                    'errors' => $walletResponse->message
+                ];
+
+                return response()->json($response, Response::HTTP_FORBIDDEN);
+            }
+
+            if ($vendor->vendor_name == 'Commio') {
+                $response = $this->purchaseViaCommio($createdBy, $request->companyId, $request->vendorId, $qty, $rate, $request->accountId, $request->dids);
+
+                return $response;
+            } else {
+            }            
+        }
+
+        if ($request->type == 'card') {
+
+            $paymentController = new PaymentController($this->stripeController);
+
+            $request->merge([
+                'amount' => $rate,
+                'account_id' => $request->companyId,
+            ]);
+
+            $paymentResponse = $paymentController->pay($request, $metadata);
+
+            // Extract content from response
+            $paymentResponse = $paymentResponse->getContent();
+            $responseData = json_decode($paymentResponse, true);
+
+            if ($responseData['status']) {
+                $response = $this->purchaseViaCommio($createdBy, $request->companyId, $request->vendorId, $qty, $rate, $request->accountId, $request->dids);
+
+                return $paymentResponse;
+            } else {
+                return commonServerError();
+            }
+            
+        }
+
+        if ($request->type == 'configure') {
+
+            $response = $this->purchaseViaCommio($createdBy, $request->companyId, $request->vendorId, $qty, $rate, $request->accountId, $request->dids);
+
+            return $response;
         }
 
         // DB::commit();
@@ -263,7 +274,5 @@ class TfnController extends Controller
         return response()->json($responseFunctionDataObject, Response::HTTP_OK);
     }
 
-    protected function didBuywithCard()
-    {
-    }
+    
 }

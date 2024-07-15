@@ -173,7 +173,6 @@ class CommioController extends Controller
         $username = $datas->data->username;
         $password = $datas->data->token;
 
-
         $tnsarray = [];
         if (!empty($dids)) {
             $inputs = $dids;
@@ -232,90 +231,76 @@ class CommioController extends Controller
             $responseData['status'] = 'created';
             $responseData['id'] = 54698;
 
-            if (isset($responseData['status'])) {
-                if ($responseData['status'] == 'created') {
-                    //add param like order created but not Completed order as per commio
-                    $ordeDetail = [
-                        'account_id' => $companyId,
-                        'vendor_id' => $vendorId,
-                        'order_id' => $responseData['id'],
-                        'status' => $responseData['status'],
+            if (isset($responseData['status']) && $responseData['status'] == 'created') {
+
+                //add param like order created but not Completed order as per commio
+                $ordeDetail = [
+                    'account_id' => $companyId,
+                    'vendor_id' => $vendorId,
+                    'order_id' => $responseData['id'],
+                    'status' => $responseData['status'],
+                ];
+
+                $ordeDetail = DidOrderStatus::create($ordeDetail);
+
+                if (!$ordeDetail) {
+                    //effect in DB to notify to techteam
+                    $res = [
+                        'status' => false,
+                        'message' => 'Order Completion Failed!Please Contact Support.',
                     ];
 
-                    $ordeDetail = DidOrderStatus::create($ordeDetail);
+                    return response()->json($res, Response::HTTP_OK);
+                }
 
-                    if ($ordeDetail) {
-                        $completeOrder = $this->completeOrder($companyId, $responseData['id'], $vendorId, $accountId);
-                        if (isset($completeOrder['status']) && isset($completeOrder['type'])) {
-                            //origination_order
-                            if ($completeOrder['status'] == 'completed') {
-                                if ($completeOrder['type'] == 'origination_order') {
-                                    foreach ($completeOrder['tns'] as $row) {
+                $completeOrder = $this->completeOrder($companyId, $responseData['id'], $vendorId, $accountId);
 
-                                        $purchasedDid = $row['did'];
-                                        //insert into did detail tbl
-                                        $ordeDetail = [
-                                            'account_id' => $companyId,
-                                            'orderid' => $responseData['id'],
-                                            'domain' => $vendorId,
-                                            'did' => $row['did'],
-                                            'price' => $rate,
-                                            'created_by' => $createdBy,
-                                        ];
-                                        $ordeDetail = DidDetail::create($ordeDetail);
-                                    }
+                if (isset($completeOrder['status']) && isset($completeOrder['type'])) {
+                    //origination_order
+                    if ($completeOrder['status'] == 'completed' && $completeOrder['type'] == 'origination_order') {
 
-                                    //make the order Status Completed in did order statuses tbl
-                                    $completed = DidOrderStatus::where('order_id', $responseData['id'])->update(['status' => 'Completed']);
-
-                                    if ($completed) {
-
-                                        //update account status to 5 
-                                        Account::where('id', $companyId)->update(['company_status' => 5]);
-
-
-                                        $res = [
-                                            'status' => true,
-                                            'message' => 'Order Completed',
-                                        ];
-                                        return response()->json($res, Response::HTTP_OK);
-                                    } else {
-                                        $res = [
-                                            'status' => false,
-                                            'message' => 'Order Completion Failed!Please Contact Support.',
-                                        ];
-                                        return response()->json($res, Response::HTTP_FORBIDDEN);
-                                    }
-                                }
-                            } else {
-                                //notify to tech team , order not completed but order created.
-                                $failed = DidOrderStatus::where('order_id', $responseData['id'])->update(['status' => 'Failed']);
-                                $res = [
-                                    'status' => false,
-                                    'message' => 'Order Created But Completion Failed!Please Contact Support. With Order Id ' . $responseData['id']
-                                ];
-                                return response()->json($res, Response::HTTP_OK);
-                            }
-                        } else {
-                            //notify to tech team , order not completed but order created.
-                            $res = [
-                                'status' => false,
-                                'message' => 'Order Created But Completion Failed!Please Contact Support. With Order Id ' . $responseData['id']
+                        foreach ($completeOrder['tns'] as $row) {
+                            //insert into did detail tbl
+                            $ordeDetail = [
+                                'account_id' => $companyId,
+                                'orderid' => $responseData['id'],
+                                'domain' => $vendorId,
+                                'did' => $row['did'],
+                                'price' => $rate,
+                                'created_by' => $createdBy,
                             ];
-                            return response()->json($res, Response::HTTP_OK);
+                            
+                            $ordeDetail = DidDetail::create($ordeDetail);
                         }
+
+                        //make the order Status Completed in did order statuses tbl
+                        DidOrderStatus::where('order_id', $responseData['id'])->update(['status' => 'Completed']);
+
+                        //update account status to 5 
+                        Account::where('id', $companyId)->update(['company_status' => 5]);
+
+                        $res = [
+                            'status' => true,
+                            'message' => 'Order Completed',
+                        ];
+
+                        return response()->json($res, Response::HTTP_OK);
                     } else {
-                        //effect in DB to notify to techteam
+                        //notify to tech team , order not completed but order created.
+                        DidOrderStatus::where('order_id', $responseData['id'])->update(['status' => 'Failed']);
+
                         $res = [
                             'status' => false,
-                            'message' => 'Order Completion Failed!Please Contact Support.',
+                            'message' => 'Order Created But Completion Failed!Please Contact Support. With Order Id ' . $responseData['id']
                         ];
+
                         return response()->json($res, Response::HTTP_OK);
                     }
                 } else {
+                    //notify to tech team , order not completed but order created.
                     $res = [
                         'status' => false,
-                        'message' => $responseData['message'],
+                        'message' => 'Order Created But Completion Failed!Please Contact Support. With Order Id ' . $responseData['id']
                     ];
 
                     return response()->json($res, Response::HTTP_OK);
@@ -339,9 +324,6 @@ class CommioController extends Controller
         $response['tns'] = [
             [
                 "did" => "18559046202"
-            ],
-            [
-                "did" => "18557391599"
             ]
         ];
 

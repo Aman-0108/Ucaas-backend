@@ -240,127 +240,35 @@ class PaymentController extends Controller
      */
     public function walletRecharge(Request $request)
     {
-        // Perform validation on the request data
-        $validator = Validator::make(
-            $request->all(),
-            [
-                'account_id' => 'required|exists:accounts,id',
-                'card_id' => [
-                    Rule::exists('card_details', 'id')->where(function ($query) use ($request) {
-                        $query->where('id', $request->card_id)
-                            ->where('account_id', $request->account_id);
-                    })
-                ],
-                'name' => [
-                    'required_unless:card_id,' . $request->card_id,
-                    'string',
-                    'min:5'
-                ],
-                'type' => 'required_unless:card_id,' . $request->card_id . '|string|max:20',
-                'card_number' => 'required_unless:card_id,' . $request->card_id . '|numeric|digits_between:14,16',
-                'exp_month' => 'required_unless:card_id,' . $request->card_id . '|digits_between:1,2|numeric|between:1,12',
-                'exp_year' => 'required_unless:card_id,' . $request->card_id . '|numeric|digits:4',
-                'address_id' => [
-                    'required',
-                    Rule::exists('billing_addresses', 'id')->where(function ($query) use ($request) {
-                        $query->where('id', $request->address_id)
-                            ->where('account_id', $request->account_id);
-                    })
-                ],
-                'amount' => 'required|numeric|between:0,9999999.99',
-                'cvc' => [
-                    'required',
-                    'digits:3',
-                ],
-                'save_card' => 'required_unless:card_id,' . $request->card_id . '|boolean',
-                'paymentfor' => 'string'
-            ]
-        );
-
-        // Check if validation fails
-        if ($validator->fails()) {
-
-            $type = config('enums.RESPONSE.ERROR');
-            $status = false;
-            $msg = $validator->errors();
-
-            return responseHelper($type, $status, $msg, Response::HTTP_FORBIDDEN);
-        }
-
-        // Validate CVV if card_id is present
-        if ($request->has('card_id')) {
-            $card = CardDetail::where(['id' => $request->card_id, 'cvc' => $request->cvc])->first();
-
-            if (!$card) {
-                $type = config('enums.RESPONSE.ERROR'); // Response type (error)
-                $status = false; // Operation status (failed)
-                $msg = 'CVV is invalid.'; // Detailed error messages
-
-                // Return CVV validation error response
-                return responseHelper($type, $status, $msg, Response::HTTP_BAD_REQUEST);
-            } else {
-                if ($card->default) {
-                    // Prepare payment input based on card_id presence
-                    $stripePaymentinput = [
-                        'card_number' => $card->card_number,
-                        'exp_month' =>  $card->exp_month,
-                        'exp_year' =>  $card->exp_year,
-                        'cvc' =>  $card->cvc,
-                        'type' => 'card'
-                    ];
-                } else {
-                    $type = config('enums.RESPONSE.ERROR'); // Response type (error)
-                    $status = false; // Operation status (failed)
-                    $msg = 'Your card is inactive.'; // Detailed error messages
-
-                    // Return CVV validation error response
-                    return responseHelper($type, $status, $msg, Response::HTTP_BAD_REQUEST);
-                }
-            }
-        } else {
-            $stripePaymentinput = [
-                'card_number' => $request->card_number,
-                'exp_month' =>  $request->exp_month,
-                'exp_year' =>  $request->exp_year,
-                'cvc' =>  $request->cvc,
-                'type' => 'card'
-            ];
-        }
-
-        // Extract input data for Stripe payment
-        $amount = $request->amount;
-
-        $paymentMode = 'card';
-
-        // Create payment method using Stripe
-        $paymentMethodResponse = $this->checkPaymentMethod($stripePaymentinput);
-
-        // Handle payment method creation failure
-        if (!$paymentMethodResponse['status']) {
-            $response = [
-                'status' => false,
-                'error' => $paymentMethodResponse['error'],
-            ];
-            return response()->json($response, Response::HTTP_FORBIDDEN);
-        }
-
-        $paymentId = $paymentMethodResponse['paymentId'];
-
         // Define metadata for the transaction
         $metadata = [
-            'cause' => ($request->has('paymentfor')) ? 'New Did Buy' : 'wallet recharge',
+            'cause' => 'wallet recharge',
             'account_id' => $request->account_id
             // Add more metadata fields as needed
         ];
 
-        // Create payment intent for the recharge transaction
-        $transactionId = $this->stripeController->createPaymentIntent($amount, $paymentId, $metadata);
+        $description = 'Wallet balance added';
+
+        $paymentMode = 'card';
+
+        $amount = $request->amount;
+
+        $paymentResponse = $this->pay($request, $metadata);
+
+        // Extract content from response
+        $paymentResponse = $paymentResponse->getContent();
+        $responseData = json_decode($paymentResponse, true);
 
         // If transaction is successful
-        if ($transactionId) {
-            // If card is not saved, save it
-            if (!$request->has('card_id')) {
-                $cardInput = [
+        if ($responseData['status']) {
+
+            $transactionId = $responseData['transactionId'];
+
+            if ($request->has('card_id')) {
+                // card details
+                $card = CardDetail::where(['id' => $request->card_id, 'account_id' => $request->account_id, 'cvc' => $request->cvc])->first();
+            } else {
+                $card = [
                     'name' => $request->name,
                     'card_number' => $request->card_number,
                     'exp_month' => $request->exp_month,
@@ -368,150 +276,60 @@ class PaymentController extends Controller
                     'cvc' => $request->cvc,
                 ];
 
-                // Optionally save card based on user input
-                if ($request->save_card == 1) {
-                    $cardInput['save_card'] = 1;
-                }
-
-                // Save card details using CardController
-                $cardController = new CardController();
-                $card = $cardController->saveCard($request->account_id, $cardInput);
+                $card = json_decode(json_encode($card));
             }
 
-            $description = ($request->has('paymentfor')) ? 'New Did Buy' : 'Wallet balance added';
+            if($request->has('address_id')) {
+                $billingAddress = BillingAddress::find($request->address_id);
+            } else {               
+                $billingAddresInputs = [
+                    'fullname' => $request->fullname,
+                    'contact_no' => $request->contact_no,
+                    'email' => $request->email,
+                    'address' => $request->address,
+                    'zip' => $request->zip,
+                    'city' => $request->city,
+                    'state' => $request->state,
+                    'country' => $request->country
+                ];
 
-            $billingAddress = BillingAddress::find($request->address_id);
-
-            if (!$request->has('paymentfor')) {
-                return $this->dispatchAfterPayment($billingAddress, $amount, $paymentId, $transactionId, $request, $card, $paymentMode, $description);
+                $billingAddress = json_decode(json_encode($billingAddresInputs));
             }
 
-            return $this->dispatchAfterDidPayment($billingAddress, $amount, $paymentId, $transactionId, $request, $card, $paymentMode, $description);
+            // Add payment record
+            $payment = $this->addPayment($billingAddress, $request->account_id, $card, $paymentMode, $amount, $transactionId, $description);
+
+            // Update account balance
+            $accountController = new AccountController($this->stripeController);
+            $accountController->addOrUpdateBalance($request->account_id, $amount, $payment['id'], $transactionId);
+
+            // Retrieve account details
+            $account = Account::find($request->account_id);
+
+            // Prepare data for email notification
+            $maildata = [
+                'company_name' => $account->company_name,
+                'email' => $account->email,
+                'amount' => $payment->amount_total,
+                'transactionId' => $transactionId,
+                'pdfPath' => $payment->invoice_url,
+                'transaction_date' => $payment->transaction_date
+            ];
+
+            // Send mail to account holder with invoice
+            WalletRecharge::dispatch($maildata);
+
+            // Prepare success response
+            $type = config('enums.RESPONSE.SUCCESS'); // Response type (success)
+            $status = true; // Operation status (success)
+            $msg = 'You have added balance successfully'; // Success message
+
+            // Return a JSON response with HTTP status code 200 (OK)
+            return responseHelper($type, $status, $msg, Response::HTTP_OK);
+
+            // return $this->dispatchAfterDidPayment($billingAddress, $amount, $paymentId, $transactionId, $request, $card, $paymentMode, $description);
         } else {
             // Handle common server error if transaction fails
-            return commonServerError();
-        }
-    }
-
-    /**
-     * Recharge account with fresh payment details.
-     *
-     * This function validates incoming request data, processes payment method validation,
-     * creates a payment intent, adds billing address and optionally saves card details,
-     * and dispatches tasks after a successful payment.
-     *
-     * @param Illuminate\Http\Request $request The HTTP request object.
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function rechargeWithFreshDetails(Request $request)
-    {
-        // Validate the incoming request data
-        $validator = Validator::make(
-            $request->all(),
-            [
-                'account_id' => 'required|exists:accounts,id',
-                'name' => 'string|required|min:5',
-                'type' => 'required|string|max:20',
-                'card_number' => 'required|numeric|digits_between:14,16',
-                'exp_month' => 'required|digits_between:1,2|numeric|between:1,12',
-                'exp_year' => 'required|numeric|digits:4',
-                'cvc' => 'required|numeric|digits_between:3,4',
-                'fullname' => 'required|string',
-                'contact_no' => 'required|string',
-                'email' => 'required|string',
-                'address' => 'required|string',
-                'zip' => 'required|string',
-                'city' => 'required|string',
-                'state' => 'required|string',
-                'country' => 'required|string',
-                'save_card' => 'boolean',
-                'amount' => 'required|numeric|between:0,9999999.99'
-            ]
-        );
-
-        // Check if validation fails
-        if ($validator->fails()) {
-            // Return a 403 Forbidden response with validation errors
-            $response = [
-                'status' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ];
-
-            return response()->json($response, Response::HTTP_FORBIDDEN);
-        }
-
-        // Validate email format using custom function
-        if (!is_valid_email($request->email)) {
-            // Return a 404 Not Found response if email format is invalid
-            $response = [
-                'status' => false,
-                'message' => 'Invalid email format'
-            ];
-
-            return response()->json($response, Response::HTTP_NOT_FOUND);
-        }
-
-        $paymentMode = 'card';
-
-        // Prepare payment method input for Stripe
-        $stripePaymentInput = $request->only(['card_number', 'exp_month', 'exp_year', 'cvc', 'type']);
-        $paymentMethodResponse = $this->checkPaymentMethod($stripePaymentInput);
-
-        // Check payment method validation response
-        if (!$paymentMethodResponse['status']) {
-            // Return a 403 Forbidden response with payment method validation error            
-            $response = [
-                'status' => false,
-                'error' => $paymentMethodResponse['error'],
-            ];
-
-            return response()->json($response, Response::HTTP_FORBIDDEN);
-        }
-
-        // Retrieve payment ID from payment method validation response
-        $paymentId = $paymentMethodResponse['paymentId'];
-
-        // Define metadata for payment intent        
-        $metadata = [
-            'cause' => 'wallet recharge',
-            'account_id' => $request->account_id
-            // Add more metadata fields as needed
-        ];
-
-        // Create payment intent for the recharge transaction
-        $transactionId = $this->stripeController->createPaymentIntent($request->amount, $paymentId, $metadata);
-
-        // Check if payment intent creation was successful
-        if ($transactionId) {
-            // Add billing address
-            $billingAddressController = new BillingAddressController();
-            $billingResult = $billingAddressController->addData($request->account_id, $request->only(['fullname', 'contact_no', 'email', 'address', 'zip', 'city', 'state', 'country']));
-
-            $request->merge(['address_id' => $billingResult->id]);
-
-            // Save card details if requested
-            $cardInput = [
-                'name' => $request->name,
-                'card_number' => $request->card_number,
-                'exp_month' => $request->exp_month,
-                'exp_year' => $request->exp_year,
-                'cvc' => $request->cvc,
-            ];
-
-            if ($request->save_card) {
-                $cardInput['save_card'] = 1;
-            }
-
-            $cardController = new CardController();
-            $card = $cardController->saveCard($request->account_id, $cardInput);
-
-            $description = 'Wallet balance added';
-
-            // Dispatch tasks after successful payment
-            return $this->dispatchAfterPayment($billingResult, $request->amount, $paymentId, $transactionId, $request, $card, $paymentMode, $description);
-        } else {
-            // Handle common server error if payment intent creation failed
             return commonServerError();
         }
     }
@@ -556,54 +374,165 @@ class PaymentController extends Controller
         }
     }
 
-    /**
-     * Dispatch tasks after successful payment.
-     *
-     * This function performs several actions after a successful payment:
-     * - Adds a payment record.
-     * - Updates the account balance.
-     * - Sends an email to the account holder with invoice details.
-     * - Returns a success response.
-     *
-     * @param float $amount The amount of the payment.
-     * @param string $paymentId The ID of the payment.
-     * @param string $transactionId The transaction ID associated with the payment.
-     * @param Illuminate\Http\Request $request The HTTP request object.
-     * @param object $card The card object associated with the payment.
-     * @return \Illuminate\Http\JsonResponse
-     */
-    protected function dispatchAfterPayment($billingAddress, $amount, $paymentId, $transactionId, $request, $card, $paymentMode, $description)
-    {
-        // Add payment record
-        $payment = $this->addPayment($billingAddress, $request->account_id, $card, $paymentMode, $amount, $transactionId, $description);
+    protected function pay(Request $request, $metadata)
+    {    
+        // Perform validation on the request data
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'account_id' => 'required|exists:accounts,id',
+                'card_id' => [
+                    Rule::exists('card_details', 'id')->where(function ($query) use ($request) {
+                        $query->where('id', $request->card_id)
+                            ->where('account_id', $request->account_id);
+                    })
+                ],
+                'name' => [
+                    'required_unless:card_id,' . $request->card_id,
+                    'string',
+                    'min:5'
+                ],
+                'type' => 'required_unless:card_id,' . $request->card_id . '|string|max:20',
+                'card_number' => 'required_unless:card_id,' . $request->card_id . '|numeric|digits_between:14,16',
+                'exp_month' => 'required_unless:card_id,' . $request->card_id . '|digits_between:1,2|numeric|between:1,12',
+                'exp_year' => 'required_unless:card_id,' . $request->card_id . '|numeric|digits:4',
+                'address_id' => [
+                    Rule::exists('billing_addresses', 'id')->where(function ($query) use ($request) {
+                        $query->where('id', $request->address_id)
+                            ->where('account_id', $request->account_id);
+                    })
+                ],  
+                'fullname' => 'required_unless:address_id,' . $request->address_id . '|string',
+                'contact_no' => 'required_unless:address_id,' . $request->address_id . '|string',
+                'email' => 'required_unless:address_id,' . $request->address_id . '|string',
+                'address' => 'required_unless:address_id,' . $request->address_id . '|string',
+                'zip' => 'required_unless:address_id,' . $request->address_id . '|string',
+                'city' => 'required_unless:address_id,' . $request->address_id . '|string',
+                'state' => 'required_unless:address_id,' . $request->address_id . '|string',
+                'country' => 'required_unless:address_id,' . $request->address_id . '|string',              
+                'amount' => 'required|numeric|between:0,9999999.99',
+                'cvc' => [
+                    'required',
+                    'digits:3',
+                ],
+                'save_card' => 'required_unless:card_id,' . $request->card_id . '|boolean',
+                'paymentfor' => 'string'
+            ]
+        );
 
-        // Update account balance
-        $accountController = new AccountController($this->stripeController);
-        $accountResult = $accountController->addOrUpdateBalance($request->account_id, $amount, $paymentId, $transactionId);
+        // Check if validation fails
+        if ($validator->fails()) {
 
-        // Retrieve account details
-        $account = Account::find($request->account_id);
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = $validator->errors();
 
-        // Prepare data for email notification
-        $maildata = [
-            'company_name' => $account->company_name,
-            'email' => $account->email,
-            'amount' => $payment->amount_total,
+            return responseHelper($type, $status, $msg, Response::HTTP_FORBIDDEN);
+        }
+
+        // Validate CVV if card_id is present
+        if ($request->has('card_id')) {
+            $card = CardDetail::where(['id' => $request->card_id, 'cvc' => $request->cvc])->first();
+
+            if (!$card) {
+                $type = config('enums.RESPONSE.ERROR'); // Response type (error)
+                $status = false; // Operation status (failed)
+                $msg = 'CVV is invalid.'; // Detailed error messages
+
+                // Return CVV validation error response
+                return responseHelper($type, $status, $msg, Response::HTTP_BAD_REQUEST);
+            } else {
+                // Prepare payment input based on card_id presence
+                $stripePaymentinput = [
+                    'card_number' => $card->card_number,
+                    'exp_month' =>  $card->exp_month,
+                    'exp_year' =>  $card->exp_year,
+                    'cvc' =>  $card->cvc,
+                    'type' => 'card'
+                ];
+            }
+        } else {
+            $stripePaymentinput = [
+                'card_number' => $request->card_number,
+                'exp_month' =>  $request->exp_month,
+                'exp_year' =>  $request->exp_year,
+                'cvc' =>  $request->cvc,
+                'type' => 'card'
+            ];
+        }
+
+        // Extract input data for Stripe payment
+        $amount = $request->amount;
+
+        // Create payment method using Stripe
+        $paymentMethodResponse = $this->checkPaymentMethod($stripePaymentinput);
+
+        // Handle payment method creation failure
+        if (!$paymentMethodResponse['status']) {
+            $response = [
+                'status' => false,
+                'error' => $paymentMethodResponse['error'],
+            ];
+            return response()->json($response, Response::HTTP_FORBIDDEN);
+        }
+
+        $paymentId = $paymentMethodResponse['paymentId'];
+
+        // Create payment intent for the recharge transaction
+        $transactionId = $this->stripeController->createPaymentIntent($amount, $paymentId, $metadata);
+
+        if (empty($transactionId)) {
+            $response = [
+                'status' => false,
+                'error' => 'something went wrong',
+            ];
+            return response()->json($response);
+        }
+
+        // If card is not saved, save it
+        if (!$request->has('card_id')) {
+            $cardInput = [
+                'name' => $request->name,
+                'card_number' => $request->card_number,
+                'exp_month' => $request->exp_month,
+                'exp_year' => $request->exp_year,
+                'cvc' => $request->cvc,
+            ];
+
+            // Optionally save card based on user input
+            if ($request->save_card == 1) {
+                $cardInput['save_card'] = 1;
+            }
+
+            // Save card details using CardController
+            $cardController = new CardController();
+            $card = $cardController->saveCard($request->account_id, $cardInput);
+        }
+
+        // If address is new
+        if(!$request->has('address_id')) {
+            $billingAddresInputs = [
+                'fullname' => $request->fullname,
+                'contact_no' => $request->contact_no,
+                'email' => $request->email,
+                'address' => $request->address,
+                'zip' => $request->zip,
+                'city' => $request->city,
+                'state' => $request->state,
+                'country' => $request->country
+            ];
+
+            // $billingAddress = json_decode(json_encode($billingAddresInputs));
+            $billingAddressController = new BillingAddressController();
+            $billingAddressController->addData($request->account_id, $billingAddresInputs);
+        }
+
+        $response = [
+            'status' => true,
             'transactionId' => $transactionId,
-            'pdfPath' => $payment->invoice_url,
-            'transaction_date' => $payment->transaction_date
         ];
 
-        // Send mail to account holder with invoice
-        WalletRecharge::dispatch($maildata);
-
-        // Prepare success response
-        $type = config('enums.RESPONSE.SUCCESS'); // Response type (success)
-        $status = true; // Operation status (success)
-        $msg = 'You have added balance successfully'; // Success message
-
-        // Return a JSON response with HTTP status code 200 (OK)
-        return responseHelper($type, $status, $msg, Response::HTTP_OK);
+        return response()->json($response);
     }
 
     /**
