@@ -33,6 +33,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\StripeController;
 use App\Http\Controllers\Api\CommioController;
+use App\Http\Controllers\Api\DiddetailsController;
 use App\Http\Controllers\Api\TfnController;
 use App\Http\Controllers\Api\DidRateController;
 use App\Http\Controllers\Api\DidVendorController;
@@ -40,6 +41,7 @@ use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\StripeControllerc;
+use App\Http\Controllers\Api\WalletTransactionController;
 use App\Http\Controllers\UtilityController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -584,9 +586,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Payment Controller
     Route::controller(PaymentController::class)->group(function () {
-        Route::get('all-payments', 'index');
+        Route::get('payments/all', 'index');
         Route::post('wallet-recharge', 'walletRecharge');
-        Route::post('wallet-recharge-fresh', 'rechargeWithFreshDetails');
     });
 
     // DID Related
@@ -608,12 +609,21 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::delete('rate/destroy/{id}', 'destroy');
             Route::get('rate/show/{id}/{rateType}', 'show');
         });
+
+        // DID 
+        Route::controller(DiddetailsController::class)->group(function () {
+            Route::get('all', 'index');
+        });
     });
 
     Route::controller(TfnController::class)->group(function () {
         Route::post('getActiveDidVendor', 'getActiveDidVendor');
         Route::post('searchTfn', 'searchTfn');
         Route::post('purchaseTfn', 'purchaseTfn');
+    });
+
+    Route::controller(WalletTransactionController::class)->group(function () { 
+        Route::get('transaction/wallet', 'index');
     });
 });
 

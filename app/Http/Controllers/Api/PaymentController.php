@@ -27,7 +27,8 @@ class PaymentController extends Controller
     // All Payments
     public function index(Request $request)
     {
-        $payments = Payment::with(['account']);
+        // $payments = Payment::with(['account']);
+        $payments = Payment::query();
 
         // Check if the request contains an 'account_id' parameter
         if ($request->has('account_id')) {
@@ -39,7 +40,7 @@ class PaymentController extends Controller
         $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
 
         // Execute the query to fetch domains
-        $payments = $payments->orderBy('id', 'asc')->paginate($ROW_PER_PAGE);
+        $payments = $payments->orderBy('id', 'desc')->paginate($ROW_PER_PAGE);
 
         // Prepare the response data
         $response = [
@@ -114,9 +115,11 @@ class PaymentController extends Controller
         $billingInput = $request->only(['fullname', 'contact_no', 'email', 'address', 'zip', 'city', 'state', 'country']);
 
         $paymentMode = 'card';
+        $transaction_type = 'debit';
+        $payment_gateway = '';
 
         // check peyment gateway options
-        $checkGateway = $this->checkPaymentGateway();
+        $checkGateway = checkPaymentGateway();
 
         if (!$checkGateway) {
             return response()->json([
@@ -128,6 +131,9 @@ class PaymentController extends Controller
         $transactionId = '';
 
         if ($checkGateway == 'Stripe') {
+
+            $payment_gateway = 'Stripe';
+
             $stripe = App::make(StripeController::class);
 
             // Create payment method using Stripe
@@ -203,7 +209,7 @@ class PaymentController extends Controller
             $description = 'New Package ordered.';
 
             // Add Payments
-            $payment = $this->addPayment($billingResult, $accountId, $card, $paymentMode, $amount, $transactionId, $description, $package->subscription_type);
+            $payment = $this->addPayment($transaction_type, $payment_gateway, $billingResult, $accountId, $card, $paymentMode, $amount, $transactionId, $description, $package->subscription_type);
 
             // Add Subscription
             $subscriptionController = new SubscriptionController();
@@ -260,6 +266,16 @@ class PaymentController extends Controller
         $description = 'Wallet balance added';
 
         $paymentMode = 'card';
+        $transaction_type = 'debit';
+
+        $payment_gateway = checkPaymentGateway();
+
+        if (!$payment_gateway) {
+            return response()->json([
+                'status' => false,
+                'error' => 'Payment Gateway configuration error'
+            ], 400);
+        }
 
         $amount = $request->amount;
 
@@ -307,7 +323,7 @@ class PaymentController extends Controller
             }
 
             // Add payment record
-            $payment = $this->addPayment($billingAddress, $request->account_id, $card, $paymentMode, $amount, $transactionId, $description);
+            $payment = $this->addPayment($transaction_type, $payment_gateway, $billingAddress, $request->account_id, $card, $paymentMode, $amount, $transactionId, $description);
 
             // Update account balance
             $accountController = new AccountController();
@@ -440,7 +456,7 @@ class PaymentController extends Controller
         $amount = $request->amount;
 
         // check peyment gateway options
-        $checkGateway = $this->checkPaymentGateway();
+        $checkGateway = checkPaymentGateway();
 
         if (!$checkGateway) {
             return response()->json([
@@ -543,7 +559,7 @@ class PaymentController extends Controller
      * @param $subscriptionType string The type of subscription associated with the payment.
      * @return Payment The newly created payment object.
      */
-    public function addPayment($billingAddress, $accountId, $card, $paymentMode, $amount, $transactionId, $description = null, $subscriptionType = null)
+    public function addPayment($transaction_type, $payment_gateway, $billingAddress, $accountId, $card, $paymentMode, $amount, $transactionId, $description = null, $subscriptionType = null)
     {
         // Record transaction details in the database
         $inputData = [
@@ -552,8 +568,8 @@ class PaymentController extends Controller
             'amount_subtotal' => $amount,
             'stripe_session_id' => $transactionId,
             'transaction_id' => $transactionId,
-            'payment_gateway' => 'Stripe',
-            'transaction_type' => 'new',
+            'payment_gateway' => $payment_gateway,
+            'transaction_type' => $transaction_type,
             'subscription_type' => $subscriptionType,
             'payment_method_options' => $paymentMode,
             'currency' => 'usd',
@@ -606,17 +622,6 @@ class PaymentController extends Controller
         return $payment;
     }
 
-    protected function checkPaymentGateway()
-    {
-        $result = PaymentGateway::where('status', 'active')->first();
-
-        if (!$result) {
-            return false;
-        }
-
-        return $result->name;
-    }
-
     /**
      * Check and create payment method using Stripe.
      *
@@ -629,7 +634,7 @@ class PaymentController extends Controller
     protected function checkPaymentMethod($request)
     {
         // check peyment gateway options
-        $checkGateway = $this->checkPaymentGateway();
+        $checkGateway = checkPaymentGateway();
 
         if (!$checkGateway) {
             $response = [
