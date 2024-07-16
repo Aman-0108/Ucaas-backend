@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\NewUser;
 use App\Jobs\WalletRecharge;
 use App\Mail\NewUserMail;
 use App\Mail\RechargeSuccessfull;
@@ -12,24 +13,17 @@ use App\Models\CardDetail;
 use App\Models\Lead;
 use App\Models\Package;
 use App\Models\Payment;
+use App\Models\PaymentGateway;
 use App\Models\TransactionDetail;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 
 class PaymentController extends Controller
 {
-    protected $stripeController;
-
-    public function __construct(StripeController $stripeController)
-    {
-        $this->stripeController = $stripeController;
-    }
-
     // All Payments
     public function index(Request $request)
     {
@@ -121,35 +115,51 @@ class PaymentController extends Controller
 
         $paymentMode = 'card';
 
-        // Create payment method using Stripe
-        $paymentMethodResponse = $this->stripeController->createPaymentMethod($stripePaymentinput);
+        // check peyment gateway options
+        $checkGateway = $this->checkPaymentGateway();
 
-        $paymentMethodContent = $paymentMethodResponse->getContent();
-        $responseData = json_decode($paymentMethodContent, true);
-
-        if (isset($responseData['error'])) {
-            // Handle the error related to incorrect card number
-            $response = [
+        if (!$checkGateway) {
+            return response()->json([
                 'status' => false,
-                'error' => $responseData['error'],
-            ];
-            return response()->json($response, Response::HTTP_FORBIDDEN);
-        } else {
-            $paaymentMethodSuccess = $responseData['success'];
-
-            $paymentId = $paaymentMethodSuccess['id'];
+                'error' => 'Payment Gateway configuration error'
+            ], 400);
         }
 
-        $leadId = $lead->id;
+        $transactionId = '';
 
-        // Define metadata
-        $metadata = [
-            'lead_id' => $leadId,
-            // Add more metadata fields as needed
-        ];
+        if ($checkGateway == 'Stripe') {
+            $stripe = App::make(StripeController::class);
 
-        // Create payment intent for the recharge transaction
-        $transactionId = $this->stripeController->createPaymentIntent($amount, $paymentId, $metadata);
+            // Create payment method using Stripe
+            $paymentMethodResponse = $stripe->createPaymentMethod($stripePaymentinput);
+
+            $paymentMethodContent = $paymentMethodResponse->getContent();
+            $responseData = json_decode($paymentMethodContent, true);
+
+            if (isset($responseData['error'])) {
+                // Handle the error related to incorrect card number
+                $response = [
+                    'status' => false,
+                    'error' => $responseData['error'],
+                ];
+                return response()->json($response, Response::HTTP_FORBIDDEN);
+            } else {
+                $paaymentMethodSuccess = $responseData['success'];
+
+                $paymentId = $paaymentMethodSuccess['id'];
+            }
+
+            $leadId = $lead->id;
+
+            // Define metadata
+            $metadata = [
+                'lead_id' => $leadId,
+                // Add more metadata fields as needed
+            ];
+
+            // Create payment intent for the recharge transaction
+            $transactionId = $stripe->createPaymentIntent($amount, $paymentId, $metadata);
+        }
 
         // If transaction is successful
         if ($transactionId) {
@@ -161,7 +171,7 @@ class PaymentController extends Controller
             unset($lead->id, $lead->created_at, $lead->updated_at);
 
             // Add Account
-            $accountController = new AccountController($this->stripeController);
+            $accountController = new AccountController();
             $account = $accountController->createAccount($lead->toArray());
 
             $accountId = $account->id;
@@ -210,7 +220,7 @@ class PaymentController extends Controller
             ];
 
             // Send mail to account holder with invoice
-            // Mail::to($account->email)->send(new NewUserMail($userCredentials));
+            NewUser::dispatch($userCredentials);
 
             DB::commit();
 
@@ -279,9 +289,9 @@ class PaymentController extends Controller
                 $card = json_decode(json_encode($card));
             }
 
-            if($request->has('address_id')) {
+            if ($request->has('address_id')) {
                 $billingAddress = BillingAddress::find($request->address_id);
-            } else {               
+            } else {
                 $billingAddresInputs = [
                     'fullname' => $request->fullname,
                     'contact_no' => $request->contact_no,
@@ -300,7 +310,7 @@ class PaymentController extends Controller
             $payment = $this->addPayment($billingAddress, $request->account_id, $card, $paymentMode, $amount, $transactionId, $description);
 
             // Update account balance
-            $accountController = new AccountController($this->stripeController);
+            $accountController = new AccountController();
             $accountController->addOrUpdateBalance($request->account_id, $amount, $payment['id'], $transactionId);
 
             // Retrieve account details
@@ -326,56 +336,21 @@ class PaymentController extends Controller
 
             // Return a JSON response with HTTP status code 200 (OK)
             return responseHelper($type, $status, $msg, Response::HTTP_OK);
-
-            // return $this->dispatchAfterDidPayment($billingAddress, $amount, $paymentId, $transactionId, $request, $card, $paymentMode, $description);
         } else {
-            // Handle common server error if transaction fails
-            return commonServerError();
-        }
-    }
-
-    /**
-     * Check and create payment method using Stripe.
-     *
-     * This function interacts with Stripe through a controller to create a payment method
-     * and handles the response accordingly.
-     *
-     * @param Illuminate\Http\Request $request The HTTP request containing payment method details.
-     * @return array An array containing the status of the operation and relevant data.
-     */
-    protected function checkPaymentMethod($request)
-    {
-        // Create payment method using Stripe        
-        $paymentMethodResponse = $this->stripeController->createPaymentMethod($request);
-
-        // Extract content from response
-        $paymentMethodContent = $paymentMethodResponse->getContent();
-        $responseData = json_decode($paymentMethodContent, true);
-
-        // Check for errors in the response
-        if (isset($responseData['error'])) {
-            // Handle the error case
-            $response = [
-                'status' => false,
-                'error' => $responseData['error'],
-            ];
-
-            return $response;
-        } else {
-            // Handle the success case
-            $paymentMethodSuccess = $responseData['success'];
-
-            $response = [
-                'status' => true,
-                'paymentId' => $paymentMethodSuccess['id'], // Assuming 'id' is the key for payment ID
-            ];
-
-            return $response;
+            // Handle common server error if transaction fails            
+            if ($responseData['error']) {
+                return response()->json([
+                    'satus' => false,
+                    'error' => $responseData['error']
+                ], 400);
+            } else {
+                return commonServerError();
+            }
         }
     }
 
     public function pay(Request $request, $metadata)
-    {    
+    {
         // Perform validation on the request data
         $validator = Validator::make(
             $request->all(),
@@ -401,7 +376,7 @@ class PaymentController extends Controller
                         $query->where('id', $request->address_id)
                             ->where('account_id', $request->account_id);
                     })
-                ],  
+                ],
                 'fullname' => 'required_unless:address_id,' . $request->address_id . '|string',
                 'contact_no' => 'required_unless:address_id,' . $request->address_id . '|string',
                 'email' => 'required_unless:address_id,' . $request->address_id . '|string',
@@ -409,7 +384,7 @@ class PaymentController extends Controller
                 'zip' => 'required_unless:address_id,' . $request->address_id . '|string',
                 'city' => 'required_unless:address_id,' . $request->address_id . '|string',
                 'state' => 'required_unless:address_id,' . $request->address_id . '|string',
-                'country' => 'required_unless:address_id,' . $request->address_id . '|string',              
+                'country' => 'required_unless:address_id,' . $request->address_id . '|string',
                 'amount' => 'required|numeric|between:0,9999999.99',
                 'cvc' => [
                     'required',
@@ -443,7 +418,7 @@ class PaymentController extends Controller
                 return responseHelper($type, $status, $msg, Response::HTTP_BAD_REQUEST);
             } else {
                 // Prepare payment input based on card_id presence
-                $stripePaymentinput = [
+                $paymentInput = [
                     'card_number' => $card->card_number,
                     'exp_month' =>  $card->exp_month,
                     'exp_year' =>  $card->exp_year,
@@ -452,7 +427,7 @@ class PaymentController extends Controller
                 ];
             }
         } else {
-            $stripePaymentinput = [
+            $paymentInput = [
                 'card_number' => $request->card_number,
                 'exp_month' =>  $request->exp_month,
                 'exp_year' =>  $request->exp_year,
@@ -464,27 +439,46 @@ class PaymentController extends Controller
         // Extract input data for Stripe payment
         $amount = $request->amount;
 
-        // Create payment method using Stripe
-        $paymentMethodResponse = $this->checkPaymentMethod($stripePaymentinput);
+        // check peyment gateway options
+        $checkGateway = $this->checkPaymentGateway();
 
-        // Handle payment method creation failure
-        if (!$paymentMethodResponse['status']) {
-            $response = [
+        if (!$checkGateway) {
+            return response()->json([
                 'status' => false,
-                'error' => $paymentMethodResponse['error'],
-            ];
-            return response()->json($response, Response::HTTP_FORBIDDEN);
+                'error' => 'Payment Gateway configuration error'
+            ], 400);
         }
 
-        $paymentId = $paymentMethodResponse['paymentId'];
+        $transactionId = '';
 
-        // Create payment intent for the recharge transaction
-        $transactionId = $this->stripeController->createPaymentIntent($amount, $paymentId, $metadata);
+        if ($checkGateway == 'Stripe') {
+
+            $stripe = App::make(StripeController::class);
+
+            // Create payment method using Stripe
+            $paymentMethodResponse = $this->checkPaymentMethod($paymentInput);
+
+            // Handle payment method creation failure
+            if (!$paymentMethodResponse['status']) {
+                $response = [
+                    'status' => false,
+                    'error' => $paymentMethodResponse['error'],
+                ];
+                return response()->json($response, Response::HTTP_FORBIDDEN);
+            }
+
+            $paymentId = $paymentMethodResponse['paymentId'];
+
+            // Create payment intent for the recharge transaction
+            $transactionId = $stripe->createPaymentIntent($amount, $paymentId, $metadata);
+        }
+
+        // end
 
         if (empty($transactionId)) {
             $response = [
                 'status' => false,
-                'error' => 'something went wrong.ff.',
+                'error' => 'something went wrong with payment configuration.',
             ];
             return response()->json($response);
         }
@@ -510,7 +504,7 @@ class PaymentController extends Controller
         }
 
         // If address is new
-        if(!$request->has('address_id')) {
+        if (!$request->has('address_id')) {
             $billingAddresInputs = [
                 'fullname' => $request->fullname,
                 'contact_no' => $request->contact_no,
@@ -535,58 +529,6 @@ class PaymentController extends Controller
 
         return response()->json($response);
     }
-
-    // public function tfnBuy($request, $metadata)
-    // {
-    //     $paymentResponse = $this->pay($request, $metadata);
-
-    //     // Extract content from response
-    //     $paymentResponse = $paymentResponse->getContent();
-    //     $responseData = json_decode($paymentResponse, true);
-
-    //     if ($responseData['status']) {
-
-    //         $transactionId = $responseData['transactionId'];
-
-    //         if ($request->has('card_id')) {
-    //             // card details
-    //             $card = CardDetail::where(['id' => $request->card_id, 'account_id' => $request->account_id, 'cvc' => $request->cvc])->first();
-    //         } else {
-    //             $card = [
-    //                 'name' => $request->name,
-    //                 'card_number' => $request->card_number,
-    //                 'exp_month' => $request->exp_month,
-    //                 'exp_year' => $request->exp_year,
-    //                 'cvc' => $request->cvc,
-    //             ];
-
-    //             $card = json_decode(json_encode($card));
-    //         }
-
-    //         if($request->has('address_id')) {
-    //             $billingAddress = BillingAddress::find($request->address_id);
-    //         } else {               
-    //             $billingAddresInputs = [
-    //                 'fullname' => $request->fullname,
-    //                 'contact_no' => $request->contact_no,
-    //                 'email' => $request->email,
-    //                 'address' => $request->address,
-    //                 'zip' => $request->zip,
-    //                 'city' => $request->city,
-    //                 'state' => $request->state,
-    //                 'country' => $request->country
-    //             ];
-
-    //             $billingAddress = json_decode(json_encode($billingAddresInputs));
-    //         }
-
-    //         $payment = $this->addPayment($billingAddress, $accountId, $card, $paymentMode, $amount, $transactionId, $description = null, $subscriptionType = null);
-
-    //         return $payment;
-    //     } else {
-    //         return commonServerError();
-    //     }
-    // }
 
     /**
      * Adds a new payment record for an account.
@@ -664,20 +606,76 @@ class PaymentController extends Controller
         return $payment;
     }
 
-    protected function dispatchAfterDidPayment($billingAddress, $amount, $paymentId, $transactionId, $request, $card, $paymentMode, $description)
+    protected function checkPaymentGateway()
     {
-        // Add payment record
-        $payment = $this->addPayment($billingAddress, $request->account_id, $card, $paymentMode, $amount, $transactionId, $description);
+        $result = PaymentGateway::where('status', 'active')->first();
 
-        // Prepare success response
-        $type = config('enums.RESPONSE.SUCCESS'); // Response type (success)
-        $status = true; // Operation status (success)
-        $msg = 'success'; // Success message
-        $data = $payment;
+        if (!$result) {
+            return false;
+        }
 
-        // mail send 
+        return $result->name;
+    }
 
-        // Return a JSON response with HTTP status code 200 (OK)
-        return responseHelper($type, $status, $msg, Response::HTTP_OK, $data);
+    /**
+     * Check and create payment method using Stripe.
+     *
+     * This function interacts with Stripe through a controller to create a payment method
+     * and handles the response accordingly.
+     *
+     * @param Illuminate\Http\Request $request The HTTP request containing payment method details.
+     * @return array An array containing the status of the operation and relevant data.
+     */
+    protected function checkPaymentMethod($request)
+    {
+        // check peyment gateway options
+        $checkGateway = $this->checkPaymentGateway();
+
+        if (!$checkGateway) {
+            $response = [
+                'status' => false,
+                'error' => 'Payment gateway is not set properly.'
+            ];
+
+            return $response;
+        }
+
+        if ($checkGateway == 'Stripe') {
+            $stripe = App::make(StripeController::class);
+            // Create payment method using Stripe        
+            $paymentMethodResponse = $stripe->createPaymentMethod($request);
+
+            // Extract content from response
+            $paymentMethodContent = $paymentMethodResponse->getContent();
+            $responseData = json_decode($paymentMethodContent, true);
+
+            // Check for errors in the response
+            if (isset($responseData['error'])) {
+                // Handle the error case
+                $response = [
+                    'status' => false,
+                    'error' => $responseData['error'],
+                ];
+
+                return $response;
+            } else {
+                // Handle the success case
+                $paymentMethodSuccess = $responseData['success'];
+
+                $response = [
+                    'status' => true,
+                    'paymentId' => $paymentMethodSuccess['id'], // Assuming 'id' is the key for payment ID
+                ];
+
+                return $response;
+            }
+        } else {
+            $response = [
+                'status' => false,
+                'error' => 'Payment Gateway configuration error on payment method.'
+            ];
+
+            return $response;
+        }
     }
 }
