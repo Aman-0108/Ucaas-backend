@@ -113,8 +113,6 @@ class TfnController extends Controller
     {
         $createdBy = $request->user()->id;
 
-        // $createdBy = 1;
-
         $validator = Validator::make(
             $request->all(),
             [
@@ -186,7 +184,6 @@ class TfnController extends Controller
             $walletResponse = $this->useWallet($createdBy, $request->companyId, $rate);
 
             if (!$walletResponse->status) {
-
                 $response = [
                     'status' => false,
                     'errors' => $walletResponse->message
@@ -200,7 +197,13 @@ class TfnController extends Controller
 
                 return $response;
             } else {
-            }            
+                $response = [
+                    'status' => false,
+                    'errors' => 'Check vendor configuration.'
+                ];
+
+                return response()->json($response, Response::HTTP_FORBIDDEN);
+            }           
         }
 
         if ($request->type == 'card') {
