@@ -29,10 +29,18 @@ class DialplanController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse Returns a JSON response containing all fetched gateways.
      */
-    public function index()
+    public function index(Request $request)
     {
         // Retrieve all dialplans from the database
-        $dialplans = Dialplan::all();
+        $dialplans = Dialplan::query();
+
+        // Check if the request contains an 'account' parameter
+        if ($request->has('account')) {
+            // If 'account' parameter is provided, filter outbound routings by account ID
+            $dialplans->where('account_id', $request->account);
+        }
+
+        $dialplans = $dialplans->get();
 
         // Prepare the response data
         $response = [
