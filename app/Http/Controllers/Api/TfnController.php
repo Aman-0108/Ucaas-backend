@@ -208,7 +208,7 @@ class TfnController extends Controller
 
         if ($request->type == 'card') {
 
-            $paymentController = new PaymentController($this->stripeController);
+            $paymentController = new PaymentController();
 
             $request->merge([
                 'amount' => $rate,
@@ -331,9 +331,8 @@ class TfnController extends Controller
     {
         $CommioController = new CommioController();
         $purchaseDataResponse = $CommioController->purchaseDidInCommio($createdBy, $companyId, $vendorId, $qty, $rate, $accountId, $dids);
-        $responseFunctionDataObject = $purchaseDataResponse->getData();
 
-        return response()->json($responseFunctionDataObject, Response::HTTP_OK);
+        return $purchaseDataResponse;
     }
 
     

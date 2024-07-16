@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\PaymentGateway;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Stripe\StripeClient;
 
@@ -19,13 +20,7 @@ class StripeServiceProvider extends ServiceProvider
 
             $gateway = PaymentGateway::where('status', 'active')->first();
 
-            $secret = '';
-
-            if ($gateway) {
-                $secret = $gateway->api_secret;
-            } else {
-                $secret = config('srevices.stripe.api_secret');
-            }
+            $secret = ($gateway) ? $gateway->api_secret : config('services.stripe.api_secret');
 
             return new StripeClient($secret);
         });

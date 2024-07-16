@@ -7,17 +7,11 @@ use App\Models\Lead;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class LeadController extends Controller
-{
-    protected $stripeController;
-
-    public function __construct(StripeController $stripeController)
-    {
-        $this->stripeController = $stripeController;
-    }
-
+{    
     /**
      * Retrieves a list of leads.
      *

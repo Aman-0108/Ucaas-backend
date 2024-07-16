@@ -19,13 +19,6 @@ use Illuminate\Support\Facades\Validator;
 
 class AccountController extends Controller
 {
-    protected $stripeController;
-
-    public function __construct(StripeController $stripeController)
-    {
-        $this->stripeController = $stripeController;
-    }
-
     /**
      * Retrieve all accounts.
      *
