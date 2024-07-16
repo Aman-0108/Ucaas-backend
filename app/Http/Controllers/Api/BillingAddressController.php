@@ -16,10 +16,18 @@ class BillingAddressController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse A JSON response containing the retrieved billing addresses or an error message.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Retrieve all billing addresses from the database
-        $billingAddresses = BillingAddress::all();
+        // Define a base query for BillingAddress
+        $query = BillingAddress::query();
+
+        // Apply filtering based on request parameters
+        if ($request->has('account_id')) {
+            $query->where('account_id', $request->account_id);
+        }
+
+        // Fetch the billing addresses based on the query
+        $billingAddresses = $query->get();
 
         // Prepare the response data
         $response = [

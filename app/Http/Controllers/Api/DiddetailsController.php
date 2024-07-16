@@ -22,6 +22,30 @@ class DiddetailsController extends Controller
         $this->type = 'did_details';
     }
 
+    public function index(Request $request)
+    {
+        // Define a base query for did's
+        $query = DidDetail::query();
+
+        // Apply filtering based on request parameters
+        if ($request->has('account_id')) {
+            $query->where('account_id', $request->account_id);
+        }
+
+        // Fetch the did'sbased on the query
+        $dialplans = $query->get();
+
+        // Prepare the response data
+        $response = [
+            'status' => true,
+            'data' => $dialplans,
+            'message' => 'Successfully fetched all dids'
+        ];
+
+        // Return the response as JSON with HTTP status code 200 (OK)
+        return response()->json($response, Response::HTTP_OK);
+    }
+
     /**
      * Store a newly created did details resource in storage.
      *

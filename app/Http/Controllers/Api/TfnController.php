@@ -164,6 +164,8 @@ class TfnController extends Controller
 
         $paymentMode = 'card';
         $description = 'New DID Buy.';
+        $transaction_type = 'debit';
+        $payment_gateway = '';
 
         // DB::beginTransaction();
 
@@ -203,10 +205,19 @@ class TfnController extends Controller
                 ];
 
                 return response()->json($response, Response::HTTP_FORBIDDEN);
-            }           
+            }
         }
 
         if ($request->type == 'card') {
+
+            $payment_gateway = checkPaymentGateway();
+
+            if (!$payment_gateway) {
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Payment Gateway configuration error'
+                ], 400);
+            }
 
             $paymentController = new PaymentController();
 
@@ -223,18 +234,18 @@ class TfnController extends Controller
 
             if ($responseData['status']) {
                 $response = $this->purchaseViaCommio($createdBy, $request->companyId, $request->vendorId, $qty, $rate, $request->accountId, $request->dids);
-                
+
                 $transactionId = $responseData['transactionId'];
 
                 if ($request->has('card_id')) {
                     // card details
                     $card = CardDetail::where(['id' => $request->card_id, 'account_id' => $request->account_id, 'cvc' => $request->cvc])->first();
-                    
+
                     if (!$card) {
                         $type = config('enums.RESPONSE.ERROR'); // Response type (error)
                         $status = false; // Operation status (failed)
                         $msg = 'CVV is invalid.'; // Detailed error messages
-        
+
                         // Return CVV validation error response
                         return responseHelper($type, $status, $msg, Response::HTTP_BAD_REQUEST);
                     }
@@ -246,13 +257,13 @@ class TfnController extends Controller
                         'exp_year' => $request->exp_year,
                         'cvc' => $request->cvc,
                     ];
-    
+
                     $card = json_decode(json_encode($card));
                 }
-    
-                if($request->has('address_id')) {
+
+                if ($request->has('address_id')) {
                     $billingAddress = BillingAddress::find($request->address_id);
-                } else {               
+                } else {
                     $billingAddresInputs = [
                         'fullname' => $request->fullname,
                         'contact_no' => $request->contact_no,
@@ -263,16 +274,16 @@ class TfnController extends Controller
                         'state' => $request->state,
                         'country' => $request->country
                     ];
-    
+
                     $billingAddress = json_decode(json_encode($billingAddresInputs));
                 }
-    
+
                 // Add payment record
-                $paymentController->addPayment($billingAddress, $request->account_id, $card, $paymentMode, $rate, $transactionId, $description);
+                $paymentController->addPayment($transaction_type, $payment_gateway, $billingAddress, $request->account_id, $card, $paymentMode, $rate, $transactionId, $description);
 
                 return $response;
             } else {
-                if(isset($responseData['error'])) {
+                if (isset($responseData['error'])) {
                     return response()->json([
                         'status' => false,
                         'error' => $responseData['error']
@@ -281,7 +292,6 @@ class TfnController extends Controller
 
                 return  commonServerError();
             }
-            
         }
 
         if ($request->type == 'configure') {
@@ -334,6 +344,4 @@ class TfnController extends Controller
 
         return $purchaseDataResponse;
     }
-
-    
 }

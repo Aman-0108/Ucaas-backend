@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\PaymentGateway;
 use App\Models\Uid;
 use Illuminate\Support\Str;
 use Illuminate\Http\Response;
@@ -388,5 +389,21 @@ if (!function_exists('commonServerError')) {
 
         // Call helper function to create the response
         return responseHelper($type, $status, $msg, $httpStatusCode);
+    }
+}
+
+/**
+ * Check the active payment gateway.
+ *
+ * @return string|false Name of the active payment gateway if found, false otherwise.
+ */
+if (!function_exists('checkPaymentGateway')) {
+    function checkPaymentGateway()
+    {
+        // Query the PaymentGateway model for the first active gateway
+        $result = PaymentGateway::where('status', 'active')->first();
+        
+        // Return false if no active payment gateway was found
+        return empty(!$result) ? $result->name : false;
     }
 }

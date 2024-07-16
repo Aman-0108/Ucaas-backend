@@ -13,6 +13,37 @@ use App\Models\AccountBalance;
 
 class WalletTransactionController extends Controller
 {
+    public function index(Request $request)
+    {
+        $query = WalletTransaction::query();
+
+        // Check if the request contains an 'account_id' parameter
+        if ($request->has('account_id')) {
+            // If 'account' parameter is provided, filter domains by account ID
+            $query->where('account_id', $request->account_id);
+        }
+
+        if ($request->has('transaction_type')) {
+            // If 'account' parameter is provided, filter domains by account ID
+            $query->where('transaction_type', $request->transaction_type);
+        }
+
+        // COMING FROM GLOBAL CONFIG
+        $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+
+        // Execute the query to fetch domains
+        $payments = $query->orderBy('id', 'desc')->paginate($ROW_PER_PAGE);
+
+        // Prepare the response data
+        $response = [
+            'status' => true,
+            'data' => $payments,
+            'message' => 'Successfully fetched.'
+        ];
+
+        // Return a JSON response containing the list of domains
+        return response()->json($response, Response::HTTP_OK);
+    }
 
     //public function useWalletBalance($accountId, $deductValue)
     public function useWalletBalance($walletData)
