@@ -10,4 +10,8 @@ class Lead extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    public function timezone() {
+        return $this->hasOne(Timezone::class, 'id', 'timezone_id');
+    }
 }

@@ -23,7 +23,7 @@ class LeadController extends Controller
     public function index()
     {
         // Start building the query to fetch leads
-        $leads = Lead::query();
+        $leads = Lead::with('timezone');
 
         // COMING FROM GLOBAL CONFIG
         $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
