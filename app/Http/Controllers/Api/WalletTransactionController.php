@@ -62,8 +62,6 @@ class WalletTransactionController extends Controller
         } else {
             // return ($chkWalletBalance->amount >= $deductValue) ? true : false;
 
-
-
             if ($chkWalletBalance->amount >= $deductValue) {
 
                 //echo "balance".$chkWalletBalance->amount." rate".$deductValue;  exit;
@@ -72,7 +70,6 @@ class WalletTransactionController extends Controller
 
                 AccountBalance::where('id', $accountId)->update(['amount' => $inputData]);
 
-                //`created_by`, `account_id`, `amount`, `transaction_type`, `payment_gateway_session_id`, `payment_gateway_transaction_id`, `payment_gateway`, `invoice_url`, `descriptor`,
                 $walletDataDetail = [
                     'created_by'                        => !empty($walletData['created_by']) ? $walletData['created_by'] : "",
                     'account_id'                        => !empty($walletData['accountId']) ? $walletData['accountId'] : "",
@@ -84,6 +81,7 @@ class WalletTransactionController extends Controller
                     'invoice_url'                       => !empty($walletData['invoice_url']) ? $walletData['invoice_url'] : "",
                     'descriptor'                        => !empty($walletData['descriptor']) ? $walletData['descriptor'] : "",
                 ];
+                
                 WalletTransaction::create($walletDataDetail);
 
                 $response = [

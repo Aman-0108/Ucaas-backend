@@ -363,6 +363,15 @@ class AccountDetailsController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
+        $path = $accountDetail->path;
+
+        $exists = Storage::exists($path);
+
+        if ($exists) {
+            // Delete associated file from storage
+            Storage::delete($path);
+        }
+
         // Delete the Account Details record
         $accountDetail->delete();
 

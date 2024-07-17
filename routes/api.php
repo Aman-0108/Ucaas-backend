@@ -40,6 +40,7 @@ use App\Http\Controllers\Api\DidVendorController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\PermissionController;
+use App\Http\Controllers\Api\SoundController;
 use App\Http\Controllers\Api\StripeControllerc;
 use App\Http\Controllers\Api\WalletTransactionController;
 use App\Http\Controllers\UtilityController;
@@ -184,7 +185,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::post('store', 'store')->name('add');
 
             // To destroy the address by Id
-            Route::delete('destroy/{id}', 'destroy')->name('delete');            
+            Route::delete('destroy/{id}', 'destroy')->name('delete');
         });
 
         // Set status
@@ -622,8 +623,28 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::post('purchaseTfn', 'purchaseTfn');
     });
 
-    Route::controller(WalletTransactionController::class)->group(function () { 
+    Route::controller(WalletTransactionController::class)->group(function () {
         Route::get('transaction/wallet', 'index');
+    });
+
+    // Audio related
+    Route::controller(SoundController::class)->group(function () {
+        Route::prefix('sound')->middleware('permission')->name('sound.')->group(function () {
+            // To get all the accounts
+            Route::get('all', 'index')->name('browse');
+
+            // To get the particular account by Id
+            Route::get('{id}', 'show')->name('read');
+
+            // To update the particular account by Id
+            Route::put('{id}', 'update')->name('edit');
+
+            // To store new account
+            Route::post('store', 'store')->name('add');
+
+            // To destroy the account by Id
+            Route::delete('{id}', 'destroy')->name('delete');
+        });
     });
 });
 
