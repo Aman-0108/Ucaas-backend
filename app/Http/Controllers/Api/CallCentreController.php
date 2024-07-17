@@ -77,7 +77,17 @@ class CallCentreController extends Controller
                 'extension' => 'string|unique:call_center_queues,extension,NULL,id,account_id,' . $request->account_id,
                 'strategy' => 'in:' . implode(',', config('enums.agent.strategy')),
                 'moh_sound' => 'string|nullable',
+                'time_base_score' => 'in:queue,system',
                 'record_template' => 'boolean',
+                'tier_rules_apply' => 'boolean',
+                'tier_rule_wait_second' => 'integer|nullable',
+                'tier_rule_wait_multiply_level' => 'boolean',
+                'tier_rule_no_agent_no_wait' => 'boolean',
+                'abondoned_resume_allowed' => 'boolean',
+                'max_wait_time' => 'integer',
+                'max_wait_time_with_no_agent' => 'integer',
+                'max_wait_time_with_no_agent_time_reached' => 'integer',
+                'ring_progressively_delay' => 'integer',                
                 'queue_timeout_action' => 'string|nullable',
                 'discard_abandoned_after' => 'numeric|nullable',
                 'queue_cid_prefix' => 'string|nullable',
@@ -85,7 +95,7 @@ class CallCentreController extends Controller
                 'xml' => 'string|nullable'
             ]
         );
-
+       
         // If validation fails
         if ($validator->fails()) {
             // If validation fails, return a JSON response with error messages
@@ -238,7 +248,17 @@ class CallCentreController extends Controller
                 'extension' => 'string|unique:call_center_queues,extension,' . $id . ',id,account_id,' . $call_centre_queue->account_id,                
                 'strategy' => 'in:' . implode(',', config('enums.agent.strategy')),
                 'moh_sound' => 'string|nullable',
+                'time_base_score' => 'in:queue,system',
                 'record_template' => 'boolean',
+                'tier_rules_apply' => 'boolean',
+                'tier_rule_wait_second' => 'integer|nullable',
+                'tier_rule_wait_multiply_level' => 'boolean',
+                'tier_rule_no_agent_no_wait' => 'boolean',
+                'abondoned_resume_allowed' => 'boolean',
+                'max_wait_time' => 'integer',
+                'max_wait_time_with_no_agent' => 'integer',
+                'max_wait_time_with_no_agent_time_reached' => 'integer',
+                'ring_progressively_delay' => 'integer',
                 'queue_timeout_action' => 'string|nullable',
                 'discard_abandoned_after' => 'numeric|nullable',
                 'queue_cid_prefix' => 'string|nullable',
