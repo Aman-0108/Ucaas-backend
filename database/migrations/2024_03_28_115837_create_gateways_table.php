@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('gateways', function (Blueprint $table) {
-            $table->id();            
+            $table->id();  
+            $table->foreignId('account_id')->nullable()->references('id')->on('accounts');          
             $table->string('name');
             $table->string('username');
             $table->string('password');

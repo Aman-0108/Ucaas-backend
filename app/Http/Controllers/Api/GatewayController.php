@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Account;
 use App\Models\Gateway;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -99,6 +100,7 @@ class GatewayController extends Controller
             $request->all(),
             [
                 // Validation rules for each field
+                'account_id' => 'required|exists:accounts,id',
                 'name' => 'required|unique:gateways,name',
                 'username' => 'required|string',
                 'password' => 'required|string',
@@ -112,6 +114,8 @@ class GatewayController extends Controller
                 'fromUser' => 'string|min:3|nullable',
                 'fromDomain' => 'string|min:5|nullable',
                 'realm' => 'string|min:2|nullable',
+                'didConfigure' => 'boolean',
+                'domain' => 'string|required_if:didConfigure,true',
             ]
         );
 
@@ -139,6 +143,43 @@ class GatewayController extends Controller
 
         // Generate UID and attach it to the validated data
         createUid($action, $type, $validated, $userId);
+
+        if ($request->has('didConfigure')) {
+
+            $domain = $request->domain;
+
+            unset($validated['didConfigure'], $validated['domain']);
+
+            $domainInput = [
+                'account_id' => intval($request->account_id),
+                'domain_name' => $domain,
+                'created_by' => $userId
+            ];
+
+            $domainInstance = new DomainController();
+            $domainResponse = $domainInstance->store(new Request($domainInput));
+
+            // Extract content from response
+            $domainResponse = $domainResponse->getContent();
+            $responseData = json_decode($domainResponse, true);
+
+            // If transaction is successful
+            if ($responseData['status']) {
+                $account = Account::find($request->account_id);
+
+                if (!$account) {
+                    // If the account is not found, return a 404 Not Found response
+                    $type = config('enums.RESPONSE.ERROR');
+                    $status = false;
+                    $msg = 'Account not found';
+
+                    return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
+                }
+
+                $account->company_status = 6;
+                $account->save();
+            }
+        }
 
         $validated['created_by'] = $userId;
 

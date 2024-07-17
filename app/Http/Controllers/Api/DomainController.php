@@ -114,9 +114,10 @@ class DomainController extends Controller
     public function store(Request $request)
     {
         // Retrieve the ID of the authenticated user making the request
-        $userId = $request->user()->id;
 
-        if ($request->user()->usertype == 'SuperAdmin') {
+        $userId = ($request->user()) ? $request->user()->id : null;
+
+        if ($request->user() && ($request->user()->usertype == 'SuperAdmin')) {
             // Validate the request data
             $validator = Validator::make(
                 $request->all(),
