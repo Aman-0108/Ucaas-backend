@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Account;
+use App\Models\DidDetail;
 use App\Models\Gateway;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
