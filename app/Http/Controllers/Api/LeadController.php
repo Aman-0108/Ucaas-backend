@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lead;
+use App\Rules\GlobalMobileNumber;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -61,8 +62,8 @@ class LeadController extends Controller
                 'admin_name' => 'required|string',
                 'timezone_id' => 'required|exists:timezones,id',
                 'email' => 'required|email|unique:accounts,email',
-                'contact_no' => 'required|string',
-                'alternate_contact_no' => 'string|nullable',
+                'contact_no' => ['required',  new GlobalMobileNumber],
+                'alternate_contact_no' => ['nullable', new GlobalMobileNumber],
                 'building' => 'string|nullable',
                 'unit' => 'required|string',
                 'street' => 'required|string',
