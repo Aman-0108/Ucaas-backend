@@ -146,6 +146,17 @@ class GatewayController extends Controller
 
         if ($request->has('didConfigure')) {
 
+            // check did exist or not
+            $did = DidDetail::where('account_id', $request->account_id)->first();
+
+            if(!$did) {
+                $type = config('enums.RESPONSE.ERROR');
+                $status = false;
+                $msg = "You don't have any Did.";
+
+                return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
+            }
+
             $domain = $request->domain;
 
             unset($validated['didConfigure'], $validated['domain']);
@@ -163,7 +174,7 @@ class GatewayController extends Controller
             $domainResponse = $domainResponse->getContent();
             $responseData = json_decode($domainResponse, true);
 
-            // If transaction is successful
+            // If response status is true
             if ($responseData['status']) {
                 $account = Account::find($request->account_id);
 
