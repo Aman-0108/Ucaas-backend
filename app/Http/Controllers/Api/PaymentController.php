@@ -15,6 +15,7 @@ use App\Models\Package;
 use App\Models\Payment;
 use App\Models\PaymentGateway;
 use App\Models\TransactionDetail;
+use App\Models\WalletTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\App;
@@ -256,6 +257,7 @@ class PaymentController extends Controller
      */
     public function walletRecharge(Request $request)
     {
+        $userId = $request->user()->id;
         // Define metadata for the transaction
         $metadata = [
             'cause' => 'wallet recharge',
@@ -287,6 +289,17 @@ class PaymentController extends Controller
 
         // If transaction is successful
         if ($responseData['status']) {
+
+            $walletDataDetail = [
+                'created_by'                        => $userId,
+                'account_id'                        => $request->account_id,
+                'amount'                            => $amount,
+                'transaction_type'                  => 'credit',
+                'invoice_url'                       => null,
+                'descriptor'                        => $description,
+            ];
+
+            WalletTransaction::create($walletDataDetail);
 
             $transactionId = $responseData['transactionId'];
 
