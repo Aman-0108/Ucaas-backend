@@ -27,8 +27,8 @@ class PaymentController extends Controller
     // All Payments
     public function index(Request $request)
     {
-        // $payments = Payment::with(['account']);
-        $payments = Payment::query();
+        $payments = Payment::with(['paymentDetails']);
+        // $payments = Payment::query();
 
         // Check if the request contains an 'account_id' parameter
         if ($request->has('account_id')) {
