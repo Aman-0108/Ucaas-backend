@@ -324,6 +324,11 @@ class CommioController extends Controller
         $response['tns'] = [
             [
                 "did" => "18559046202"
+            ],
+            "features"=> [
+                "cnam" => false,
+                "sms" => true,
+                "e911"=> false
             ]
         ];
 
