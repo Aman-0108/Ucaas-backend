@@ -291,12 +291,12 @@ class PaymentController extends Controller
         if ($responseData['status']) {
 
             $walletDataDetail = [
-                'created_by'                        => $userId,
-                'account_id'                        => $request->account_id,
-                'amount'                            => $amount,
-                'transaction_type'                  => 'credit',
-                'invoice_url'                       => null,
-                'descriptor'                        => $description,
+                'created_by'  => $userId,
+                'account_id' => $request->account_id,
+                'amount' => $amount,
+                'transaction_type' => 'credit',
+                'invoice_url'  => null,
+                'descriptor'  => $description,
             ];
 
             WalletTransaction::create($walletDataDetail);
