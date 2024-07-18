@@ -8,6 +8,7 @@ use App\Models\DidOrderStatus;
 use App\Models\Account;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class CommioController extends Controller
@@ -243,6 +244,10 @@ class CommioController extends Controller
 
                 $ordeDetail = DidOrderStatus::create($ordeDetail);
 
+                Log::info($ordeDetail);
+
+                // exit;
+
                 if (!$ordeDetail) {
                     //effect in DB to notify to techteam
                     $res = [
@@ -255,21 +260,27 @@ class CommioController extends Controller
 
                 $completeOrder = $this->completeOrder($companyId, $responseData['id'], $vendorId, $accountId);
 
+                Log::info($completeOrder);
+
                 if (isset($completeOrder['status']) && isset($completeOrder['type'])) {
                     //origination_order
                     if ($completeOrder['status'] == 'completed' && $completeOrder['type'] == 'origination_order') {
 
                         foreach ($completeOrder['tns'] as $row) {
+
                             //insert into did detail tbl
                             $ordeDetail = [
                                 'account_id' => $companyId,
                                 'orderid' => $responseData['id'],
                                 'domain' => $vendorId,
                                 'did' => $row['did'],
+                                'cnam' => $row['features']['cnam'],
+                                'sms' => $row['features']['sms'],
+                                'e911' => $row['features']['e911'],
                                 'price' => $rate,
                                 'created_by' => $createdBy,
                             ];
-                            
+
                             $ordeDetail = DidDetail::create($ordeDetail);
                         }
 
@@ -322,12 +333,15 @@ class CommioController extends Controller
         $response['type'] = 'origination_order';
         $response['status'] = 'completed';
         $response['tns'] = [
-            "did" => "18559046202",
-            "features"=> [
-                "cnam" => false,
-                "sms" => true,
-                "e911"=> false
+            [
+                "did" => "18559046202",
+                "features" => [
+                    "cnam" => false,
+                    "sms" => true,
+                    "e911" => false
+                ]
             ]
+
         ];
 
         return $response;

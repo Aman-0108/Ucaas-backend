@@ -22,6 +22,9 @@ class CreateDidDetailsTable extends Migration
             $table->string('domain');
             $table->string('did');
             //$table->string('didSummary');
+            $table->boolean('cnam')->default(false);
+            $table->boolean('sms')->default(false);
+            $table->boolean('e911')->default(false);
             $table->string('tollfreePrefix')->nullable();
             $table->string('npanxx')->nullable();
             $table->string('ratecenter')->nullable();
