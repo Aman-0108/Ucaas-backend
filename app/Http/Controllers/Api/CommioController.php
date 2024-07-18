@@ -322,9 +322,7 @@ class CommioController extends Controller
         $response['type'] = 'origination_order';
         $response['status'] = 'completed';
         $response['tns'] = [
-            [
-                "did" => "18559046202"
-            ],
+            "did" => "18559046202",
             "features"=> [
                 "cnam" => false,
                 "sms" => true,
