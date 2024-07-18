@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\DidDetail;
+use App\Models\Domain;
 use App\Models\Gateway;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -171,6 +173,22 @@ class GatewayController extends Controller
             $domainInstance = new DomainController();
             $domainResponse = $domainInstance->store(new Request($domainInput));
 
+            $domain = Domain::where('account_id', $request->account_id)->first();
+
+            if(!$domain) {
+                $type = config('enums.RESPONSE.ERROR');
+                $status = false;
+                $msg = "Domain not found.";
+
+                return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
+            }
+
+            // Retrieving an account object based on the provided account_id from the request
+            $account = Account::find($request->account_id);
+
+            // update domain id
+            User::where('email', $account->email)->update(['domain_id' => $domain->id]);
+          
             // Extract content from response
             $domainResponse = $domainResponse->getContent();
             $responseData = json_decode($domainResponse, true);
