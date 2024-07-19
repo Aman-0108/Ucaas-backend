@@ -44,6 +44,10 @@ class SoundController extends Controller
             $query->where('account_id', $request->account_id);
         }
 
+        if($request->has('type')) {
+            $query->where('type', $request->type);
+        }
+
         // Execute the query to fetch audios
         $audios = $query->orderBy('id', 'desc')->get();
 
