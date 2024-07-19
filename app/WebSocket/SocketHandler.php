@@ -326,4 +326,10 @@ class SocketHandler implements MessageComponentInterface
             $this->onDataReceived(json_encode($customizedResponse));
         }
     }
+
+    protected function getActiveChannels()
+    {
+        
+
+    }
 }

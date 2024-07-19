@@ -762,4 +762,27 @@ class FreeSwitchController extends Controller
             return $this->disconnected();
         }
     }
+
+    public function getActiveCalls(): JsonResponse
+    {
+         // Check if the socket is connected
+         if ($this->socket->is_connected()) {
+            // Send an API request to fetch call events
+            $response = $this->socket->request('api show calls');
+
+            // Prepare the response data
+            $responseData = [
+                'status' => true, // Indicates the success status of the request
+                'data' => $response, // Contains the response from the server
+                'message' => 'Successfully fetched call status'
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($responseData, Response::HTTP_OK);
+        } else {
+            // If the socket is not connected, return a disconnected response
+            return $this->disconnected();
+        }
+       
+    }
 }

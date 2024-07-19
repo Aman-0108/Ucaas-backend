@@ -2,12 +2,14 @@
 
 namespace App\Listeners;
 
+use App\Http\Controllers\Api\FreeSwitchController;
 use App\Events\CallRecorded;
 use App\Events\ChannelHangupComplete;
 use App\Events\FreeswitchEvent;
 use App\Events\FreeSwitchShutDown;
 use App\Events\FsCallEvent;
 use App\Events\ExtensionRegistration;
+use App\Events\ShowCalls;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Event;
@@ -186,7 +188,7 @@ class FreeswitchListner
      */
     protected function handleChannelCreateEvent($eventData)
     {
-        // Process the CHANNEL_CREATE event (parse JSON, save to database, etc.)
+        // Event::dispatch(new ShowCalls($eventData));
         echo '\n';
         echo "CHANNEL_CREATE event received: ";
     }
@@ -322,6 +324,6 @@ class FreeswitchListner
 
     protected function recordStart($eventData)
     {
-        Log::info($eventData);
+        // Log::info($eventData);
     }
 }
