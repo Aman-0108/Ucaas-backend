@@ -44,11 +44,14 @@ class SoundController extends Controller
             $query->where('account_id', $request->account_id);
         }
 
-        // COMING FROM GLOBAL CONFIG
-        $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
-
         // Execute the query to fetch audios
-        $audios = $query->orderBy('id', 'desc')->paginate($ROW_PER_PAGE);
+        $audios = $query->orderBy('id', 'desc')->get();
+
+        $audios->each(function ($audio) {
+            if ($audio->path && $audio->name) {
+                $audio->url = Storage::url($audio->path.'/'.$audio->name);
+            }
+        });
 
         // Prepare the response data
         $response = [
@@ -122,7 +125,7 @@ class SoundController extends Controller
             [
                 'account_id' => 'required|exists:accounts,id',
                 'path' => 'required|file|mimes:wav,mp3|max:2048',
-                'type' => 'string|nullable'
+                'type' => 'required|in:hold,busy'
             ]
         );
 
@@ -152,7 +155,7 @@ class SoundController extends Controller
             'account_id' => $request->account_id,
             'name' => $fileName,
             'path' => $path,
-            'type' => null
+            'type' => $request->type
         ];
 
         // Begin a database transaction
