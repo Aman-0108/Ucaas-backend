@@ -240,7 +240,7 @@ class FreeSwitchController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse JSON response containing the status information.
      */
-    public function status(): JsonResponse
+    public function status()
     {
         if ($this->connected) {
             // Check call state
@@ -711,9 +711,9 @@ class FreeSwitchController extends Controller
                 // Fetch domain ID from the database
                 $domain = Domain::where('domain_name', $realm)->first();
 
-                if($domain) {
+                if ($domain) {
                     $formattedArray[] = ['extension' => $extension, 'domain' => json_encode($domain->id), 'account_id' => $domain->account_id];
-                }                
+                }
             }
 
             // Find differences between active extensions and formatted array
@@ -762,39 +762,45 @@ class FreeSwitchController extends Controller
         }
     }
 
-    public function getActiveCalls(): JsonResponse
+    /**
+     * Fetches active calls from the FreeSwitch server and sends them to the UI via WebSocket.
+     *
+     * @return void
+     */
+    public function getActiveCall()
     {
-         // Check if the socket is connected
-         if ($this->socket->is_connected()) {
+        // Check if the socket is connected
+        if ($this->socket->is_connected()) {
+
             // Send an API request to fetch call events
             $response = $this->socket->request('api show calls');
 
-            Log::info(['activeCalls' => $response]);
+            // Check if the string contains "0 total"
+            if (strpos($response, '0 total') !== false) {
+                // If it does, create a customized response with an empty result
+                $customizedResponse = [
+                    'key' => 'activeCalls',
+                    'result' => [],
+                ];
+            } else {
+                // If it does not, create a customized response with the formatted data
+                $activeCalls = activeCallDataFormat($response);
 
-            $formattedData = [];
+                // Create a customized response with the active inbound calls
+                $customizedResponse = [
+                    'key' => 'activeCalls',
+                    'result' => $activeCalls,
+                ];
+            }
 
-            $customizedResponse = [
-                'key' => 'activeCalls',
-                'result' => $formattedData,
-            ];
-    
+            // Initialize WebSocket controller
             $socketController = new WebSocketController();
-    
+
+            // Send the customized response to the UI via WebSocket
             $socketController->send($customizedResponse);
-
-            // Prepare the response data
-            $responseData = [
-                'status' => true, // Indicates the success status of the request
-                'data' => $response, // Contains the response from the server
-                'message' => 'Successfully fetched call status'
-            ];
-
-            // Return the response as JSON with HTTP status code 200 (OK)
-            return response()->json($responseData, Response::HTTP_OK);
         } else {
             // If the socket is not connected, return a disconnected response
             return $this->disconnected();
         }
-       
     }
 }

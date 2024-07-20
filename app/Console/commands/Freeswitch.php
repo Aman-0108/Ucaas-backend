@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Http\Controllers\Api\FreeSwitchController;
 use App\Services\FreeSwitchService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class Freeswitch extends Command
 {
@@ -42,6 +43,8 @@ class Freeswitch extends Command
     { 
         // Retry loop
         while (true) {
+
+            $this->info('running...');
             // Attempt to connect to FreeSWITCH ESL
             $connected = $this->connectToESL();
 
@@ -53,10 +56,18 @@ class Freeswitch extends Command
                 // Subscribe to receive notifications for all events
                 $this->freeSwitch->subscribe('ALL');
 
-                $this->getActiveCalls();
+                while (true) {
+                    $this->info('Listening for active calls...');
+                    
+                    // Get active calls
+                    $this->getActiveCalls();
+
+                    // Wait for 3 seconds before listening again
+                    sleep(3);
+                }
 
                 // Continuously listen for events from the FreeSWITCH server
-                while (true) {
+                while (true) {                    
                     // Start listening for events
                     $this->freeSwitch->startListening();
 
@@ -100,10 +111,12 @@ class Freeswitch extends Command
      */
     protected function getActiveCalls()
     {
+        $this->info('Fetching active calls...');
         // Create an instance of the FreeSwitchController
         $fsController = new FreeSwitchController();
-
+        
         // Call the getActiveCalls method of the FreeSwitchController to get the active calls
-        $fsController->getActiveCalls();
+        $fsController->getActiveCall();
+        
     }
 }

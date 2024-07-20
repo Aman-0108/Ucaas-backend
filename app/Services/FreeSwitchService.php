@@ -138,7 +138,6 @@ class FreeSwitchService
             }
         }
         // fclose($this->client);
-        // Log::info("Connection closed");
     }
 
     /**

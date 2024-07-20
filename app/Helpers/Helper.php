@@ -402,8 +402,54 @@ if (!function_exists('checkPaymentGateway')) {
     {
         // Query the PaymentGateway model for the first active gateway
         $result = PaymentGateway::where('status', 'active')->first();
-        
+
         // Return false if no active payment gateway was found
         return empty(!$result) ? $result->name : false;
+    }
+}
+
+/**
+ * Format the active call data response to a JSON object.
+ *
+ * @param string $response Raw response from the API
+ *
+ * @return array Formatted response with active inbound calls
+ */
+if (!function_exists('activeCallDataFormat')) {
+    function activeCallDataFormat($response)
+    {
+        // Split the string into an array by newlines
+        $lines = explode("\n", $response);
+
+        // Extract headers from the first line
+        $headers = explode(',', array_shift($lines));
+
+        // Initialize an empty array to store the call data
+        $calls = [];
+
+        // Loop through the remaining lines
+        foreach ($lines as $line) {
+            // Skip empty lines and lines with the word "total" in them
+            if (trim($line) === '' || strpos(trim($line), 'total.') !== false) {
+                continue;
+            }
+
+            // Split the line into values
+            $values = explode(',', $line);
+
+            // Combine the headers and values into an associative array
+            $call = array_combine($headers, $values);
+
+            // Add the call to the array
+            $calls[] = $call;
+        }
+
+        // Filter the array to only include inbound calls with the status "ACTIVE"
+        $activeCalls = array_filter($calls, function ($call) {
+            return $call['direction'] === 'inbound' && $call['callstate'] === 'ACTIVE';
+        });       
+
+        // Return the customized response
+        return $activeCalls;
     }
 }
