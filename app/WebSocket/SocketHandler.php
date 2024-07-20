@@ -327,7 +327,7 @@ class SocketHandler implements MessageComponentInterface
         }
     }
 
-    protected function getActiveChannels()
+    protected function getActiveCalls()
     {
         
 

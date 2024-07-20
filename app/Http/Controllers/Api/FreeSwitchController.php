@@ -12,7 +12,6 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
-use function PHPUnit\Framework\isEmpty;
 
 class FreeSwitchController extends Controller
 {
@@ -769,6 +768,19 @@ class FreeSwitchController extends Controller
          if ($this->socket->is_connected()) {
             // Send an API request to fetch call events
             $response = $this->socket->request('api show calls');
+
+            Log::info(['activeCalls' => $response]);
+
+            $formattedData = [];
+
+            $customizedResponse = [
+                'key' => 'activeCalls',
+                'result' => $formattedData,
+            ];
+    
+            $socketController = new WebSocketController();
+    
+            $socketController->send($customizedResponse);
 
             // Prepare the response data
             $responseData = [

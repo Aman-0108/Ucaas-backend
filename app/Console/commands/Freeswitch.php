@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Http\Controllers\Api\FreeSwitchController;
 use App\Services\FreeSwitchService;
 use Illuminate\Console\Command;
 
@@ -52,6 +53,8 @@ class Freeswitch extends Command
                 // Subscribe to receive notifications for all events
                 $this->freeSwitch->subscribe('ALL');
 
+                $this->getActiveCalls();
+
                 // Continuously listen for events from the FreeSWITCH server
                 while (true) {
                     // Start listening for events
@@ -88,5 +91,19 @@ class Freeswitch extends Command
             // Return false if connection fails
             return false;
         }
+    }
+
+    /**
+     * Get the active calls from FreeSwitch using the FreeSwitchController.
+     *
+     * @return \Illuminate\Http\JsonResponse The JSON response containing the active calls.
+     */
+    protected function getActiveCalls()
+    {
+        // Create an instance of the FreeSwitchController
+        $fsController = new FreeSwitchController();
+
+        // Call the getActiveCalls method of the FreeSwitchController to get the active calls
+        $fsController->getActiveCalls();
     }
 }
