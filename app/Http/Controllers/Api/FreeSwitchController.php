@@ -871,10 +871,12 @@ class FreeSwitchController extends Controller
     protected function eavesdropCall($uuid)
     {
         // Get the extension of the authenticated user
-        $extension = Auth::user()->extension_id;
+        $extensionId = Auth::user()->extension_id;
+
+        $extension = Extension::find($extensionId);
 
         // Check if the extension is empty
-        if (empty($extension)) {
+        if (!$extension) {
             $response = [
                 'status' => false,
                 'message' => 'Extension not found.',
@@ -911,17 +913,34 @@ class FreeSwitchController extends Controller
 
         // If the socket is connected, eavesdrop on the call
         if ($this->connected) {
-            $cmd = "api originate sofia/default/{$extension}@{$domain}&eavesdrop($uuid)";
+            // $cmd = "api originate sofia/default/{$extension->extension}@{$domain} &eavesdrop($uuid)";
+            $cmd = "api originate user/{$extension->extension}@{$domain} &eavesdrop($uuid)";
 
             $response = $this->socket->request($cmd);
-            // Prepare the response data
-            $response = [
-                'status' => true, // Indicates the success status of the request
-                'data' => $response,
-                'message' => 'Successfully eavesdrop call.',
-            ];
-            // Return the response as JSON with HTTP status code 200 (OK)
-            return response()->json($response, Response::HTTP_OK);
+
+            if (strpos($response, "-ERR NO_USER_RESPONSE") !== false) {
+                $response = [
+                    'status' => false, // Indicates the success status of the request
+                    'data' => $response,
+                    'message' => 'User rejected the call.',
+                ];
+
+                // Return the response as JSON with HTTP status code 400 (OK)
+                return response()->json($response, Response::HTTP_BAD_REQUEST);
+            }
+
+            // // Check if the response contains "+OK"
+            if (strpos($response, "+OK") !== false) {
+                // Prepare the response data
+                $response = [
+                    'status' => true, // Indicates the success status of the request
+                    'data' => $response,
+                    'message' => 'Successfully eavesdrop call.',
+                ];
+                // Return the response as JSON with HTTP status code 200 (OK)
+                return response()->json($response, Response::HTTP_OK);
+            }
+
         } else {
             // If the socket is not connected, return a disconnected response
             return $this->disconnected();
