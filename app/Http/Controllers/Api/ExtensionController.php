@@ -187,6 +187,13 @@ class ExtensionController extends Controller
                 'ignorebusy' => 'boolean',
                 'blockIncomingStatus' => 'boolean',
                 'blockOutGoingStatus' => 'boolean',
+                'moh_sound' => [
+                    'integer',
+                    Rule::exists('sounds', 'id')->where(function ($query) use ($request) {
+                        $query->where('id', $request->moh_sound)
+                            ->where('account_id', $request->account_id);
+                    })
+                ],
             ]
         );
 
@@ -427,6 +434,13 @@ class ExtensionController extends Controller
 
                 'blockIncomingStatus' => 'boolean',
                 'blockOutGoingStatus' => 'boolean',
+                'moh_sound' => [
+                    'integer',
+                    Rule::exists('sounds', 'id')->where(function ($query) use ($request) {
+                        $query->where('id', $request->moh_sound)
+                            ->where('account_id', $request->account_id);
+                    })
+                ],
             ]
         );
 

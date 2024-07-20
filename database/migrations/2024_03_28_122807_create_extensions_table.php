@@ -69,6 +69,8 @@ return new class extends Migration
 
             $table->boolean('sofia_status')->default(false);
 
+            $table->foreignId('moh_sound')->nullable()->references('id')->on('sounds');
+
             $table->softDeletes();
             $table->timestamps();
         });
