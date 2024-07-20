@@ -516,6 +516,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::get('freeswitch/reloadacl', 'reloadacl');
         Route::get('freeswitch/reloadXml', 'reloadXml');
         Route::post('freeswitch/call', 'call');
+        Route::get('freeswitch/call-kill/{uuid}', 'callKill');
+        Route::get('freeswitch/call-barge/{uuid}', 'bargeCall');
+        Route::get('freeswitch/call-eavesdrop/{uuid}', 'eavesdropCall');
         // Route::get('freeswitch/shutDown', 'shutDown');
 
         Route::get('freeswitch/checkActiveExtensionOnServer', 'checkActiveExtensionOnServer');

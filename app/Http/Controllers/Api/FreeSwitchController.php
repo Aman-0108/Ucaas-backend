@@ -9,6 +9,7 @@ use App\Traits\Esl;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
@@ -127,9 +128,6 @@ class FreeSwitchController extends Controller
 
             // Check if the string contains "0 total"
             if (strpos($response, '0 total') !== false) {
-                // Remove line breaks from the string
-                // $string = str_replace(array("\r", "\n"), '', $response);
-
                 // No registrations found, return an empty response
                 $response = [
                     'status' => true, // Indicates the success status of the request
@@ -798,6 +796,132 @@ class FreeSwitchController extends Controller
 
             // Send the customized response to the UI via WebSocket
             $socketController->send($customizedResponse);
+        } else {
+            // If the socket is not connected, return a disconnected response
+            return $this->disconnected();
+        }
+    }
+
+    /**
+     * Kills a call by UUID.
+     *
+     * @param string $uuid The UUID of the call to kill.
+     *
+     * @return \Illuminate\Http\JsonResponse The JSON response indicating the status of the request.
+     */
+    protected function callKill($uuid)
+    {
+        if ($this->connected) {
+            // Build the API command to kill the call
+            $cmd = "api uuid_kill {$uuid}";
+            // Check call state
+            $response = $this->socket->request($cmd);
+
+            if (trim($response) == "-ERR No such channel!") {
+                // If the call does not exist, return an error response
+                $response = [
+                    'status' => false, // Indicates the success status of the request
+                    'message' => 'Wrong channel. Please try again.',
+                ];
+
+                // Return the response as JSON with HTTP status code 400 (Bad Request)
+                return response()->json($response, Response::HTTP_BAD_REQUEST);
+            }
+
+            // Prepare the response data
+            $response = [
+                'status' => true, // Indicates the success status of the request
+                'message' => 'Successfully terminated call.',
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
+        } else {
+            // If the socket is not connected,
+            return $this->disconnected();
+        }
+    }
+
+    protected function bargeCall($uuid)
+    {
+        if ($this->connected) {
+            // Build the API command to kill the call
+            $cmd = "api uuid_barge {$uuid}";
+            // Check call state
+            $response = $this->socket->request($cmd);
+            // Prepare the response data
+            $response = [
+                'status' => true, // Indicates the success status of the request
+                'message' => 'Successfully barge call.',
+            ];
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
+        } else {
+            // If the socket is not connected,
+            return $this->disconnected();
+        }
+    }
+
+    /**
+     * Eavesdrop on a call using the provided UUID
+     *
+     * @param string $uuid The unique identifier of the call
+     * @return \Illuminate\Http\JsonResponse
+     */
+    protected function eavesdropCall($uuid)
+    {
+        // Get the extension of the authenticated user
+        $extension = Auth::user()->extension_id;
+
+        // Check if the extension is empty
+        if (empty($extension)) {
+            $response = [
+                'status' => false,
+                'message' => 'Extension not found.',
+            ];
+            // Return the response as JSON with HTTP status code 400 (Bad Request)
+            return response()->json($response, Response::HTTP_BAD_REQUEST);
+        }
+
+        // Get the account ID of the authenticated user
+        $accountId = Auth::user()->account_id;
+
+        // Check if the account ID is empty
+        if (empty($accountId)) {
+            $response = [
+                'status' => false,
+                'message' => 'Account not found.',
+            ];
+            // Return the response as JSON with HTTP status code 400 (Bad Request)
+            return response()->json($response, Response::HTTP_BAD_REQUEST);
+        }
+
+        // Get the domain name associated with the account ID
+        $domain = Domain::where('account_id', $accountId)->first()->domain_name;
+
+        // Check if the domain is empty
+        if (empty($domain)) {
+            $response = [
+                'status' => false,
+                'message' => 'Domain not found.',
+            ];
+            // Return the response as JSON with HTTP status code 400 (Bad Request)
+            return response()->json($response, Response::HTTP_BAD_REQUEST);
+        }
+
+        // If the socket is connected, eavesdrop on the call
+        if ($this->connected) {
+            $cmd = "api originate sofia/default/{$extension}@{$domain}&eavesdrop($uuid)";
+
+            $response = $this->socket->request($cmd);
+            // Prepare the response data
+            $response = [
+                'status' => true, // Indicates the success status of the request
+                'data' => $response,
+                'message' => 'Successfully eavesdrop call.',
+            ];
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
         } else {
             // If the socket is not connected, return a disconnected response
             return $this->disconnected();
