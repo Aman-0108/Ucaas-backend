@@ -10,7 +10,7 @@ class WebSocketController extends Controller
     public function send($data)
     {
         // WebSocket server URL
-        $serverUrl = 'ws://192.168.1.88:'. config('services.websocket.port').'?type=admin';
+        $serverUrl = 'ws://192.168.1.89:'. config('services.websocket.port').'?type=admin';
         $client = new Client($serverUrl);
 
         // $client->text("Hello WebSocket.org!");

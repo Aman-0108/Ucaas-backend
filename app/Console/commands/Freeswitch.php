@@ -40,11 +40,9 @@ class Freeswitch extends Command
      * @return void
      */
     public function handle()
-    { 
+    {
         // Retry loop
         while (true) {
-
-            $this->info('running...');
             // Attempt to connect to FreeSWITCH ESL
             $connected = $this->connectToESL();
 
@@ -56,24 +54,8 @@ class Freeswitch extends Command
                 // Subscribe to receive notifications for all events
                 $this->freeSwitch->subscribe('ALL');
 
-                while (true) {
-                    $this->info('Listening for active calls...');
-                    
-                    // Get active calls
-                    $this->getActiveCalls();
-
-                    // Wait for 3 seconds before listening again
-                    sleep(3);
-                }
-
-                // Continuously listen for events from the FreeSWITCH server
-                while (true) {                    
-                    // Start listening for events
-                    $this->freeSwitch->startListening();
-
-                    // Wait for 5 seconds before listening again
-                    sleep(5);
-                }
+                // Start listening for events
+                $this->freeSwitch->startListening();
             } else {
                 // If connection fails, inform the user and retry after a delay
                 $this->info('Failed to connect to FreeSWITCH ESL. Retrying in 5 seconds...');
@@ -91,10 +73,11 @@ class Freeswitch extends Command
     {
         try {
             // Attempt to connect to FreeSWITCH ESL
-            $this->freeSwitch->connect();
+            $response = $this->freeSwitch->connect();
 
+            return ($response) ? $response : false;
             // Return true if connection is successful
-            return true;
+
         } catch (\Exception $e) {
             // Log any connection errors (optional)
             $this->error('Error connecting to FreeSWITCH ESL: ' . $e->getMessage());
@@ -102,21 +85,5 @@ class Freeswitch extends Command
             // Return false if connection fails
             return false;
         }
-    }
-
-    /**
-     * Get the active calls from FreeSwitch using the FreeSwitchController.
-     *
-     * @return \Illuminate\Http\JsonResponse The JSON response containing the active calls.
-     */
-    protected function getActiveCalls()
-    {
-        $this->info('Fetching active calls...');
-        // Create an instance of the FreeSwitchController
-        $fsController = new FreeSwitchController();
-        
-        // Call the getActiveCalls method of the FreeSwitchController to get the active calls
-        $fsController->getActiveCall();
-        
     }
 }
