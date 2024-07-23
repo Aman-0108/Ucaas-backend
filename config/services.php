@@ -49,7 +49,8 @@ return [
     ],
 
     'websocket' => [
-        'port' => env('WEBSOCKET_PORT', 8091)
+        'port' => env('WEBSOCKET_PORT', 8091),
+        'ip' => env('WEBSOCKET_IP', '127.0.0.1')
     ],
 
     'stripe' => [
