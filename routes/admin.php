@@ -2,12 +2,17 @@
 
 use App\Http\Controllers\Api\Admin\DocumentController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DestinationController;
+use App\Http\Controllers\Api\DestinationRateController;
 use App\Http\Controllers\Api\DidRateController;
 use App\Http\Controllers\Api\DidVendorController;
 use App\Http\Controllers\Api\DomainController;
 use App\Http\Controllers\Api\FeatureController;
 use App\Http\Controllers\Api\PackageController;
 use App\Http\Controllers\Api\PermissionController;
+use App\Http\Controllers\Api\RateController;
+use App\Http\Controllers\Api\RatingPlanController;
+use App\Http\Controllers\Api\RatingProfileController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\TimezoneController;
 use Illuminate\Support\Facades\Route;
@@ -151,6 +156,106 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
             Route::put('rate/update/{id}', 'update');
             Route::delete('rate/destroy/{id}', 'destroy');
             Route::get('rate/show/{id}/{rateType}', 'show');
+        });
+    });
+
+    // CG Destination
+    Route::controller(DestinationController::class)->group(function () {
+        Route::prefix('destination')->name('destination.')->group(function () {
+            // To get all the addresses
+            Route::get('all', 'index')->name('browse');
+
+            // To get the particular address by Id
+            Route::get('show/{id}', 'show')->name('read');
+
+            // To update the particular address by Id
+            Route::put('update/{id}', 'update')->name('edit');
+
+            // To store new address
+            Route::post('store', 'store')->name('add');
+
+            // To destroy the address by Id
+            Route::delete('destroy/{id}', 'destroy')->name('delete');
+        });
+    });
+
+    // CG Rates
+    Route::controller(RateController::class)->group(function () {
+        Route::prefix('rate')->name('rate.')->group(function () {
+            // To get all the addresses
+            Route::get('all', 'index')->name('browse');
+
+            // To get the particular address by Id
+            Route::get('show/{id}', 'show')->name('read');
+
+            // To update the particular address by Id
+            Route::put('update/{id}', 'update')->name('edit');
+
+            // To store new address
+            Route::post('store', 'store')->name('add');
+
+            // To destroy the address by Id
+            Route::delete('destroy/{id}', 'destroy')->name('delete');
+        });
+    });
+
+    // CG Destination Rates
+    Route::controller(DestinationRateController::class)->group(function () {
+        Route::prefix('destination-rate')->name('destinationrate.')->group(function () {
+            // To get all the addresses
+            Route::get('all', 'index')->name('browse');
+
+            // To get the particular address by Id
+            Route::get('show/{id}', 'show')->name('read');
+
+            // To update the particular address by Id
+            Route::put('update/{id}', 'update')->name('edit');
+
+            // To store new address
+            Route::post('store', 'store')->name('add');
+
+            // To destroy the address by Id
+            Route::delete('destroy/{id}', 'destroy')->name('delete');
+        });
+    });
+
+    // CG Rating Plans
+    Route::controller(RatingPlanController::class)->group(function () {
+        Route::prefix('rating-plan')->name('ratingplan.')->group(function () {
+            // To get all the addresses
+            Route::get('all', 'index')->name('browse');
+
+            // To get the particular address by Id
+            Route::get('show/{id}', 'show')->name('read');
+
+            // To update the particular address by Id
+            Route::put('update/{id}', 'update')->name('edit');
+
+            // To store new address
+            Route::post('store', 'store')->name('add');
+
+            // To destroy the address by Id
+            Route::delete('destroy/{id}', 'destroy')->name('delete');
+        });
+    });
+
+    // CG Rating Profiles
+    Route::controller(RatingProfileController::class)->group(function () {
+        Route::prefix('rating-profile')->name('ratingprofile.')->group(function () {
+            // To get all the addresses
+            Route::get('all', 'index')->name('browse');
+
+            // To get the particular address by Id
+            Route::get('show/{id}', 'show')->name('read');
+
+            // To update the particular address by Id
+            Route::put('update/{id}', 'update')->name('edit');
+
+            // To store new address
+            Route::post('store', 'store')->name('add');
+
+            // To destroy the address by Id
+            Route::delete('destroy/{id}', 'destroy')->name('delete');
         });
     });
 });
