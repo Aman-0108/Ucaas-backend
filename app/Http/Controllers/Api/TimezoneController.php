@@ -19,7 +19,7 @@ class TimezoneController extends Controller
     {
         $timezones = Timezone::query();
 
-        if ($request->has('account')) {
+        if ($request->has('account_id')) {
             $timezones->where('account_id', $request->account);
         }
 

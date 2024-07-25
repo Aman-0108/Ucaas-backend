@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DidRateController;
 use App\Http\Controllers\Api\DidVendorController;
 use App\Http\Controllers\Api\DomainController;
 use App\Http\Controllers\Api\FeatureController;
+use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\PackageController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RateController;
@@ -28,9 +29,17 @@ Route::group(['middleware' => 'guest'], function () {
 
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
+    // Auth
     Route::controller(AuthController::class)->group(function () {
         // To logout the authenticated user
         Route::get('logout', 'logout');
+    });
+
+    Route::controller(LeadController::class)->group(function () {
+        Route::prefix('leads')->name('lead.')->group(function () {
+            // To get all the leads
+            Route::get('all', 'index')->name('browse');
+        });
     });
 
     // All timezones

@@ -15,21 +15,35 @@ class DefaultPermissionSeeder extends Seeder
      */
     public function run()
     {
-        $filter = [
-            'Account', 'User', 'Role', 'RolePermission', 'Extension', 'ChannelHangupComplete', 'WalletTransaction', 'BillingAddress', 'CardDetail', 'Domain', 'Timezone', 'Dialplan', 'Sound', 'Gateway'
-        ];
+        // $filter = [
+        //     'Account', 'User', 'Role', 'RolePermission', 'Extension', 'ChannelHangupComplete', 'WalletTransaction', 'BillingAddress', 'CardDetail', 'Domain', 'Timezone', 'Dialplan', 'Sound', 'Gateway'
+        // ];
 
-        $Permissions = Permission::whereIn('model', $filter)->get();
+        $filter = ['Account'];
+
+        $permissions = Permission::whereIn('model', $filter)->get();
 
         $formatteddata = [];
 
-        foreach ($Permissions as $permission) {
-            $formatteddata[] = [
-                'permission_id' => $permission->id,
-                'setfor' => 'New Company',
-                'created_at' => date("Y-m-d H:i:s"),
-                'updated_at' => date("Y-m-d H:i:s")
-            ];
+        foreach ($permissions as $permission) {
+            if($permission->type == 'account') {
+                if($permission->action == 'read') {
+                    $formatteddata[] = [
+                        'permission_id' => $permission->id,
+                        'setfor' => 'New Company',
+                        'created_at' => date("Y-m-d H:i:s"),
+                        'updated_at' => date("Y-m-d H:i:s")
+                    ];                    
+                }
+            } else {
+                $formatteddata[] = [
+                    'permission_id' => $permission->id,
+                    'setfor' => 'New Company',
+                    'created_at' => date("Y-m-d H:i:s"),
+                    'updated_at' => date("Y-m-d H:i:s")
+                ];
+            }
+           
         }
 
         DefaultPermission::insert($formatteddata);

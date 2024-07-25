@@ -69,15 +69,16 @@ Route::group(['middleware' => 'guest'], function () {
     Route::get('free/package/details/{id}', [PackageController::class, 'show']);
 
     // All timezones
-    Route::get('timezones/{Account?}', [TimezoneController::class, 'index']);
+    Route::get('timezones', [TimezoneController::class, 'index']);
 
-    Route::controller(LeadController::class)->group(function () {
-        // To get all the leads
-        Route::get('leads', 'index');
+    // To create new lead 
+    Route::post('lead-store', [LeadController::class, 'store']);
 
-        // To create new lead 
-        Route::post('lead-store', 'store');
-    });
+    // To create new payment 
+    Route::post('pay', [PaymentController::class, 'paymentForNewAccount']);
+
+    // To generate invoice
+    Route::post('generate-invoice', [InvoiceController::class, 'generateInvoice']);
 
     // User Auth
     Route::controller(AuthController::class)->group(function () {
@@ -90,16 +91,7 @@ Route::group(['middleware' => 'guest'], function () {
         Route::post('verifyOTP', 'verifyOTP');
         // Route::post('reset-password','reset')->name('password.reset');
     });
-
-    // Payment Controller
-    Route::controller(PaymentController::class)->group(function () {
-        Route::post('pay', 'paymentForNewAccount')->name('company.pay');
-    });
-
-    // Invoice
-    Route::controller(InvoiceController::class)->group(function () {
-        Route::post('generate-invoice', 'generateInvoicet')->name('generate.invoice');
-    });
+   
 });
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
