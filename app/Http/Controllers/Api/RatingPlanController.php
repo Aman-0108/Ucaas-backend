@@ -32,7 +32,9 @@ class RatingPlanController extends Controller
     public function index()
     {
         // Retrieve all rating plan from the database
-        $ratingplan = RatingPlan::all();
+        $ratingplan = RatingPlan::with([
+            'destinationRate:id,name,DestinationId,RatesTag,RoundingMethod,RoundingDecimals,MaxCost,MaxCostStrategy',
+        ])->get();
 
         // Prepare the response data
         $response = [

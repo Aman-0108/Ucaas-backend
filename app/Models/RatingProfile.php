@@ -10,4 +10,9 @@ class RatingProfile extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    public function ratingPlan()
+    {
+        return $this->hasOne(RatingPlan::class, 'id', 'RatingPlanId');
+    }
 }

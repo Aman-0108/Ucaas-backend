@@ -32,7 +32,9 @@ class RatingProfileController extends Controller
     public function index()
     {
         // Retrieve all rating profiles from the database
-        $ratingProfiles = RatingProfile::all();
+        $ratingProfiles = RatingProfile::with([
+            'ratingPlan:id,name'
+        ])->get();
 
         // Prepare the response data
         $response = [
