@@ -32,12 +32,12 @@ class DialplanController extends Controller
     public function index(Request $request)
     {
         // Retrieve all dialplans from the database
-        $dialplans = Dialplan::query();
+        $dialplans = Dialplan::with(['did']);
 
         // Check if the request contains an 'account' parameter
-        if ($request->has('account')) {
+        if ($request->has('account_id')) {
             // If 'account' parameter is provided, filter outbound routings by account ID
-            $dialplans->where('account_id', $request->account);
+            $dialplans->where('account_id', $request->account_id);
         }
 
         $dialplans = $dialplans->get();
@@ -64,7 +64,7 @@ class DialplanController extends Controller
     public function show($id)
     {
         // Find the dialplan by ID
-        $dialplan = Dialplan::find($id);
+        $dialplan = Dialplan::with(['did'])->find($id);
 
         // Check if the gateway exists
         if (!$dialplan) {
