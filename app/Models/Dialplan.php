@@ -13,6 +13,6 @@ class Dialplan extends Model
 
     public function did()
     {
-        return $this->hasOne(DidDetail::class, 'did_id', 'id');
+        return $this->hasOne(DidDetail::class, 'id', 'did_id');
     }
 }
