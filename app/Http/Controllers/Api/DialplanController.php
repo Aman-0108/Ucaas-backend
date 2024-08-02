@@ -127,6 +127,7 @@ class DialplanController extends Controller
                 'record' => 'string|nullable',
                 'holdMusic' => 'string|nullable',
                 'action' => 'string|nullable',
+                'did_id' => 'exists:did_details,id',
                 'created_by' => 'string|exists:users,id|nullable'
             ]
         );
@@ -229,6 +230,7 @@ class DialplanController extends Controller
                 'holdMusic' => 'string|nullable',
                 'dialplan_xml' => 'string',
                 'action' => 'string|nullable',
+                'did_id' => 'exists:did_details,id',
                 'created_by' => 'string|exists:users,id|nullable'
             ]
         );

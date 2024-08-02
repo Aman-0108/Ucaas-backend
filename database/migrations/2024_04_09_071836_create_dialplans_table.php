@@ -43,6 +43,8 @@ class CreateDialplansTable extends Migration
             $table->bigInteger('created_by')->nullable();
             $table->string('action')->nullable();
 
+            $table->foreignId('did_id')->nullable()->references('id')->on('did_details')->onUpdate('cascade')->onDelete('cascade');
+
             $table->foreignId('call_center_queues_id')->nullable()->references('id')->on('call_center_queues');
 
             $table->softDeletes();
