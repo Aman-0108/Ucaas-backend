@@ -16,7 +16,7 @@ class CreateRatingPlansTable extends Migration
         Schema::create('rating_plans', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->foreignId('DestinationRatesId')->references('id')->on('destination_rates');
+            $table->foreignId('DestinationRatesId')->references('id')->on('destination_rates')->onUpdate('cascade')->onDelete('cascade');
             $table->string('TimingTag');
             $table->integer('Weight');
             $table->timestamps();

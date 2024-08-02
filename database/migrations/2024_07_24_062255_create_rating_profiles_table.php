@@ -19,7 +19,7 @@ class CreateRatingProfilesTable extends Migration
             $table->enum('Category', ['call', 'sms', 'data', 'custom'])->default('call');
             $table->string('Subject');
             $table->timestamp('ActivationTime')->nullable();
-            $table->foreignId('RatingPlanId')->references('id')->on('rating_plans');
+            $table->foreignId('RatingPlanId')->references('id')->on('rating_plans')->onUpdate('cascade')->onDelete('cascade');
             $table->string('RatesFallbackSubject')->nullable();
             $table->timestamps();
         });

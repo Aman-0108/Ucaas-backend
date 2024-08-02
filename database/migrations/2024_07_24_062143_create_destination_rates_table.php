@@ -16,8 +16,8 @@ class CreateDestinationRatesTable extends Migration
         Schema::create('destination_rates', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->foreignId('DestinationId')->references('id')->on('destinations');
-            $table->foreignId('RatesTag')->references('id')->on('rates');
+            $table->foreignId('DestinationId')->references('id')->on('destinations')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('RatesTag')->references('id')->on('rates')->onUpdate('cascade')->onDelete('cascade');
             $table->string('RoundingMethod');
             $table->integer('RoundingDecimals');
             $table->decimal('MaxCost', 10, 2); // Adjust precision and scale as needed
