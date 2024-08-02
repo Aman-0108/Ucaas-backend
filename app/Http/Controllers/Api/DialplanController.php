@@ -40,7 +40,7 @@ class DialplanController extends Controller
             $dialplans->where('account_id', $request->account_id);
         }
 
-        $dialplans = $dialplans->get();
+        $dialplans = $dialplans->orderBy('id', 'desc')->get();
 
         // Prepare the response data
         $response = [
