@@ -84,6 +84,16 @@ class ChannelHangupController extends Controller
 
         // Retrieve all calls
         $query = ChannelHangupComplete::query();
+
+        if($request->has('account_id')) {
+            $query->where('account_id', $request->account_id);
+        }
+
+        if($request->has('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        // Retrieve all calls
         $all = $query->get();
 
         // Filter all calls by success and missed status
