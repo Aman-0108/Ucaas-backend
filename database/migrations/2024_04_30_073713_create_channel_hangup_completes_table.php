@@ -75,6 +75,10 @@ class CreateChannelHangupCompletesTable extends Migration
 
             $table->bigInteger('account_id')->nullable();
 
+            $table->foreignId('user_id')->nullable()->references('id')->on('users')->onUpdate('cascade')->onDelete('cascade');
+
+            $table->string('recording_path')->nullable();
+
             $table->softDeletes();
 
             // $table->timestamp('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
