@@ -33,6 +33,9 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::controller(AuthController::class)->group(function () {
         // To logout the authenticated user
         Route::get('logout', 'logout');
+
+        // To get the authenticated user
+        Route::get('user', 'user');
     });
 
     Route::controller(LeadController::class)->group(function () {

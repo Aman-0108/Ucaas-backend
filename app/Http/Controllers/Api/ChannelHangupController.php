@@ -83,7 +83,10 @@ class ChannelHangupController extends Controller
         $missed = 'NOANSWER';
 
         // Retrieve all calls
-        $query = ChannelHangupComplete::query();
+        $query = ChannelHangupComplete::with([
+            'callerUser:id,username',
+            'calleeUser:id,username'
+        ]);
 
         if($request->has('account_id')) {
             $query->where('account_id', $request->account_id);
@@ -96,25 +99,12 @@ class ChannelHangupController extends Controller
         // Retrieve all calls
         $all = $query->get();
 
+        // caller_user_id
+
+
         // Filter all calls by success and missed status
         $allSuccess = $this->filterByValue($all, $success);
         $allMissed = $this->filterByValue($all, $missed);
-
-        // Retrieve inbound calls
-        $query = ChannelHangupComplete::query();
-        $inbound = $query->where('Call-Direction', 'inbound')->get();
-
-        // Filter inbound calls by success and missed status
-        $inboundSuccess = $this->filterByValue($inbound, $success);
-        $inboundMissed = $this->filterByValue($inbound, $missed);
-
-        // Retrieve outbound calls
-        $query = ChannelHangupComplete::query();
-        $outbound = $query->where('Call-Direction', 'outbound')->get();
-
-        // Filter outbound calls by success and missed status
-        $outboundSuccess = $this->filterByValue($outbound, $success);
-        $outboundMissed = $this->filterByValue($outbound, $missed);
 
         // Prepare call details for all calls
         $allDetails = [
@@ -125,35 +115,10 @@ class ChannelHangupController extends Controller
             'active' => null
         ];
 
-        // Prepare call details for inbound calls
-        $inboundDetails = [
-            'calls' => $inbound,
-            'count' => $inbound->count(),
-            'success' => $inboundSuccess->count(),
-            'missed' => $inboundMissed->count(),
-            'active' => null
-        ];
-
-        // Prepare call details for outbound calls
-        $outboundDetails = [
-            'calls' => $outbound,
-            'count' => $outbound->count(),
-            'success' => $outboundSuccess->count(),
-            'missed' => $outboundMissed->count(),
-            'active' => null
-        ];
-
-        // Combine all call details into a single data array
-        $data = [
-            'all' => $allDetails,
-            'inboundData' => $inboundDetails,
-            'outboundData' => $outboundDetails
-        ];
-
         // Prepare JSON response
         $response = [
             'status' => true,
-            'data' => $data,
+            'data' => $allDetails,
             'message' => 'Successfully fetched.'
         ];
 

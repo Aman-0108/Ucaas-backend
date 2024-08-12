@@ -10,16 +10,21 @@ class ChannelHangupComplete extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $guarded = [];
-    
+    protected $guarded = [];    
 
     // public function scopeMale($query)
     // {
     //     return $query->where('gender', '=', 'male');
     // }
 
-    // public function scopeOverTwentyFive($query)
-    // {
-    //     return $query->where('age', '>', 25);
-    // }
+    public function callerUser()
+    {
+        return $this->hasOne(User::class, 'id', 'caller_user_id');
+    }
+
+    public function calleeUser()
+    {
+        return $this->hasOne(User::class, 'id', 'callee_user_id');
+    }
+    
 }
