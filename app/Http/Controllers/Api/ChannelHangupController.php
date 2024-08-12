@@ -76,9 +76,6 @@ class ChannelHangupController extends Controller
      */
     public function callDetailsByUserId(Request $request)
     {
-        // Retrieve the ID of the authenticated user making the request
-        // $userId = $request->user()->id;
-
         $success = 'SUCCESS';
         $missed = 'NOANSWER';
 
@@ -93,9 +90,7 @@ class ChannelHangupController extends Controller
         }
 
         if($request->has('user_id')) {
-            
-            $query->where('user_id', $request->user_id);
-            
+            // If 'user_id' parameter is provided, filter calls by user ID            
             $userId = $request->user_id;
             
             $query->where(function ($q) use ($userId) {
