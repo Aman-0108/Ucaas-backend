@@ -7,6 +7,7 @@ use App\Models\Contact;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class ContactController extends Controller
 {
@@ -18,10 +19,15 @@ class ContactController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse The JSON response containing the list of contacts
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Retrieve all contacts from the database
-        $contacts = Contact::all();
+        // Retrieve the authenticated user's ID
+        $userId = $request->user()->id;
+
+        $query = Contact::query();
+
+        // Filter contacts by user ID if provided
+        $contacts = $userId ? $query->where('user_id', $userId)->get() : $query->get();
 
         // Prepare a success response with the list of contacts
         $response = [
@@ -30,7 +36,7 @@ class ContactController extends Controller
             'message' => 'Successfully fetched all contacts'
         ];
 
-        // Return a JSON response with the list of contacts with status(200)
+        // Return a JSON response with the list of contacts
         return response()->json($response, Response::HTTP_OK);
     }
 
@@ -87,9 +93,22 @@ class ContactController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
+                'user_id' => 'required|exists:users,id',
                 'title' => 'required',
-                'name' => 'required|string|unique:contacts,name',
-                'did' => 'required|string|unique:contacts,did',
+                'name' => [
+                    'required',
+                    'string',
+                    Rule::unique('contacts')->where(function ($query) use ($request) {
+                        return $query->where('user_id', $request->input('user_id'));
+                    }),
+                ],
+                'did' => [
+                    'required',
+                    'string',
+                    Rule::unique('contacts')->where(function ($query) use ($request) {
+                        return $query->where('user_id', $request->input('user_id'));
+                    }),
+                ],
             ]
         );
 
@@ -150,13 +169,30 @@ class ContactController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
-        // Perform validation on the request data
+        // Validate the incoming request
         $validator = Validator::make(
             $request->all(),
             [
+                'user_id' => 'required|exists:users,id',
                 'title' => 'required',
-                'name' => 'required|string|unique:contacts,name,' . $id,
-                'did' => 'required|string|unique:contacts,did,' . $id,
+                'name' => [
+                    'required',
+                    'string',
+                    Rule::unique('contacts')
+                        ->where(function ($query) use ($request) {
+                            return $query->where('user_id', $request->input('user_id'));
+                        })
+                        ->ignore($id), // Ignore the current record's ID
+                ],
+                'did' => [
+                    'required',
+                    'string',
+                    Rule::unique('contacts')
+                        ->where(function ($query) use ($request) {
+                            return $query->where('user_id', $request->input('user_id'));
+                        })
+                        ->ignore($id), // Ignore the current record's ID
+                ],
             ]
         );
 
