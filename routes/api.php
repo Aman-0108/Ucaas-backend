@@ -33,6 +33,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\StripeController;
 use App\Http\Controllers\Api\CommioController;
+use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\DiddetailsController;
 use App\Http\Controllers\Api\TfnController;
 use App\Http\Controllers\Api\DidRateController;
@@ -91,7 +92,6 @@ Route::group(['middleware' => 'guest'], function () {
         Route::post('verifyOTP', 'verifyOTP');
         // Route::post('reset-password','reset')->name('password.reset');
     });
-   
 });
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
@@ -639,6 +639,26 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
             // To destroy the account by Id
             Route::delete('{id}', 'destroy')->name('delete');
+        });
+    });
+
+    // contact
+    Route::controller(ContactController::class)->group(function () {
+        Route::prefix('contact')->name('contact.')->group(function () {
+            // To get all the addresses
+            Route::get('all', 'index')->name('browse');
+
+            // To get the particular address by Id
+            Route::get('show/{id}', 'show')->name('read');
+
+            // To update the particular address by Id
+            Route::put('update/{id}', 'update')->name('edit');
+
+            // To store new address
+            Route::post('store', 'store')->name('add');
+
+            // To destroy the address by Id
+            Route::delete('destroy/{id}', 'destroy')->name('delete');
         });
     });
 });
