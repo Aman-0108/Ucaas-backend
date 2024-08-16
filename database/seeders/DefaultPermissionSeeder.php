@@ -16,7 +16,7 @@ class DefaultPermissionSeeder extends Seeder
      */
     public function run()
     {
-        $filteredModels = ['Account'];
+        $filteredModels = ['Account', 'User', 'Role', 'RolePermission', 'Extension', 'ChannelHangupComplete', 'WalletTransaction', 'BillingAddress', 'CardDetail', 'Domain', 'Timezone', 'Dialplan', 'Sound', 'Gateway'];
 
         $permissions = Permission::whereIn('model', $filteredModels)->get();
 
@@ -59,7 +59,4 @@ class DefaultPermissionSeeder extends Seeder
         return $formatteddata;
     }
 
-    //     // $filter = [
-    //     //     'Account', 'User', 'Role', 'RolePermission', 'Extension', 'ChannelHangupComplete', 'WalletTransaction', 'BillingAddress', 'CardDetail', 'Domain', 'Timezone', 'Dialplan', 'Sound', 'Gateway'
-    //     // ];
 }

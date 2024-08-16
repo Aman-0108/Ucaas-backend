@@ -40,6 +40,8 @@ class CreateAccountsTable extends Migration
             $table->foreignId('document_approved_by')->nullable()->references('id')->on('users');
 
             $table->text('firebase_token')->nullable();
+
+            $table->decimal('balance', 10, 2)->default(0.00);
             
             $table->softDeletes();
             $table->timestamps();

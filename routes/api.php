@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AccountDetailsController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BillingAddressController;
 use App\Http\Controllers\Api\CallCentreController;
+use App\Http\Controllers\Api\CallRateController;
 use App\Http\Controllers\Api\CardController;
 use App\Http\Controllers\Api\ChannelHangupController;
 use App\Http\Controllers\Api\DialplanController;

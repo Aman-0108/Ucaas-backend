@@ -290,6 +290,8 @@ class PaymentController extends Controller
         // If transaction is successful
         if ($responseData['status']) {
 
+            DB::beginTransaction();
+
             $walletDataDetail = [
                 'created_by'  => $userId,
                 'account_id' => $request->account_id,
@@ -344,6 +346,8 @@ class PaymentController extends Controller
 
             // Retrieve account details
             $account = Account::find($request->account_id);
+
+            DB::commit();
 
             // Prepare data for email notification
             $maildata = [

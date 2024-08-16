@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Admin\DocumentController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CallRateController;
 use App\Http\Controllers\Api\DestinationController;
 use App\Http\Controllers\Api\DestinationRateController;
 use App\Http\Controllers\Api\DidRateController;
@@ -254,6 +255,26 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     // CG Rating Profiles
     Route::controller(RatingProfileController::class)->group(function () {
         Route::prefix('rating-profile')->name('ratingprofile.')->group(function () {
+            // To get all the addresses
+            Route::get('all', 'index')->name('browse');
+
+            // To get the particular address by Id
+            Route::get('show/{id}', 'show')->name('read');
+
+            // To update the particular address by Id
+            Route::put('update/{id}', 'update')->name('edit');
+
+            // To store new address
+            Route::post('store', 'store')->name('add');
+
+            // To destroy the address by Id
+            Route::delete('destroy/{id}', 'destroy')->name('delete');
+        });
+    });
+
+    // Call rate Plan
+    Route::controller(CallRateController::class)->group(function () {
+        Route::prefix('call-rates-plans')->middleware('permission')->name('callratesplan.')->group(function () {
             // To get all the addresses
             Route::get('all', 'index')->name('browse');
 

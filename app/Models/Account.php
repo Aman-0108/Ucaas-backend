@@ -102,4 +102,14 @@ class Account extends Authenticatable
     {
         return $this->hasMany(DidDetail::class, 'account_id', 'id');
     }
+
+    /**
+     * Get the bundle minutes associated with the account.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function bundleMinutes()
+    {
+        return $this->hasOne(BundleMinute::class, 'account_id', 'id');
+    }
 }

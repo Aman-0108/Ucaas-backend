@@ -52,6 +52,7 @@ class AccountController extends Controller
             'details:id,account_id,document_id,path,status,description',
             'details.document:id,name',
             'balance',
+            'bundleMinutes',
             'subscription',
             'payments' => function ($query) {
                 $query->select('account_id', 'amount_subtotal', 'transaction_id', 'currency', 'payment_status', 'transaction_date', 'invoice_url', 'subscription_type')
@@ -108,6 +109,7 @@ class AccountController extends Controller
             'details:id,account_id,document_id,path,status,description',
             'details.document:id,name',
             'balance',
+            'bundleMinutes',
             'subscription',
             'payments' => function ($query) {
                 $query->select('account_id', 'amount_subtotal', 'transaction_id', 'currency', 'payment_status', 'transaction_date', 'invoice_url', 'subscription_type')
@@ -604,6 +606,9 @@ class AccountController extends Controller
             // If account balance doesn't exist, create a new one
             AccountBalance::create($inputData);
         }
+
+        $account->balance = $account->balance + $amount;
+        $account->save();
 
         // Prepare the response data
         $response = [
