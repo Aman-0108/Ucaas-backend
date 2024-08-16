@@ -941,7 +941,7 @@ class FreeSwitchController extends Controller
             }
 
             if (strpos($response, "+OK") !== false) {
-                return $this->successResponse("Successfully {$action} the call.", $response);
+                return response()->json("Successfully {$action} the call.", $response);
             }
         }
 
