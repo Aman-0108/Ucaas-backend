@@ -842,7 +842,7 @@ class FreeSwitchController extends Controller
         }
     }
 
-    protected function bargeCall($uuid)
+    protected function barge($uuid)
     {
         if ($this->connected) {
             // Build the API command to kill the call
@@ -868,14 +868,34 @@ class FreeSwitchController extends Controller
      * @param string $uuid The unique identifier of the call
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function eavesdropCall($uuid)
+    protected function eavesdrop($uuid)
     {
-        // Get the extension of the authenticated user
-        $extensionId = Auth::user()->extension_id;
+        return $this->handleCallAction($uuid, 'eavesdrop');
+    }
 
-        $extension = Extension::find($extensionId);
+    /**
+     * Intercept a call using the provided UUID
+     *
+     * @param string $uuid The unique identifier of the call
+     * @return \Illuminate\Http\JsonResponse
+     */
+    protected function intercept($uuid)
+    {
+        return $this->handleCallAction($uuid, 'intercept');
+    }
 
-        // Check if the extension is empty
+    /**
+     * Handle call actions like eavesdropping and intercepting
+     *
+     * @param string $uuid The unique identifier of the call
+     * @param string $action The action to perform ('eavesdrop' or 'intercept')
+     * @return \Illuminate\Http\JsonResponse
+     */
+    private function handleCallAction($uuid, $action)
+    {
+        // Get the authenticated user's extension
+        $extension = Extension::find(Auth::user()->extension_id);
+
         if (!$extension) {
             $response = [
                 'status' => false,
@@ -911,39 +931,21 @@ class FreeSwitchController extends Controller
             return response()->json($response, Response::HTTP_BAD_REQUEST);
         }
 
-        // If the socket is connected, eavesdrop on the call
+        // If the socket is connected, perform the call action
         if ($this->connected) {
-            // $cmd = "api originate sofia/default/{$extension->extension}@{$domain} &eavesdrop($uuid)";
-            $cmd = "api originate user/{$extension->extension}@{$domain} &eavesdrop($uuid)";
-
+            $cmd = "api originate user/{$extension->extension}@{$domain} &$action($uuid)";
             $response = $this->socket->request($cmd);
 
             if (strpos($response, "-ERR NO_USER_RESPONSE") !== false) {
-                $response = [
-                    'status' => false, // Indicates the success status of the request
-                    'data' => $response,
-                    'message' => 'User rejected the call.',
-                ];
-
-                // Return the response as JSON with HTTP status code 400 (OK)
-                return response()->json($response, Response::HTTP_BAD_REQUEST);
+                return $this->errorResponse('User rejected the call.', $response);
             }
 
-            // // Check if the response contains "+OK"
             if (strpos($response, "+OK") !== false) {
-                // Prepare the response data
-                $response = [
-                    'status' => true, // Indicates the success status of the request
-                    'data' => $response,
-                    'message' => 'Successfully eavesdrop call.',
-                ];
-                // Return the response as JSON with HTTP status code 200 (OK)
-                return response()->json($response, Response::HTTP_OK);
+                return $this->successResponse("Successfully {$action} the call.", $response);
             }
-
-        } else {
-            // If the socket is not connected, return a disconnected response
-            return $this->disconnected();
         }
+
+        // If the socket is not connected, return an error response
+        return $this->disconnected();
     }
 }

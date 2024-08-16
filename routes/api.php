@@ -503,18 +503,43 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Freeswitch
     Route::controller(FreeSwitchController::class)->group(function () {
-        Route::get('freeswitch/status', 'status');
-        Route::get('freeswitch/sofiaStatus', 'sofiaStatus');
-        Route::get('freeswitch/showRegistrations', 'showRegistrations');
-        Route::get('freeswitch/reloadacl', 'reloadacl');
-        Route::get('freeswitch/reloadXml', 'reloadXml');
-        Route::post('freeswitch/call', 'call');
-        Route::get('freeswitch/call-kill/{uuid}', 'callKill');
-        Route::get('freeswitch/call-barge/{uuid}', 'bargeCall');
-        Route::get('freeswitch/call-eavesdrop/{uuid}', 'eavesdropCall');
-        // Route::get('freeswitch/shutDown', 'shutDown');
+        Route::prefix('freeswitch')->group(function () {
+            // check running status
+            Route::get('status', 'status');
 
-        Route::get('freeswitch/checkActiveExtensionOnServer', 'checkActiveExtensionOnServer');
+            // Allows to get the status of the sofia
+            Route::get('sofiaStatus', 'sofiaStatus');
+
+            // Allows to get the registrations
+            Route::get('showRegistrations', 'showRegistrations');
+
+            // Allows to reload the ACL
+            Route::get('reloadacl', 'reloadacl');
+
+            // Allows to reload the XML config of FreeSwitch
+            Route::get('reloadXml', 'reloadXml');
+
+            // Make a call
+            Route::post('call', 'call');
+
+            // kill a call
+            Route::get('call-kill/{uuid}', 'callKill');
+
+            // barge a call
+            Route::get('call-barge/{uuid}', 'barge');
+
+            // eavesdrop a call
+            Route::get('call-eavesdrop/{uuid}', 'eavesdrop');
+
+            // intercept a call
+            Route::get('call-intercept/{uuid}', 'intercept');
+
+            // hangup a call
+            // Route::get('freeswitch/shutDown', 'shutDown');
+
+            // check active extension on server
+            Route::get('checkActiveExtensionOnServer', 'checkActiveExtensionOnServer');
+        });
     });
 
     // CDR
@@ -522,8 +547,10 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         // To get all the cdrs
         Route::get('cdr', 'index');
 
+        // To get the particular call details by user Id
         Route::get('call-details', 'callDetailsByUserId');
 
+        // To download the call record file
         Route::get('call-record-file-download', 'getFileByPath');
     });
 
