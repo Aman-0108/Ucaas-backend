@@ -4,6 +4,7 @@ use App\Models\PaymentGateway;
 use App\Models\Uid;
 use Illuminate\Support\Str;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Generates a unique identifier (UUID) and stores it along with relevant data in the database.
@@ -445,11 +446,11 @@ if (!function_exists('activeCallDataFormat')) {
         }
 
         // Filter the array to only include inbound calls with the status "ACTIVE"
-        $activeCalls = array_filter($calls, function ($call) {
-            return $call['direction'] === 'inbound' && $call['callstate'] === 'ACTIVE';
-        });       
+        // $activeCalls = array_filter($calls, function ($call) {
+        //     return $call['direction'] === 'inbound' && $call['callstate'] === 'ACTIVE';
+        // });       
 
         // Return the customized response
-        return $activeCalls;
+        return $calls;
     }
 }
