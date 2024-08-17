@@ -937,11 +937,25 @@ class FreeSwitchController extends Controller
             $response = $this->socket->request($cmd);
 
             if (strpos($response, "-ERR NO_USER_RESPONSE") !== false) {
-                return $this->errorResponse('User rejected the call.', $response);
+                $response = [
+                    'status' => false, // Indicates the success status of the request
+                    'data' => $response,
+                    'message' => 'User rejected the call.',
+                ];
+
+                // Return the response as JSON with HTTP status code 400 (Bad Request)
+                return response()->json($response, Response::HTTP_BAD_REQUEST);
             }
 
             if (strpos($response, "+OK") !== false) {
-                return response()->json("Successfully {$action} the call.", $response);
+                // Prepare the response data
+                $response = [
+                    'status' => true, // Indicates the success status of the request
+                    'data' => $response,
+                    'message' => 'Successfully eavesdrop call.',
+                ];
+                // Return the response as JSON with HTTP status code 200 (OK)
+                return response()->json($response, Response::HTTP_OK);
             }
         }
 
