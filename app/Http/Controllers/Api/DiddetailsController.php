@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\DidDetail;
+use App\Models\DidOrderStatus;
+use App\Models\DidVendor;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -226,16 +229,114 @@ class DiddetailsController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
-        // Delete the did details
-        $didDetail->delete();
+        // Get the user type and account holder ID
+        $usertype = Auth::user()->usertype;
 
-        // Prepare the response data
-        $response = [
-            'status' => true,
-            'message' => 'Successfully deleted.'
+        // Get the user type and account holder ID
+        $accountHolderId = Auth::user()->account_id;
+
+        // Check if the user has permission to disconnect the did details
+        if($usertype !== 'Company' || $accountHolderId !== $didDetail->account_id) {
+            return response()->json(['success' => false, 'message' => `You don't have permission to perform this action.`], 403);
+        }
+
+        // Retrieve the vendor ID based on the order ID
+        $OrderStatus = DidOrderStatus::where('order_id', $didDetail->orderid)->first();
+
+        if (!$OrderStatus) {
+            return response()->json(['success' => false, 'message' => 'Vendor details not found.'], 404);
+        }
+
+        $vendorId = $OrderStatus->vendor_id;
+
+        // Find the vendor based on the vendor ID
+        $didVendor = DidVendor::find($vendorId);
+
+        $authToken = $didVendor->token;
+        $username = $didVendor->username;
+
+        if(!$authToken || !$username) {
+            return response()->json(['success' => false, 'message' => 'Vendor details not found.'], 404);
+        }
+
+        $srcData = [
+            'account_id' => 14642,
+            // 'dids' => $didDetail->did,
+            'dids' => [
+                '8885156451'
+            ],
+            'authToken' => $authToken,
+            'username' => $username
         ];
 
-        // Return the response as JSON with HTTP status code 200 (OK)
-        return response()->json($response, Response::HTTP_OK);
+        $requestObj = new Request($srcData);
+
+        $vendorResponse = $this->didDisconnect($requestObj);
+
+        // Decode the JSON response
+        $decodedResponse = json_decode($vendorResponse, true);
+
+        // Check the response code and message
+        if (isset($decodedResponse['code']) && $decodedResponse['code'] == 403) {
+            // Forbidden: User does not have permission
+            $message = $decodedResponse['message'] ?: 'Access denied.';
+            return response()->json(['success' => false, 'message' => $message], 403);
+        } else if (isset($decodedResponse['success']) && $decodedResponse['success'] === true) {
+            // Delete the did details
+            // $didDetail->delete();
+            // API call was successful
+            return response()->json(['success' => true, 'message' => 'DIDs successfully disconnected.'], 200);
+        } else {
+            // General failure
+            $message = $decodedResponse['message'] ?: 'Failed to disconnect DIDs.';
+            return response()->json(['success' => false, 'message' => $message, 'data' => $decodedResponse], 402);
+        }
+    }
+
+    public function didDisconnect(Request $request)
+    {
+        // Define the account ID
+        $account_id = $request->account_id;
+
+        // Retrieve the DIDs from the request
+        $dids = $request->dids;
+
+        // Define the URL for the API call
+        $url = 'https://api.thinq.com/account/' . $account_id . '/origination/disconnect';
+
+        // Retrieve the authentication token and username from the request
+        $authToken = $request->authToken;
+
+        // Convert the array to JSON format
+        $username = $request->username;
+
+        // Convert the array to JSON format
+        $postData = json_encode([
+            'dids' => $dids
+        ]);
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => $postData,
+            CURLOPT_HTTPHEADER => array(
+                'Authorization: Basic ' . base64_encode($username . ':' . $authToken),
+                'Content-Type: application/json'
+            ),
+        ));
+
+        $response = curl_exec($curl);
+
+        curl_close($curl);
+
+        return $response;
     }
 }

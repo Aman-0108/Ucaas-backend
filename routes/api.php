@@ -637,6 +637,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         // DID 
         Route::controller(DiddetailsController::class)->group(function () {
             Route::get('all', 'index');
+            Route::delete('destroy/{id}', 'destroy');
         });
     });
 
