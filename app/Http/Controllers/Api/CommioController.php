@@ -113,7 +113,6 @@ class CommioController extends Controller
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => 'GET',
             CURLOPT_HTTPHEADER => array(
-                //'Authorization: Basic '.$authToken,
                 'Authorization: Basic ' . base64_encode("$username:$authToken"),
                 'Content-Type: application/json'
             ),
@@ -203,34 +202,34 @@ class CommioController extends Controller
 
             $jsondata = json_encode($issuedata);
 
-            // $curl = curl_init();
-            // curl_setopt_array($curl, array(
-            // CURLOPT_URL => 'https://api.thinq.com/account/'.$accountId.'/origination/order/create',
-            // CURLOPT_RETURNTRANSFER => true,
-            // CURLOPT_ENCODING => '',
-            // CURLOPT_MAXREDIRS => 10,
-            // CURLOPT_TIMEOUT => 0,
-            // CURLOPT_FOLLOWLOCATION => true,
-            // CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            // CURLOPT_CUSTOMREQUEST => 'POST',
-            // CURLOPT_POSTFIELDS => $jsondata,
-            // CURLOPT_HTTPHEADER => array(
-            //     'Authorization: Basic '. base64_encode("$username:$password"),
-            //     'Content-Type: application/json'
-            // ),
-            // ));
+            $curl = curl_init();
+            curl_setopt_array($curl, array(
+            CURLOPT_URL => 'https://api.thinq.com/account/'.$accountId.'/origination/order/create',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => $jsondata,
+            CURLOPT_HTTPHEADER => array(
+                'Authorization: Basic '. base64_encode("$username:$password"),
+                'Content-Type: application/json'
+            ),
+            ));
 
-            // $response = curl_exec($curl);
+            $response = curl_exec($curl);
 
-            // curl_close($curl);
+            curl_close($curl);
 
-            //print_r($response);   exit;
-            //echo $response['status'];
-            // $responseData = json_decode($response, true); 
-            //echo $responseData['message'] ;  exit;
+            // print_r($response);   exit;
+            // echo $response['status'];
+            $responseData = json_decode($response, true); 
+            // echo $responseData['message'] ;  exit;
 
-            $responseData['status'] = 'created';
-            $responseData['id'] = 54698;
+            // $responseData['status'] = 'created';
+            // $responseData['id'] = 54698;
 
             if (isset($responseData['status']) && $responseData['status'] == 'created') {
 
@@ -330,22 +329,22 @@ class CommioController extends Controller
     //params = companyid , orderid, vendorId , commio account id
     public function completeOrder($accountId, $orderId, $vendorId, $commioAccountId)
     {
-        $response['type'] = 'origination_order';
-        $response['status'] = 'completed';
-        $response['tns'] = [
-            [
-                "did" => "18559046202",
-                "features" => [
-                    "cnam" => false,
-                    "sms" => true,
-                    "e911" => false
-                ]
-            ]
+        // $response['type'] = 'origination_order';
+        // $response['status'] = 'completed';
+        // $response['tns'] = [
+        //     [
+        //         "did" => "18559046202",
+        //         "features" => [
+        //             "cnam" => false,
+        //             "sms" => true,
+        //             "e911" => false
+        //         ]
+        //     ]
 
-        ];
+        // ];
 
-        return $response;
-        exit;
+        // return $response;
+        // exit;
 
         $DidController = new DidVendorController();
         $vendorDataResponse = $DidController->show($vendorId);
