@@ -933,9 +933,17 @@ class FreeSwitchController extends Controller
 
         // If the socket is connected, perform the call action
         if ($this->connected) {
+
+            // Prepare the API command based on the action
+            $uuid = ($action == 'intercept') ? "'-bleg'. $uuid" : $uuid;
+
+            // Build the API command to originate the call
             $cmd = "api originate user/{$extension->extension}@{$domain} &$action($uuid)";
+
+            // Check call state
             $response = $this->socket->request($cmd);
 
+            // Check if the response contains "-ERR NO_USER_RESPONSE"
             if (strpos($response, "-ERR NO_USER_RESPONSE") !== false) {
                 $response = [
                     'status' => false, // Indicates the success status of the request
@@ -947,19 +955,20 @@ class FreeSwitchController extends Controller
                 return response()->json($response, Response::HTTP_BAD_REQUEST);
             }
 
+            // Check if the response contains "+OK"
             if (strpos($response, "+OK") !== false) {
                 // Prepare the response data
                 $response = [
                     'status' => true, // Indicates the success status of the request
                     'data' => $response,
-                    'message' => 'Successfully eavesdrop call.',
+                    'message' => 'Successfully ' . $action . ' call.',
                 ];
                 // Return the response as JSON with HTTP status code 200 (OK)
                 return response()->json($response, Response::HTTP_OK);
             }
+        } else {
+            // If the socket is not connected, return an error response
+            return $this->disconnected();
         }
-
-        // If the socket is not connected, return an error response
-        return $this->disconnected();
     }
 }
