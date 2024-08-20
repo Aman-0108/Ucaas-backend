@@ -122,6 +122,7 @@ class DomainController extends Controller
             $validator = Validator::make(
                 $request->all(),
                 [
+                    'account_id' => 'exists:accounts,id',
                     'domain_name' => 'required|unique:domains,domain_name',
                     'created_by' => 'required|exists:users,id',
                 ]
