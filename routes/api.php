@@ -45,6 +45,7 @@ use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\SoundController;
 use App\Http\Controllers\Api\StripeControllerc;
 use App\Http\Controllers\Api\WalletTransactionController;
+use App\Http\Controllers\S3Controller;
 use App\Http\Controllers\UtilityController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -739,8 +740,6 @@ Route::controller(CommioController::class)->group(function () {
     Route::post('searchDid', 'searchDid_commio');
 });
 
-
-
 Route::controller(PermissionController::class)->group(function () {
     Route::get('permission', 'index');
     Route::post('assign-permission-role', 'assignPermissionToRole');
@@ -753,3 +752,5 @@ Route::controller(UtilityController::class)->group(function () {
     Route::post('check-mx', 'checkMailExchangeserver');
     Route::post('get-ip-from-host', 'getIpFromHost');
 });
+
+Route::post('/s3/presigned-url', [S3Controller::class, 'getPresignedUrl']);
