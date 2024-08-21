@@ -768,38 +768,39 @@ class FreeSwitchController extends Controller
     public function getActiveCall()
     {
         // Check if the socket is connected
-        if ($this->socket->is_connected()) {
-
-            // Send an API request to fetch call events
-            $response = $this->socket->request('api show calls');
-
-            // Check if the string contains "0 total"
-            if (strpos($response, '0 total') !== false) {
-                // If it does, create a customized response with an empty result
-                $customizedResponse = [
-                    'key' => 'activeCalls',
-                    'result' => [],
-                ];
-            } else {
-                // If it does not, create a customized response with the formatted data
-                $activeCalls = activeCallDataFormat($response);
-
-                // Create a customized response with the active inbound calls
-                $customizedResponse = [
-                    'key' => 'activeCalls',
-                    'result' => $activeCalls,
-                ];
-            }
-
-            // Initialize WebSocket controller
-            $socketController = new WebSocketController();
-
-            // Send the customized response to the UI via WebSocket
-            $socketController->send($customizedResponse);
-        } else {
-            // If the socket is not connected, return a disconnected response
+        if (!$this->socket->is_connected()) {
             return $this->disconnected();
         }
+
+        // Send an API request to fetch call events
+        $response = $this->socket->request('api show calls');
+
+        // Initialize response variable
+        $customizedResponse = [
+            'key' => 'activeCalls',
+            'result' => [],
+        ];
+
+        // Check if there are no active calls
+        if (strpos($response, '0 total') !== false) {
+            // No active calls, respond with empty result
+            $customizedResponse['result'] = [];
+        } else {
+            // Process response to get active calls
+            $activeCalls = activeCallDataFormat($response);
+
+            // Filter for inbound calls with the status "ACTIVE"
+            $filteredCalls = array_filter($activeCalls, function ($call) {
+                return $call['direction'] === 'inbound' && $call['callstate'] === 'ACTIVE';
+            });
+
+            // Re-index array numerically
+            $customizedResponse['result'] = array_values($filteredCalls);
+        }
+
+        // Initialize WebSocket controller and send the response
+        $socketController = new WebSocketController();
+        $socketController->send($customizedResponse);
     }
 
     /**

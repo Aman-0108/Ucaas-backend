@@ -445,11 +445,6 @@ if (!function_exists('activeCallDataFormat')) {
             $calls[] = $call;
         }
 
-        // Filter the array to only include inbound calls with the status "ACTIVE"
-        // $activeCalls = array_filter($calls, function ($call) {
-        //     return $call['direction'] === 'inbound' && $call['callstate'] === 'ACTIVE';
-        // });       
-
         // Return the customized response
         return $calls;
     }
