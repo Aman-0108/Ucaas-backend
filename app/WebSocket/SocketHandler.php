@@ -59,7 +59,8 @@ class SocketHandler implements MessageComponentInterface
 
                 $this->getOnlineExtensions();
 
-                $this->getOnlineUsers($userId, $resourceId);
+                // $this->getOnlineUsers($userId, $resourceId);
+                $this->getOnlineUsers();
             }
         }
     }
@@ -140,6 +141,8 @@ class SocketHandler implements MessageComponentInterface
         if ($userId) {
             User::where('id', $userId)->update(['socket_session_id' => NULL, 'socket_status' => 'offline']);
         }
+
+        $this->getOnlineUsers();
     }
 
     /**
@@ -305,11 +308,11 @@ class SocketHandler implements MessageComponentInterface
      *
      * @return void
      */
-    protected function getOnlineUsers($userId, $resourceId)
+    protected function getOnlineUsers($userId = null, $resourceId = null)
     {
         // Query the User model for online users
         $result = User::select('id', 'name', 'email')
-                        ->where('created_by', $userId)
+                        // ->where('created_by', $userId)
                         ->where('socket_status', true)
                         ->get();
 
@@ -321,16 +324,11 @@ class SocketHandler implements MessageComponentInterface
                 'result' => $result,
             ];
 
-            $this->sendMessageToClient($resourceId, $customizedResponse);
+            // $this->sendMessageToClient($resourceId, $customizedResponse);
 
             // Send the customized response to onDataReceived method
-            // $this->onDataReceived(json_encode($customizedResponse));
+            $this->onDataReceived(json_encode($customizedResponse));
         }
     }
 
-    protected function getActiveCalls()
-    {
-        
-
-    }
 }
