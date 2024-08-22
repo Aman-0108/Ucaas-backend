@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class GatewayController extends Controller
@@ -103,7 +104,7 @@ class GatewayController extends Controller
             $request->all(),
             [
                 // Validation rules for each field
-                'account_id' => 'required|exists:accounts,id',
+                'account_id' => 'nullable|exists:accounts,id',
                 'name' => 'required|unique:gateways,name',
                 'username' => 'required|string',
                 'password' => 'required|string',
@@ -118,7 +119,7 @@ class GatewayController extends Controller
                 'fromDomain' => 'string|min:5|nullable',
                 'realm' => 'string|min:2|nullable',
                 'didConfigure' => 'boolean',
-                'domain' => 'string|required_if:didConfigure,true',
+                'domain' => 'string|required_if:didConfigure,true|unique:domains,domain_name',
             ]
         );
 

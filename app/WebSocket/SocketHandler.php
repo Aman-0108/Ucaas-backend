@@ -4,6 +4,7 @@ namespace App\WebSocket;
 
 use App\Models\Extension;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
 
@@ -58,7 +59,7 @@ class SocketHandler implements MessageComponentInterface
 
                 $this->getOnlineExtensions();
 
-                $this->getOnlineUsers();
+                $this->getOnlineUsers($userId, $resourceId);
             }
         }
     }
@@ -139,14 +140,6 @@ class SocketHandler implements MessageComponentInterface
         if ($userId) {
             User::where('id', $userId)->update(['socket_session_id' => NULL, 'socket_status' => 'offline']);
         }
-
-        $this->getOnlineUsers();
-
-        // $userId = $queryarray['user_id'];
-
-        // if (isset($queryarray['user_id'])) {
-        //     User::where('id', $userId)->update(['socket_session_id' => NULL, 'socket_status' => 'offline']);
-        // }
     }
 
     /**
@@ -218,6 +211,9 @@ class SocketHandler implements MessageComponentInterface
 
             // Send your message to the client
             $message = json_encode($message);
+
+            $message = json_encode($message);
+
             $client->send($message);
         } else {
             // If the client with the provided resource ID is not found, display an error message
@@ -309,10 +305,13 @@ class SocketHandler implements MessageComponentInterface
      *
      * @return void
      */
-    protected function getOnlineUsers()
+    protected function getOnlineUsers($userId, $resourceId)
     {
         // Query the User model for online users
-        $result = User::where('socket_status', true)->get(['id', 'name', 'email']);
+        $result = User::select('id', 'name', 'email')
+                        ->where('created_by', $userId)
+                        ->where('socket_status', true)
+                        ->get();
 
         // If online users are found
         if ($result) {
@@ -322,8 +321,10 @@ class SocketHandler implements MessageComponentInterface
                 'result' => $result,
             ];
 
+            $this->sendMessageToClient($resourceId, $customizedResponse);
+
             // Send the customized response to onDataReceived method
-            $this->onDataReceived(json_encode($customizedResponse));
+            // $this->onDataReceived(json_encode($customizedResponse));
         }
     }
 
