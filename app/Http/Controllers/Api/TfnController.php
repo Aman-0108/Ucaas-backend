@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Account;
 use App\Models\DidRateChart;
 use App\Models\CardDetail;
 use App\Models\BillingAddress;
@@ -56,6 +57,7 @@ class TfnController extends Controller
         }
 
         $getVendorDetail =  $this->getActiveDidVendor();
+        
         $vendorDataObject = $getVendorDetail->getData();
 
         if (empty($getVendorDetail->getData())) {
@@ -297,6 +299,9 @@ class TfnController extends Controller
         if ($request->type == 'configure') {
 
             $response = $this->purchaseViaCommio($createdBy, $request->companyId, $request->vendorId, $qty, $rate, $request->accountId, $request->dids);
+
+            //update account status to 6 
+            // Account::where('id', $request->companyId)->update(['company_status' => 6]);
 
             return $response;
         }

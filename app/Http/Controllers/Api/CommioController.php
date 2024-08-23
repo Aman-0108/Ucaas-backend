@@ -223,14 +223,8 @@ class CommioController extends Controller
 
             curl_close($curl);
 
-            // print_r($response);   exit;
-            // echo $response['status'];
             $responseData = json_decode($response, true); 
-            // echo $responseData['message'] ;  exit;
-
-            // $responseData['status'] = 'created';
-            // $responseData['id'] = 54698;
-
+           
             if (isset($responseData['status']) && $responseData['status'] == 'created') {
 
                 //add param like order created but not Completed order as per commio
@@ -242,10 +236,6 @@ class CommioController extends Controller
                 ];
 
                 $ordeDetail = DidOrderStatus::create($ordeDetail);
-
-                Log::info($ordeDetail);
-
-                // exit;
 
                 if (!$ordeDetail) {
                     //effect in DB to notify to techteam
@@ -285,9 +275,6 @@ class CommioController extends Controller
 
                         //make the order Status Completed in did order statuses tbl
                         DidOrderStatus::where('order_id', $responseData['id'])->update(['status' => 'Completed']);
-
-                        //update account status to 5 
-                        Account::where('id', $companyId)->update(['company_status' => 5]);
 
                         $res = [
                             'status' => true,
@@ -329,23 +316,6 @@ class CommioController extends Controller
     //params = companyid , orderid, vendorId , commio account id
     public function completeOrder($accountId, $orderId, $vendorId, $commioAccountId)
     {
-        // $response['type'] = 'origination_order';
-        // $response['status'] = 'completed';
-        // $response['tns'] = [
-        //     [
-        //         "did" => "18559046202",
-        //         "features" => [
-        //             "cnam" => false,
-        //             "sms" => true,
-        //             "e911" => false
-        //         ]
-        //     ]
-
-        // ];
-
-        // return $response;
-        // exit;
-
         $DidController = new DidVendorController();
         $vendorDataResponse = $DidController->show($vendorId);
         $datas = $vendorDataResponse->getData();
@@ -372,8 +342,9 @@ class CommioController extends Controller
         $response = curl_exec($curl);
 
         curl_close($curl);
-        //echo $response;
+        
         $responseData = json_decode($response, true);
+
         return $responseData;
     }
 }
