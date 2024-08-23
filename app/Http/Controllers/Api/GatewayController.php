@@ -148,69 +148,69 @@ class GatewayController extends Controller
         // Generate UID and attach it to the validated data
         createUid($action, $type, $validated, $userId);
 
-        if ($request->has('didConfigure')) {
+        // if ($request->has('didConfigure')) {
 
-            // check did exist or not
-            $did = DidDetail::where('account_id', $request->account_id)->first();
+        //     // check did exist or not
+        //     $did = DidDetail::where('account_id', $request->account_id)->first();
 
-            if(!$did) {
-                $type = config('enums.RESPONSE.ERROR');
-                $status = false;
-                $msg = "You don't have any Did.";
+        //     if(!$did) {
+        //         $type = config('enums.RESPONSE.ERROR');
+        //         $status = false;
+        //         $msg = "You don't have any Did.";
 
-                return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
-            }
+        //         return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
+        //     }
 
-            $domain = $request->domain;
+        //     $domain = $request->domain;
 
-            unset($validated['didConfigure'], $validated['domain']);
+        //     unset($validated['didConfigure'], $validated['domain']);
 
-            $domainInput = [
-                'account_id' => intval($request->account_id),
-                'domain_name' => $domain,
-                'created_by' => $userId
-            ];
+        //     $domainInput = [
+        //         'account_id' => intval($request->account_id),
+        //         'domain_name' => $domain,
+        //         'created_by' => $userId
+        //     ];
 
-            $domainInstance = new DomainController();
-            $domainResponse = $domainInstance->store(new Request($domainInput));
+        //     $domainInstance = new DomainController();
+        //     $domainResponse = $domainInstance->store(new Request($domainInput));
 
-            $domain = Domain::where('account_id', $request->account_id)->first();
+        //     $domain = Domain::where('account_id', $request->account_id)->first();
 
-            if(!$domain) {
-                $type = config('enums.RESPONSE.ERROR');
-                $status = false;
-                $msg = "Domain not found.";
+        //     if(!$domain) {
+        //         $type = config('enums.RESPONSE.ERROR');
+        //         $status = false;
+        //         $msg = "Domain not found.";
 
-                return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
-            }
+        //         return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
+        //     }
 
-            // Retrieving an account object based on the provided account_id from the request
-            $account = Account::find($request->account_id);
+        //     // Retrieving an account object based on the provided account_id from the request
+        //     $account = Account::find($request->account_id);
 
-            // update domain id
-            User::where('email', $account->email)->update(['domain_id' => $domain->id]);
+        //     // update domain id
+        //     User::where('email', $account->email)->update(['domain_id' => $domain->id]);
           
-            // Extract content from response
-            $domainResponse = $domainResponse->getContent();
-            $responseData = json_decode($domainResponse, true);
+        //     // Extract content from response
+        //     $domainResponse = $domainResponse->getContent();
+        //     $responseData = json_decode($domainResponse, true);
 
-            // If response status is true
-            if ($responseData['status']) {
-                $account = Account::find($request->account_id);
+        //     // If response status is true
+        //     if ($responseData['status']) {
+        //         $account = Account::find($request->account_id);
 
-                if (!$account) {
-                    // If the account is not found, return a 404 Not Found response
-                    $type = config('enums.RESPONSE.ERROR');
-                    $status = false;
-                    $msg = 'Account not found';
+        //         if (!$account) {
+        //             // If the account is not found, return a 404 Not Found response
+        //             $type = config('enums.RESPONSE.ERROR');
+        //             $status = false;
+        //             $msg = 'Account not found';
 
-                    return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
-                }
+        //             return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
+        //         }
 
-                $account->company_status = 6;
-                $account->save();
-            }
-        }
+        //         $account->company_status = 6;
+        //         $account->save();
+        //     }
+        // }
 
         $validated['created_by'] = $userId;
 

@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
 use App\Models\DidVendor;
+use App\Models\Domain;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -57,7 +59,7 @@ class TfnController extends Controller
         }
 
         $getVendorDetail =  $this->getActiveDidVendor();
-        
+
         $vendorDataObject = $getVendorDetail->getData();
 
         if (empty($getVendorDetail->getData())) {
@@ -128,7 +130,7 @@ class TfnController extends Controller
                 'didQty' => 'required|integer',
                 'rate' => 'required',
                 'accountId' => 'required',
-                'companyId' => 'required',
+                'companyId' => 'required|exists:accounts,id',
                 'type' => 'required|in:wallet,card,configure',
                 'didType' => 'required|in:random,block',
             ]
@@ -210,6 +212,7 @@ class TfnController extends Controller
             }
         }
 
+        // use card
         if ($request->type == 'card') {
 
             $payment_gateway = checkPaymentGateway();
@@ -296,12 +299,35 @@ class TfnController extends Controller
             }
         }
 
+        // for cofiguration
         if ($request->type == 'configure') {
 
-            $response = $this->purchaseViaCommio($createdBy, $request->companyId, $request->vendorId, $qty, $rate, $request->accountId, $request->dids);
+            $srcResponse = $this->purchaseViaCommio($createdBy, $request->companyId, $request->vendorId, $qty, $rate, $request->accountId, $request->dids);
 
-            //update account status to 6 
-            // Account::where('id', $request->companyId)->update(['company_status' => 6]);
+            $response = $srcResponse->getData();
+
+            if (!$response->status) {
+                return $srcResponse;
+            }
+
+            $account = Account::find($request->companyId);
+
+            $domainInputs = [
+                'domain_name' => $account->admin_name . $account->id . 'webvio.in',
+                'created_by' => $createdBy
+            ];
+
+            // This will update the name if the user already exists with the given email or create a new user.  
+            $result = Domain::updateOrCreate(
+                ['account_id' => (int) $request->companyId],
+                $domainInputs
+            );
+
+            // update company status 
+            Account::where('id', $request->companyId)->update(['company_status' => 6]);
+
+            // update domain id
+            User::where('email', $account->email)->update(['domain_id' => $result->id]);
 
             return $response;
         }
