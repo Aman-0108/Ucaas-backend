@@ -173,7 +173,7 @@ class PaymentController extends Controller
 
             DB::beginTransaction();
 
-            $lead->company_status = 1;
+            $lead->company_status = 2;
             // Remove unnecessary properties from the lead object
             unset($lead->id, $lead->created_at, $lead->updated_at);
 
