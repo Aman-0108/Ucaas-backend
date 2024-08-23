@@ -194,6 +194,7 @@ class ExtensionController extends Controller
                             ->where('account_id', $request->account_id);
                     })
                 ],
+                'type' => 'in:user,RingGroup,CallCentre',
             ]
         );
 
@@ -441,6 +442,7 @@ class ExtensionController extends Controller
                             ->where('account_id', $request->account_id);
                     })
                 ],
+                'type' => 'in:user,RingGroup,CallCentre',
             ]
         );
 

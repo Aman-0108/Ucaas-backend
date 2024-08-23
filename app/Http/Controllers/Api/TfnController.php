@@ -313,11 +313,11 @@ class TfnController extends Controller
             $account = Account::find($request->companyId);
 
             $domainInputs = [
-                'domain_name' => $account->admin_name . $account->id . 'webvio.in',
+                'domain_name' => $account->admin_name .'.'. $account->id . '.webvio.in',
                 'created_by' => $createdBy
             ];
 
-            // This will update the name if the user already exists with the given email or create a new user.  
+            // create domain or update  
             $result = Domain::updateOrCreate(
                 ['account_id' => (int) $request->companyId],
                 $domainInputs
