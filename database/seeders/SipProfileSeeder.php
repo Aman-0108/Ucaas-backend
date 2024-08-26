@@ -16,34 +16,50 @@ class SipProfileSeeder extends Seeder
     {
         $jsonData = '{
             "data": [
-                {
-                    "name": "internal",
-                    "description": "default internal profile",
-                    "hostname": "",
-                    "enabled": "1",
-                    "created_by": "1"
-                },
-                {
-                    "name": "external",
-                    "description": "default external profile",
-                    "hostname": "",
-                    "enabled": "1",    
-                    "created_by": "1"               
-                },
-                {
-                    "name": "internal-ipv6",
-                    "description": "default internal-ipv6 profile",
-                    "hostname": "",
-                    "enabled": "1",    
-                    "created_by": "1"                
-                },
-                {
-                    "name": "external",
-                    "description": "default external-ipv6 profile",
-                    "hostname": "",
-                    "enabled": "1", 
-                    "created_by": "1"                 
-                }
+              {
+                "id": "1",
+                "name": "internal",
+                "description": "default internal profile",
+                "hostname": "debian",
+                "enabled": "1",
+                "created_by": "1",
+                "deleted_at": null,
+                "created_at": "2024-08-26 12:48:39",
+                "updated_at": "2024-08-26 12:48:39"
+              },
+              {
+                "id": "2",
+                "name": "external",
+                "description": "default external profile",
+                "hostname": "debian",
+                "enabled": "1",
+                "created_by": "1",
+                "deleted_at": null,
+                "created_at": "2024-08-26 12:48:39",
+                "updated_at": "2024-08-26 12:48:39"
+              },
+              {
+                "id": "3",
+                "name": "internal-ipv6",
+                "description": "default internal-ipv6 profile",
+                "hostname": "debian",
+                "enabled": "1",
+                "created_by": "1",
+                "deleted_at": null,
+                "created_at": "2024-08-26 12:48:39",
+                "updated_at": "2024-08-26 12:48:39"
+              },
+              {
+                "id": "4",
+                "name": "external-ipv6",
+                "description": "default external-ipv6 profile",
+                "hostname": "debian",
+                "enabled": "1",
+                "created_by": "1",
+                "deleted_at": null,
+                "created_at": "2024-08-26 12:48:39",
+                "updated_at": "2024-08-26 12:48:39"
+              }
             ]
         }';
 

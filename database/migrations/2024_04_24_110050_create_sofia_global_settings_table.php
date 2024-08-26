@@ -16,8 +16,6 @@ return new class extends Migration
         Schema::create('sofia_global_settings', function (Blueprint $table) {
             $table->id();
 
-            $table->uuid('uid_no')->index()->nullable();
-
             $table->string('name')->default('');
             $table->string('value')->default('');
             $table->string('description')->default('');

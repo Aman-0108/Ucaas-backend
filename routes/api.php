@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AccountDetailsController;
+use App\Http\Controllers\Api\Admin\DocumentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BillingAddressController;
 use App\Http\Controllers\Api\CallCentreController;
@@ -93,6 +94,12 @@ Route::group(['middleware' => 'guest'], function () {
         Route::post('/forgot-password', 'sendResetLinkEmail')->name('password.request');
         Route::post('verifyOTP', 'verifyOTP');
         // Route::post('reset-password','reset')->name('password.reset');
+    });
+
+    // Document
+    Route::controller(DocumentController::class)->group(function () {
+        // To get all the documents
+        Route::get('documents', 'index');
     });
 });
 

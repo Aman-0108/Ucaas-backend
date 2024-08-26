@@ -16,8 +16,8 @@ class SipProfileDomainSeeder extends Seeder
     {
         $data = [
             "sip_profile_id" => "1",
-            "name" => "192.168.1.150",
-            "alias" => "192.168.1.150"
+            "name" => "192.168.2.225",
+            "alias" => "192.168.2.225"
         ];
 
         SipProfileDomain::create($data);
