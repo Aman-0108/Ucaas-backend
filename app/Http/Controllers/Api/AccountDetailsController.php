@@ -9,6 +9,7 @@ use App\Models\Document;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -162,7 +163,7 @@ class AccountDetailsController extends Controller
                 return $item->status == 1;
             });
 
-            if (!empty($approvedData)) {
+            if (!$approvedData->isEmpty()) {
                 $response = [
                     'status' => false,
                     'message' => 'already approved.'
@@ -176,7 +177,7 @@ class AccountDetailsController extends Controller
                 return $item->status == 3;
             });
 
-            if (!empty($newData)) {
+            if (!$newData->isEmpty()) {
                 $response = [
                     'status' => false,
                     'message' => 'already uploaded.'
@@ -397,10 +398,10 @@ class AccountDetailsController extends Controller
     protected function checkAllDocumentsUploadedOrNot($accountId)
     {
         // Get all required documents
-        $allRequiredDocuments = Document::where('status', 'active')->pluck('id');
+        $allRequiredDocuments = Document::where('status', 'active')->pluck('id')->toArray();
        
         // Get the uploaded documents for the account
-        $uploadedDocuments = AccountDetail::where(['account_id' => $accountId])->distinct('document_id')->pluck('document_id');
+        $uploadedDocuments = AccountDetail::where(['account_id' => $accountId])->distinct('document_id')->pluck('document_id')->toArray();
 
         // Check if all required documents are uploaded
         $result = rsort($allRequiredDocuments) === rsort($uploadedDocuments);
