@@ -10,6 +10,7 @@ use App\Models\Ringgroup;
 use App\Models\Ring_group_destination;
 use Illuminate\support\facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class RinggroupController extends Controller
 {
@@ -33,11 +34,11 @@ class RinggroupController extends Controller
     public function index(Request $request)
     {
         $ringgroups = Ringgroup::with(['ring_group_destination']); //relations tbl small character 1st letter
-        
+
         if ($request->has('account')) {
             $ringgroups->where('account_id', $request->account);
         }
-        
+
         $ringgroups = $ringgroups->get();
 
         $response = [
@@ -45,7 +46,7 @@ class RinggroupController extends Controller
             'data' => $ringgroups,
             'message' => 'Successfully fetched all Ring Groups'
         ];
-        
+
         return response()->json($response, Response::HTTP_OK);
     }
 
@@ -66,7 +67,20 @@ class RinggroupController extends Controller
                 // Validation rules for each field
                 'account_id' => 'required:exists:accounts,id',
                 'name' => 'required|string|unique:ringgroups,name',
-                'extension' => 'string|required|exists:extensions,extension|unique:ringgroups,extension,null,null,account_id,' . $request->account_id,
+                'extension' => [
+                    'required',
+                    'string',
+                    function ($attribute, $value, $fail) {
+                        if (DB::table('extensions')->where('extension', $value)->exists()) {
+                            $fail('This ' . $attribute . ' is for Users.');
+                        }
+                    },
+                    Rule::unique('ringgroups', 'extension')
+                        ->ignore($request->id)
+                        ->where(function ($query) use ($request) {
+                            return $query->where('account_id', $request->account_id);
+                        }),
+                ],
                 'strategy' => 'in:enterprise,sequence,simultaneously,random,rollover,',
                 'timeout_destination' => 'string|nullable',
                 'call_timeout' => 'required|string',
@@ -88,6 +102,7 @@ class RinggroupController extends Controller
                 'greeting' => 'string|nullable',
                 'status' => 'in:active,inactive',
                 'description' => 'string|nullable',
+                // 'type' => 'required|in:RingGroup',
             ]
         );
 
@@ -105,24 +120,24 @@ class RinggroupController extends Controller
 
         $domain = Domain::where('account_id', $request->account_id)->first();
 
-        if(empty($domain)) {
+        if (empty($domain)) {
             $response = [
                 'status' => false,
                 'message' => 'No domains found on this account'
             ];
-    
+
             // Return a JSON response with HTTP status code 204 (No Content)
             return response()->json($response, Response::HTTP_NO_CONTENT);
         }
 
         // Retrieve the validated input
-        $validated = $validator->validated();        
+        $validated = $validator->validated();
 
         // Defining action and type for creating UID
         $action = 'create';
         $type = $this->type;
 
-        createUid($action, $type, $validated, $userId);       
+        createUid($action, $type, $validated, $userId);
 
         $validated['domain_name'] = $domain->domain_name;
         $validated['created_by'] = $userId;
@@ -176,8 +191,6 @@ class RinggroupController extends Controller
                 $rvalidated = $rDestinationValidator->validated();
 
                 Ring_group_destination::create($rvalidated);
-
-                // unique:TableName,column_1,' . $this->id . ',id,colum_2,' . $this->column_2
             }
         }
 
@@ -256,7 +269,18 @@ class RinggroupController extends Controller
                 // Validation rules for each field
                 'account_id' => 'exists:accounts,id',
                 'name' => 'required|string|unique:ringgroups,name,' . $id,
-                'extension' => 'string|exists:extensions,extension',
+                'extension' => [
+                    'required',
+                    'string',
+                    Rule::unique('ringgroups', 'extension')->ignore($id)->where(function ($query) use ($request) {
+                        return $query->where('account_id', $request->account_id);
+                    }),
+                    function ($attribute, $value, $fail) {
+                        if (DB::table('extensions')->where('extension', $value)->exists()) {
+                            $fail('This ' . $attribute . ' is only for users.');
+                        }
+                    },
+                ],
                 'strategy' => 'in:enterprise,sequence,simultaneously,random,rollover,',
                 'timeout_destination' => 'string|nullable',
                 'call_timeout' => 'string',
@@ -307,8 +331,7 @@ class RinggroupController extends Controller
         DB::beginTransaction();
 
         // Generate UID and attach it to the validated data
-        createUid($action, $type, $formattedDescription, $userId);
-        // $validated['uid_no'] = 
+        createUid($action, $type, $formattedDescription, $userId);       
 
         // Update the gateway with the validated data
         $ringgroup->update($validated);

@@ -74,7 +74,38 @@ class CallCentreController extends Controller
                 'account_id' => 'required|exists:accounts,id',
                 'queue_name' => 'required|unique:call_center_queues,queue_name',
                 'greeting' => 'string|nullable',
-                'extension' => 'string|unique:call_center_queues,extension,NULL,id,account_id,' . $request->account_id,
+                'extension' => [
+                    'required',
+                    'string',
+                    function ($attribute, $value, $fail) use ($request) {
+                        // Check if extension exists in call_center_queues table with account_id 
+                        if (DB::table('call_center_queues')
+                            ->where('extension', $value)
+                            ->where('account_id', $request->account_id)
+                            ->exists()
+                        ) {
+                            $fail('The extension already exists in the call_center_queues table for this account.');
+                        }
+
+                        // Check if extension exists in extensions table with account_id
+                        if (DB::table('extensions')
+                            ->where('extension', $value)
+                            ->where('account_id', $request->account_id)
+                            ->exists()
+                        ) {
+                            $fail('The extension already exists in the extensions table.');
+                        }
+
+                        // Check if extension exists in ringgroups table with account_id
+                        if (DB::table('ringgroups')
+                            ->where('extension', $value)
+                            ->where('account_id', $request->account_id)
+                            ->exists()
+                        ) {
+                            $fail('The extension already exists in the ringgroups.');
+                        }
+                    }
+                ],
                 'strategy' => 'in:' . implode(',', config('enums.agent.strategy')),
                 'moh_sound' => 'string|nullable',
                 'time_base_score' => 'in:queue,system',
@@ -87,7 +118,7 @@ class CallCentreController extends Controller
                 'max_wait_time' => 'integer',
                 'max_wait_time_with_no_agent' => 'integer',
                 'max_wait_time_with_no_agent_time_reached' => 'integer',
-                'ring_progressively_delay' => 'integer',                
+                'ring_progressively_delay' => 'integer',
                 'queue_timeout_action' => 'string|nullable',
                 'discard_abandoned_after' => 'numeric|nullable',
                 'queue_cid_prefix' => 'string|nullable',
@@ -95,7 +126,7 @@ class CallCentreController extends Controller
                 'xml' => 'string|nullable'
             ]
         );
-       
+
         // If validation fails
         if ($validator->fails()) {
             // If validation fails, return a JSON response with error messages
@@ -192,22 +223,22 @@ class CallCentreController extends Controller
         }
 
         // Store inside dialplan
-        $dialplanData = [
-            "account_id" => $request->account_id,
-            "type" => 'Inbound',
-            "country_code" => '91',
-            "destination" => 'callcenter',
-            "context" => 'default',
-            "usage" => 'voice',
-            "order" => 230,
-            "dialplan_enabled" => 1,
-            "description" => 'call center queue',
-            "dialplan_xml" => $xml,
-            "call_center_queues_id" => $call_center_queue_id
-        ];
+        // $dialplanData = [
+        //     "account_id" => $request->account_id,
+        //     "type" => 'Inbound',
+        //     "country_code" => '91',
+        //     "destination" => 'callcenter',
+        //     "context" => 'default',
+        //     "usage" => 'voice',
+        //     "order" => 230,
+        //     "dialplan_enabled" => 1,
+        //     "description" => 'call center queue',
+        //     "dialplan_xml" => $xml,
+        //     "call_center_queues_id" => $call_center_queue_id
+        // ];
 
-        $dailPlanController = new DialplanController();
-        $dailPlanController->insertFromRawData($dialplanData);
+        // $dailPlanController = new DialplanController();
+        // $dailPlanController->insertFromRawData($dialplanData);
 
         // Commit the database transaction
         DB::commit();
@@ -249,7 +280,6 @@ class CallCentreController extends Controller
 
         // Return the response as JSON with HTTP status code 200 (OK)
         return response()->json($response, Response::HTTP_OK);
-
     }
 
     public function update(Request $request, $id)
@@ -273,8 +303,38 @@ class CallCentreController extends Controller
             $request->all(),
             [
                 'queue_name' => 'unique:call_center_queues,queue_name,' . $id,
+                'account_id' => 'required|exists:accounts,id',
                 'greeting' => 'string|nullable',
-                'extension' => 'string|unique:call_center_queues,extension,' . $id . ',id,account_id,' . $call_centre_queue->account_id,                
+                // 'extension' => 'string|unique:call_center_queues,extension,' . $id . ',id,account_id,' . $call_centre_queue->account_id,
+                'extension' => [
+                    'required',
+                    'string',
+                    function ($attribute, $value, $fail) use ($request) { 
+                        // Check if extension exists in extensions table with account_id
+                        if (DB::table('extensions')
+                            ->where('extension', $value)
+                            ->where('account_id', $request->account_id)
+                            ->exists()
+                        ) {
+                            $fail('The extension already exists in the extensions table.');
+                        }
+
+                        // Check if extension exists in ringgroups table with account_id
+                        if (DB::table('ringgroups')
+                            ->where('extension', $value)
+                            ->where('account_id', $request->account_id)
+                            ->exists()
+                        ) {
+                            $fail('The extension already exists in the ringgroups.');
+                        }
+                    },
+                    // Ensure the extension is unique in call_center_queues table within the specific account
+                    Rule::unique('call_center_queues', 'extension')
+                        ->ignore($id)
+                        ->where(function ($query) use ($request) {
+                            return $query->where('account_id', $request->account_id);
+                        }),
+                ],
                 'strategy' => 'in:' . implode(',', config('enums.agent.strategy')),
                 'moh_sound' => 'string|nullable',
                 'time_base_score' => 'in:queue,system',
@@ -425,7 +485,6 @@ class CallCentreController extends Controller
                     if ($callCenterAgent->call_center_queue_id == $id) {
 
                         $callCenterAgent->update($rvalidated);
-                       
                     } else {
                         $response = [
                             'status' => false,
@@ -436,7 +495,7 @@ class CallCentreController extends Controller
                         return response()->json($response, Response::HTTP_FORBIDDEN);
                     }
                 } else {
-                    CallCenterAgent::create($rvalidated); 
+                    CallCenterAgent::create($rvalidated);
                 }
             }
         }

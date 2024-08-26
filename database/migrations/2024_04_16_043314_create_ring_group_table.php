@@ -65,7 +65,7 @@ class CreateRingGroupTable extends Migration
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->text('description')->nullable();
 
-            $table->enum('type', ['user', 'RingGroup', 'CallCentre'])->default('user');
+            // $table->enum('type', ['user', 'RingGroup', 'CallCentre'])->default('user');
             $table->timestamps();
         });
     }
