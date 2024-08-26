@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AccountDetail;
+use App\Models\Document;
 use App\Models\Domain;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -331,7 +333,7 @@ class RinggroupController extends Controller
         DB::beginTransaction();
 
         // Generate UID and attach it to the validated data
-        createUid($action, $type, $formattedDescription, $userId);       
+        createUid($action, $type, $formattedDescription, $userId);
 
         // Update the gateway with the validated data
         $ringgroup->update($validated);
@@ -431,6 +433,24 @@ class RinggroupController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $ringgroup = Ringgroup::find($id);
+
+        if (!$ringgroup) {
+            $response = [
+                'status' => false,
+                'error' => 'Ring group not found'
+            ];
+
+            return response()->json($response, Response::HTTP_NOT_FOUND);
+        }
+
+        $ringgroup->delete();
+
+        $response = [
+            'status' => true,
+            'message' => 'Successfully deleted ringgroup'
+        ];
+
+        return response()->json($response, Response::HTTP_OK);
     }
 }

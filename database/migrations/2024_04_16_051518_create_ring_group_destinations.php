@@ -16,7 +16,7 @@ class CreateRingGroupDestinations extends Migration
         Schema::create('ring_group_destinations', function (Blueprint $table) {
             $table->id()->index();
             $table->integer('account_id')->index();
-            $table->foreignId('ring_group_id')->references('id')->on('ringgroups');
+            $table->foreignId('ring_group_id')->references('id')->on('ringgroups')->onUpdate('cascade')->onDelete('cascade');
             $table->string('destination')->comment('Enter the destination of this ring group');
             
             $table->string('destination_timeout')->nullable();

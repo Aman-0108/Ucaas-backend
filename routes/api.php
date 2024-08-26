@@ -6,7 +6,6 @@ use App\Http\Controllers\Api\Admin\DocumentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BillingAddressController;
 use App\Http\Controllers\Api\CallCentreController;
-use App\Http\Controllers\Api\CallRateController;
 use App\Http\Controllers\Api\CardController;
 use App\Http\Controllers\Api\ChannelHangupController;
 use App\Http\Controllers\Api\DialplanController;
@@ -14,10 +13,8 @@ use App\Http\Controllers\Api\DomainController;
 use App\Http\Controllers\Api\ExtensionController;
 use App\Http\Controllers\Api\FeatureController;
 use App\Http\Controllers\Api\FollowmeController;
-use App\Http\Controllers\Api\ForgotPasswordController;
 use App\Http\Controllers\Api\FreeSwitchController;
 use App\Http\Controllers\Api\GatewayController;
-use App\Http\Controllers\Api\GroupController;
 use App\Http\Controllers\Api\InboundRoutingController;
 use App\Http\Controllers\Api\OutboundRoutingController;
 use App\Http\Controllers\Api\PackageController;
@@ -44,7 +41,6 @@ use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\SoundController;
-use App\Http\Controllers\Api\StripeControllerc;
 use App\Http\Controllers\Api\WalletTransactionController;
 use App\Http\Controllers\S3Controller;
 use App\Http\Controllers\UtilityController;
@@ -355,11 +351,22 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         });
     });
 
+    // Ringgroup
     Route::controller(RinggroupController::class)->group(function () {
+        // To get all the ringgroups
         Route::get('ringgroup', 'index');
+
+        // To store new ringgroup
         Route::post('ringgroup/store', 'store');
+
+        // To get the particular ringgroup by Id
         Route::get('ringgroup/{id}', 'show');
+
+        // To update the particular ringgroup by Id
         Route::put('ringgroup/{id}', 'update');
+
+        // To destroy the ringgroup by Id
+        Route::delete('ringgroup/{id}', 'destroy');
     });
 
     Route::controller(RinggroupdestinationController::class)->group(function () {
@@ -700,7 +707,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     });
 });
 
+// Call Center
 Route::controller(CallCentreController::class)->group(function () {
+    
     Route::get('call-center-queues', 'index');
     Route::get('call-center-queue/{id}', 'show');
     Route::post('call-center-queue/store', 'store');

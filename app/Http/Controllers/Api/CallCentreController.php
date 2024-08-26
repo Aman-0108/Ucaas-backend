@@ -9,7 +9,6 @@ use App\Models\Dialplan;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
@@ -223,22 +222,22 @@ class CallCentreController extends Controller
         }
 
         // Store inside dialplan
-        // $dialplanData = [
-        //     "account_id" => $request->account_id,
-        //     "type" => 'Inbound',
-        //     "country_code" => '91',
-        //     "destination" => 'callcenter',
-        //     "context" => 'default',
-        //     "usage" => 'voice',
-        //     "order" => 230,
-        //     "dialplan_enabled" => 1,
-        //     "description" => 'call center queue',
-        //     "dialplan_xml" => $xml,
-        //     "call_center_queues_id" => $call_center_queue_id
-        // ];
+        $dialplanData = [
+            "account_id" => $request->account_id,
+            "type" => 'Inbound',
+            "country_code" => '',
+            "destination" => $data->extension,
+            "context" => 'default',
+            "usage" => 'voice',
+            "order" => 230,
+            "dialplan_enabled" => 1,
+            "description" => 'call center queue' .$data->extension,
+            "dialplan_xml" => $xml,
+            "call_center_queues_id" => $call_center_queue_id
+        ];
 
-        // $dailPlanController = new DialplanController();
-        // $dailPlanController->insertFromRawData($dialplanData);
+        $dailPlanController = new DialplanController();
+        $dailPlanController->insertFromRawData($dialplanData);
 
         // Commit the database transaction
         DB::commit();

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\AccountDetail;
+use App\Models\Document;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -152,60 +153,49 @@ class AccountDetailsController extends Controller
             return response()->json($response, Response::HTTP_FAILED_DEPENDENCY);
         }
 
-        $data = AccountDetail::where(['account_id' => $accountId])->get();
+        foreach ($request->documents as $document) {
 
-        if (!$data->isEmpty()) {
+            $uploadedData = AccountDetail::where(['account_id' => $accountId, 'document_id' => $document['document_id']])->get();
 
-            $rejectedData = $data->filter(function ($accountDetail) {
-                return $accountDetail->status == 2;
+            // Assuming $uploadedData is a collection of AccountDetail
+            $approvedData = $uploadedData->filter(function ($item) {
+                return $item->status == 1;
             });
 
-            if (!$rejectedData->isEmpty()) {
-
-                $unique = $rejectedData->unique('document_id');
-
-                $unique->each(function ($item) use ($request, $accountId) { 
-                    $docId = $item->document_id;
-                    foreach ($request->documents as $document) {
-                        if ($document['document_id'] == $docId) {
-                            $this->insertData($accountId, $document);
-                        }
-                    }                    
-                });
-
-                $response = [
-                    'status' => true,
-                    'data' => $rejectedData,
-                    'message' => 'successfully stored.',
-                    'unique' => $unique
-                ];
-
-                // Return a JSON response with HTTP status code 201 (created)
-                return response()->json($response, Response::HTTP_CREATED);
-            } else {
+            if (!empty($approvedData)) {
                 $response = [
                     'status' => false,
-                    'data' => $data,
-                    'message' => 'already submitted.'
+                    'message' => 'already approved.'
                 ];
 
                 // Return a JSON response with HTTP status code 302 (found)
                 return response()->json($response, Response::HTTP_FOUND);
             }
-        } else {
-            foreach ($request->documents as $document) {
-                $this->insertData($accountId, $document);
-            }
 
-            // update the company status        
-            $account->company_status = 3;
-            $account->save();
+            $newData = $uploadedData->filter(function ($item) {
+                return $item->status == 3;
+            });
+
+            if (!empty($newData)) {
+                $response = [
+                    'status' => false,
+                    'message' => 'already uploaded.'
+                ];
+
+                // Return a JSON response with HTTP status code 302 (found)
+                return response()->json($response, Response::HTTP_FOUND);
+            }
+            
+            // Insert data
+            $this->insertData($accountId, $document);
+
+            // Check if all documents are uploaded
+            $this->checkAllDocumentsUploadedOrNot($accountId);
         }
 
         // Prepare the response data
         $response = [
             'status' => true,
-            'data' => $data,
             'message' => 'Successfully stored'
         ];
 
@@ -401,5 +391,25 @@ class AccountDetailsController extends Controller
             'path' => $filePath,
             'status' => 3
         ]);
+    }
+
+    // Check if all required documents are uploaded
+    protected function checkAllDocumentsUploadedOrNot($accountId)
+    {
+        // Get all required documents
+        $allRequiredDocuments = Document::where('status', 'active')->pluck('id');
+       
+        // Get the uploaded documents for the account
+        $uploadedDocuments = AccountDetail::where(['account_id' => $accountId])->distinct('document_id')->pluck('document_id');
+
+        // Check if all required documents are uploaded
+        $result = rsort($allRequiredDocuments) === rsort($uploadedDocuments);
+
+        // Update the account status if all required documents are uploaded
+        if($result) {
+            $account = Account::find($accountId);
+            $account->company_status = 3;
+            $account->save();
+        }
     }
 }
