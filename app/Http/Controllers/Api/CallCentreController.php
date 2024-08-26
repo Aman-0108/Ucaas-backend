@@ -223,6 +223,35 @@ class CallCentreController extends Controller
         return response()->json($response, Response::HTTP_CREATED);
     }
 
+    public function show($id)
+    {
+        // Find the call_centre_queue by ID
+        $call_centre_queue = CallCenterQueue::find($id);
+
+        // Check if the call_centre_queue exists
+        if (!$call_centre_queue) {
+            // If call_centre_queue is not found, prepare error response
+            $response = [
+                'status' => false,
+                'error' => 'call centre queue not found'
+            ];
+            // Return a JSON response with error message and 404 status code
+            return response()->json($response, Response::HTTP_NOT_FOUND);
+        }
+
+        // Prepare the response data
+        $response = [
+            'status' => true,
+            'data' => $call_centre_queue,
+            'message' => 'Successfully fetched call centre queue'
+
+        ];
+
+        // Return the response as JSON with HTTP status code 200 (OK)
+        return response()->json($response, Response::HTTP_OK);
+
+    }
+
     public function update(Request $request, $id)
     {
         // Find the call_centre_queue by ID

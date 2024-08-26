@@ -702,6 +702,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
 Route::controller(CallCentreController::class)->group(function () {
     Route::get('call-center-queues', 'index');
+    Route::get('call-center-queue/{id}', 'show');
     Route::post('call-center-queue/store', 'store');
     Route::put('call-center-queue/update/{id}', 'update');
 
