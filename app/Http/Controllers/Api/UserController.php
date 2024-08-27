@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Domain;
 use App\Models\RolePermission;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Models\UserPermission;
 use App\Models\UserRole;
@@ -35,6 +37,7 @@ class UserController extends Controller
         try {
 
             $userId = $request->user()->id;
+            $userType = $request->user()->usertype;
 
             // Validate the request data
             $validateUser = Validator::make(
@@ -44,8 +47,6 @@ class UserController extends Controller
                     'email' => 'required|email|unique:users,email',
                     'password' => 'required',
                     'username' => 'required|unique:users,username',
-                    'domain_id' => 'required|exists:domains,id',
-                    'account_id' => 'required|exists:accounts,id',
                     'timezone_id' => 'required|exists:timezones,id',
                     'status' => 'required|in:E,D',
                     'role_id' => 'required|integer|exists:roles,id',
@@ -67,30 +68,38 @@ class UserController extends Controller
                 ], Response::HTTP_FORBIDDEN);
             }
 
-            // Additional layer of security to check 
-            // if (!is_valid_email($request->email)) {
-
-            //     $type = config('enums.RESPONSE.ERROR');
-            //     $status = false;
-            //     $msg = 'Mail exchange is not available';
-
-            //     // Return a JSON response with the success message and stored account data
-            //     return responseHelper($type, $status, $msg, Response::HTTP_NOT_FOUND);
-            // }
-
             DB::beginTransaction();
-            // Create a new user record in the database
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'username' => $request->username,
-                'password' => Hash::make($request->password),
-                'domain_id' => $request->domain_id,
-                'account_id' => $request->account_id,
-                'timezone_id' => $request->timezone_id,
-                'status' => $request->status,
-                'created_by' => $userId
-            ]);
+
+            if ($userType != 'SuperAdmin') {
+                $account_id = User::find($userId)->account_id;
+                $domainId = Domain::where('account_id', $account_id)->first()->id;
+
+                // Create a new user record in the database
+                $user = User::create([
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'username' => $request->username,
+                    'password' => Hash::make($request->password),
+                    'domain_id' => $domainId,
+                    'account_id' => $account_id,
+                    'timezone_id' => $request->timezone_id,
+                    'status' => $request->status,
+                    'created_by' => $userId
+                ]);
+
+            } else {
+                $user = User::create([
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'username' => $request->username,
+                    'password' => Hash::make($request->password),
+                    'domain_id' => 'null',
+                    'account_id' => 'null',
+                    'timezone_id' => $request->timezone_id,
+                    'status' => $request->status,
+                    'created_by' => $userId
+                ]);
+            }
 
             $this->insertUserRole($user->id, $request->role_id);
 

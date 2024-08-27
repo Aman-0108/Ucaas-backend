@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\AccountDetail;
-use App\Models\Document;
 use App\Models\Domain;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -69,20 +67,20 @@ class RinggroupController extends Controller
                 // Validation rules for each field
                 'account_id' => 'required:exists:accounts,id',
                 'name' => 'required|string|unique:ringgroups,name',
-                'extension' => [
-                    'required',
-                    'string',
-                    function ($attribute, $value, $fail) {
-                        if (DB::table('extensions')->where('extension', $value)->exists()) {
-                            $fail('This ' . $attribute . ' is for Users.');
-                        }
-                    },
-                    Rule::unique('ringgroups', 'extension')
-                        ->ignore($request->id)
-                        ->where(function ($query) use ($request) {
-                            return $query->where('account_id', $request->account_id);
-                        }),
-                ],
+                // 'extension' => [
+                //     'required',
+                //     'string',
+                //     function ($attribute, $value, $fail) {
+                //         if (DB::table('extensions')->where('extension', $value)->exists()) {
+                //             $fail('This ' . $attribute . ' is for Users.');
+                //         }
+                //     },
+                //     Rule::unique('ringgroups', 'extension')
+                //         ->ignore($request->id)
+                //         ->where(function ($query) use ($request) {
+                //             return $query->where('account_id', $request->account_id);
+                //         }),
+                // ],
                 'strategy' => 'in:enterprise,sequence,simultaneously,random,rollover,',
                 'timeout_destination' => 'string|nullable',
                 'call_timeout' => 'required|string',
@@ -141,6 +139,28 @@ class RinggroupController extends Controller
 
         createUid($action, $type, $validated, $userId);
 
+        $startingPoint = config('globals.RINGGROUP_START_FROM');
+
+        $maxExtension = Ringgroup::where('account_id', $request->account_id)->max('extension');
+
+        // Ensure the maxExtension is at least the starting point
+        $maxExtension = $maxExtension !== null ? max($maxExtension, $startingPoint) : $startingPoint;
+
+        // Fetch all existing extensions
+        $existingExtensions = Ringgroup::where('account_id', $request->account_id)
+            ->pluck('extension')
+            ->toArray();        
+
+        // Generate a list of potential extensions
+        $potentialExtensions = range($startingPoint, $maxExtension + 1); // Include +1 to cover the edge case
+
+        // Find the missing extensions
+        $availableExtensions = array_diff($potentialExtensions, $existingExtensions);
+
+        // Get the smallest available extension number
+        $newExtension = !empty($availableExtensions) ? min($availableExtensions) : $maxExtension + 1;
+
+        $validated['extension'] = $newExtension;
         $validated['domain_name'] = $domain->domain_name;
         $validated['created_by'] = $userId;
 
@@ -271,18 +291,18 @@ class RinggroupController extends Controller
                 // Validation rules for each field
                 'account_id' => 'exists:accounts,id',
                 'name' => 'required|string|unique:ringgroups,name,' . $id,
-                'extension' => [
-                    'required',
-                    'string',
-                    Rule::unique('ringgroups', 'extension')->ignore($id)->where(function ($query) use ($request) {
-                        return $query->where('account_id', $request->account_id);
-                    }),
-                    function ($attribute, $value, $fail) {
-                        if (DB::table('extensions')->where('extension', $value)->exists()) {
-                            $fail('This ' . $attribute . ' is only for users.');
-                        }
-                    },
-                ],
+                // 'extension' => [
+                //     'required',
+                //     'string',
+                //     Rule::unique('ringgroups', 'extension')->ignore($id)->where(function ($query) use ($request) {
+                //         return $query->where('account_id', $request->account_id);
+                //     }),
+                //     function ($attribute, $value, $fail) {
+                //         if (DB::table('extensions')->where('extension', $value)->exists()) {
+                //             $fail('This ' . $attribute . ' is only for users.');
+                //         }
+                //     },
+                // ],
                 'strategy' => 'in:enterprise,sequence,simultaneously,random,rollover,',
                 'timeout_destination' => 'string|nullable',
                 'call_timeout' => 'string',

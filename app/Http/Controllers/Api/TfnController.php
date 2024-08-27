@@ -12,6 +12,9 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
 use App\Models\DidVendor;
 use App\Models\Domain;
+use App\Models\Extension;
+use App\Models\Package;
+use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -313,7 +316,7 @@ class TfnController extends Controller
             $account = Account::find($request->companyId);
 
             $domainInputs = [
-                'domain_name' => $account->admin_name .'.'. $account->id . '.webvio.in',
+                'domain_name' => $account->admin_name . '.' . $account->id . '.webvio.in',
                 'created_by' => $createdBy
             ];
 
@@ -328,6 +331,49 @@ class TfnController extends Controller
 
             // update domain id
             User::where('email', $account->email)->update(['domain_id' => $result->id]);
+
+            $domain = Domain::where('account_id', $request->companyId)->first();
+
+            if (!$domain) {
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Domain not found.'
+                ], 404);
+            }
+
+            $activeSubscription = Subscription::where(['account_id' => $request->companyId, 'status' => 'active'])->first();
+
+            if ($activeSubscription) {
+                $package = Package::find($activeSubscription->package_id);
+
+                if (!$package) {
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Package not found.'
+                    ]);
+                }
+
+                $number_of_user = $package->number_of_user;
+
+                $intitialExtension = config('globals.EXTENSION_START_FROM');
+
+                for ($i = 0; $i < $number_of_user; $i++) {
+                    Extension::create([
+                        'account_id' => $request->companyId,
+                        "domain" => $domain->id,
+                        "extension" => $intitialExtension,
+                        "password" => $intitialExtension,
+                        "voicemail_password" => $intitialExtension,
+                    ]);
+
+                    $intitialExtension++;
+                }
+
+                // $response = [
+                //     'status' => true,
+                //     'message' => 'Domain created successfully.'
+                // ];
+            }
 
             return $response;
         }
