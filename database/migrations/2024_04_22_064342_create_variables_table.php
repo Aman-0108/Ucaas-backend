@@ -16,8 +16,14 @@ class CreateVariablesTable extends Migration
         Schema::create('variables', function (Blueprint $table) {
             $table->id();
             $table->string('command');
+            $table->string('category');
             $table->string('var_name');
             $table->string('var_value');
+            $table->string('hostname');
+            $table->string('enabled');
+            $table->integer('order');
+            $table->bigInteger('created_by')->nullable();
+
             $table->timestamps();
         });
     }
