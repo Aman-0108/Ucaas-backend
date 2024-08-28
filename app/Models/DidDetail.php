@@ -18,6 +18,6 @@ class DidDetail extends Model
 
     public function configuration()
     {
-        return $this->hasOne(DidConfigure::class, 'id', 'did_id');
+        return $this->hasOne(DidConfigure::class, 'did_id', 'id');
     }
 }

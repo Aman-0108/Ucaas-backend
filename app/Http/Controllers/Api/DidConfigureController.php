@@ -79,8 +79,13 @@ class DidConfigureController extends Controller
             // Generate UID and attach it to the validated data
             createUid($action, $type, $validated, $userId);
 
-            // Create a new didConfigure record with the validated data
-            $data = DidConfigure::create($validated);
+            // Use updateOrCreate to either update an existing record or create a new one
+            $data = DidConfigure::updateOrCreate(
+                [
+                    'did_id' => $validated['did_id'] // Use this as the criteria to find the existing record
+                ],
+                $validated // Attributes to update or create
+            );
 
             // Commit the database transaction
             DB::commit();
