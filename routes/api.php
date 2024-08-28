@@ -33,6 +33,7 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\StripeController;
 use App\Http\Controllers\Api\CommioController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\DidConfigureController;
 use App\Http\Controllers\Api\DiddetailsController;
 use App\Http\Controllers\Api\TfnController;
 use App\Http\Controllers\Api\DidRateController;
@@ -642,10 +643,19 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
         // Rate Chart
         Route::controller(DidRateController::class)->group(function () {
+            // To get all the rates
             Route::get('rates', 'index');
+
+            // To store new rate
             Route::post('rate/store', 'store');
+
+            // To update the particular rate by Id
             Route::put('rate/update/{id}', 'update');
+
+            // To destroy the rate by Id
             Route::delete('rate/destroy/{id}', 'destroy');
+
+            // To get the particular rate by Id
             Route::get('rate/show/{id}/{rateType}', 'show');
         });
 
@@ -653,6 +663,21 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::controller(DiddetailsController::class)->group(function () {
             Route::get('all', 'index');
             Route::delete('destroy/{id}', 'destroy');
+        });
+
+        // configuration
+        Route::controller(DidConfigureController::class)->group(function () {
+            // To store new configuration
+            Route::post('configure', 'store');
+
+            // To update the particular configuration by Id
+            Route::put('configure/update/{id}', 'update');
+
+            // To destroy the configuration by Id
+            Route::delete('configure/destroy/{id}', 'destroy');
+
+            // To get the particular configuration by Id
+            Route::get('configure/show/{id}', 'show');            
         });
     });
 
