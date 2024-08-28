@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DidDetail;
 use App\Models\DidOrderStatus;
 use App\Models\DidVendor;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -30,9 +31,11 @@ class DiddetailsController extends Controller
         // Define a base query for did's
         $query = DidDetail::with(['dialplan','configuration']);
 
-        // Apply filtering based on request parameters
-        if ($request->has('account_id')) {
-            $query->where('account_id', $request->account_id);
+        $userId = $request->user()->id;
+        $account_id = User::find($userId)->account_id;
+
+        if($account_id){
+            $query->where('account_id', $account_id);
         }
 
         // Fetch the did'sbased on the query
