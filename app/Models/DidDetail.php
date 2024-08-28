@@ -15,4 +15,9 @@ class DidDetail extends Model
     {
         return $this->hasOne(Dialplan::class, 'id', 'id');
     }
+
+    public function configuration()
+    {
+        return $this->hasOne(DidConfigure::class, 'id', 'did_id');
+    }
 }

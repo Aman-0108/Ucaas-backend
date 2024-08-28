@@ -28,7 +28,7 @@ class DiddetailsController extends Controller
     public function index(Request $request)
     {
         // Define a base query for did's
-        $query = DidDetail::with(['dialplan']);
+        $query = DidDetail::with(['dialplan','configuration']);
 
         // Apply filtering based on request parameters
         if ($request->has('account_id')) {

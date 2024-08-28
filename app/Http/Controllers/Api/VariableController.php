@@ -8,6 +8,8 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
+use App\Rules\ValidString;
+
 class VariableController extends Controller
 {
     protected $type;
@@ -144,12 +146,12 @@ class VariableController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                'command' => 'string|max:255|nullable', // The command associated with the variable
-                'category' => 'string|nullable', // The category of the variable
-                'var_name' => 'required|nullable', // The name of the variable
-                'var_value' => 'required|nullable', // The value of the variable
-                'hostname' => 'required|nullable', // The hostname associated with the variable
-                'enabled' => 'required|nullable', // Indicates whether the variable is enabled
+                'command' => ['string','max:255','nullable', new ValidString], // The command associated with the variable
+                'category' => ['string', 'nullable', new ValidString], // The category of the variable
+                'var_name' => ['string', 'nullable', new ValidString], // The name of the variable
+                'var_value' => ['string', 'nullable', new ValidString],// The value of the variable
+                'hostname' => ['string', 'nullable', new ValidString], // The hostname associated with the variable
+                'enabled' => ['string', 'nullable', new ValidString], // Indicates whether the variable is enabled
                 'order' => 'integer|nullable', // The order of the variable
             ]
         );
@@ -216,7 +218,7 @@ class VariableController extends Controller
         // Return a JSON response containing the variable details
         return response()->json($response, Response::HTTP_OK);
     }
-
+    
     /**
      * Delete a specific variable.
      *
