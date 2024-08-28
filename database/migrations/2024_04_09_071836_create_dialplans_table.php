@@ -45,7 +45,7 @@ class CreateDialplansTable extends Migration
 
             $table->foreignId('did_id')->nullable()->references('id')->on('did_details')->onUpdate('cascade')->onDelete('cascade');
 
-            $table->foreignId('call_center_queues_id')->nullable()->references('id')->on('call_center_queues');
+            $table->foreignId('call_center_queues_id')->nullable()->references('id')->on('call_center_queues')->onUpdate('cascade')->onDelete('cascade');
 
             $table->softDeletes();
             $table->timestamps();

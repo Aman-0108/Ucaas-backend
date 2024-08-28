@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CallCenterAgent;
 use App\Models\CallCenterQueue;
 use App\Models\Dialplan;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -34,8 +35,15 @@ class CallCentreController extends Controller
      */
     public function index(Request $request)
     {
+        $userId = $request->user()->id;
+        $account_id = User::find($userId)->account_id;
+
         // Retrieve all call centre queues from the database
         $call_centre_queues = CallCenterQueue::with('agents');
+
+        if($account_id) {
+            $call_centre_queues = $call_centre_queues->where('account_id', $account_id);
+        }
 
         // Execute the query to fetch call centre queues
         $call_centre_queues = $call_centre_queues->get();

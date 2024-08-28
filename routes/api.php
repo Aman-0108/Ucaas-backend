@@ -705,28 +705,30 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::delete('destroy/{id}', 'destroy')->name('delete');
         });
     });
+
+    // Call Center
+    Route::controller(CallCentreController::class)->group(function () {
+        // To get all the call-center-queues
+        Route::get('call-center-queues', 'index');
+
+        // To get the particular call-center-queue by Id
+        Route::get('call-center-queue/{id}', 'show');
+
+        // To store new call-center-queue
+        Route::post('call-center-queue/store', 'store');
+
+        // To update the particular call-center-queue by Id
+        Route::put('call-center-queue/update/{id}', 'update');
+
+        // 
+        Route::delete('call-center-queue/destroy/{id}', 'destroy');
+
+        // To destroy the call-center-queue by Id
+        Route::delete('call-center-agent/destroy/{id}', 'callCentreAgentDelete');
+    });
 });
 
-// Call Center
-Route::controller(CallCentreController::class)->group(function () {    
-    // To get all the call-center-queues
-    Route::get('call-center-queues', 'index');
 
-    // To get the particular call-center-queue by Id
-    Route::get('call-center-queue/{id}', 'show');
-
-    // To store new call-center-queue
-    Route::post('call-center-queue/store', 'store');
-
-    // To update the particular call-center-queue by Id
-    Route::put('call-center-queue/update/{id}', 'update');
-
-    // 
-    Route::delete('call-center-queue/destroy/{id}', 'destroy');
-
-    // To destroy the call-center-queue by Id
-    Route::delete('call-center-agent/destroy/{id}', 'callCentreAgentDelete');
-});
 
 // Stripe
 Route::controller(StripeController::class)->group(function () {

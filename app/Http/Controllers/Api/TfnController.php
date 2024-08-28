@@ -315,8 +315,10 @@ class TfnController extends Controller
 
             $account = Account::find($request->companyId);
 
+            $domainName = preg_replace('/\s+/', '', $account->admin_name);
+
             $domainInputs = [
-                'domain_name' => $account->admin_name . '.' . $account->id . '.webvio.in',
+                'domain_name' =>  $domainName. '.' . $account->id . '.webvio.in',
                 'created_by' => $createdBy
             ];
 
