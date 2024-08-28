@@ -40,9 +40,9 @@ class DidConfigureController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                // Validation rules for each field                
                 'did_id' => 'required|exists:did_details,id',
-                'usages' => 'required|string',
+                'usages' => 'required|array', // Validate 'usages' as an array
+                'usages.*' => 'string', // Optionally, validate each item in the 'usages' array as a string
                 'action' => 'required|string',
                 'forward' => 'required|in:disabled,pstn,direct',
                 'forward_to' => 'string|nullable',
@@ -55,44 +55,55 @@ class DidConfigureController extends Controller
         // Check if validation fails
         if ($validator->fails()) {
             // If validation fails, return a JSON response with error messages
-            $response = [
+            return response()->json([
                 'status' => false,
-                'message' => 'validation error',
+                'message' => 'Validation error',
                 'errors' => $validator->errors()
-            ];
-
-            return response()->json($response, Response::HTTP_FORBIDDEN);
+            ], Response::HTTP_FORBIDDEN);
         }
 
         // Retrieve the validated input
         $validated = $validator->validated();
 
+        // Convert the usages array to a comma-separated string
+        $validated['usages'] = implode(', ', $validated['usages']);
+
         // Begin a database transaction
         DB::beginTransaction();
 
-        // Define the action and type for creating UID
-        $action = 'create';
-        $type = $this->type;
+        try {
+            // Define the action and type for creating UID
+            $action = 'create';
+            $type = $this->type;
 
-        // Generate UID and attach it to the validated data
-        createUid($action, $type, $validated, $userId);
+            // Generate UID and attach it to the validated data
+            createUid($action, $type, $validated, $userId);
 
-        // Create a new didConfigure record with the validated data
-        $data = DidConfigure::create($validated);
+            // Create a new didConfigure record with the validated data
+            $data = DidConfigure::create($validated);
 
-        // Commit the database transaction
-        DB::commit();
+            // Commit the database transaction
+            DB::commit();
 
-        // Prepare the response data
-        $response = [
-            'status' => true,
-            'data' => $data,
-            'message' => 'Successfully stored'
-        ];
+            // Prepare the response data
+            return response()->json([
+                'status' => true,
+                'data' => $data,
+                'message' => 'Successfully stored'
+            ], Response::HTTP_CREATED);
+        } catch (\Exception $e) {
+            // Rollback the transaction if something goes wrong
+            DB::rollBack();
 
-        // Return a JSON response with HTTP status code 201 (Created)
-        return response()->json($response, Response::HTTP_CREATED);
+            // Return a JSON response with error details
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to store data',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
+
 
     /**
      * Display the did configure record with the specified ID.
@@ -119,7 +130,7 @@ class DidConfigureController extends Controller
         // Prepare the response data
         $response = [
             'status' => true,
-            'data' => ($didConfigure) ? $didConfigure : '', // Ensure data is not null
+            'data' => $didConfigure, // Ensure data is not null
             'message' => 'Successfully fetched'
         ];
 
@@ -139,18 +150,29 @@ class DidConfigureController extends Controller
         // Retrieve the ID of the authenticated user making the request
         $userId = $request->user()->id;
 
+        // Find the didConfigure with the given ID
+        $didConfigure = DidConfigure::find($id);
+
+        if (!$didConfigure) {
+            // Handle case where the didConfigure record is not found
+            return response()->json([
+                'status' => false,
+                'message' => 'Did configuration not found'
+            ], Response::HTTP_NOT_FOUND);
+        }
+
         // Validate the incoming request data
         $validator = Validator::make(
             $request->all(),
             [
-                // Validation rules for each field
-                'usages' => 'string',
-                'action' => 'string',
-                'forward' => 'in:disabled,pstn,direct',
+                'usages' => 'array|nullable', // Validate 'usages' as an array and allow it to be null
+                'usages.*' => 'string', // Optionally, validate each item in the 'usages' array as a string
+                'action' => 'string|nullable',
+                'forward' => 'in:disabled,pstn,direct|nullable',
                 'forward_to' => 'string|nullable',
-                'record' => 'boolean',
-                'hold_music' => 'string',
-                'status' => 'boolean',
+                'record' => 'boolean|nullable',
+                'hold_music' => 'string|nullable',
+                'status' => 'boolean|nullable',
             ]
         );
 
@@ -159,7 +181,7 @@ class DidConfigureController extends Controller
             // If validation fails, return a JSON response with error messages
             $response = [
                 'status' => false,
-                'message' => 'validation error',
+                'message' => 'Validation error',
                 'errors' => $validator->errors()
             ];
 
@@ -169,8 +191,10 @@ class DidConfigureController extends Controller
         // Retrieve the validated input
         $validated = $validator->validated();
 
-        // Find the didConfigure with the given ID
-        $didConfigure = DidConfigure::find($id);
+        // Convert the usages array to a comma-separated string if it's present
+        if (isset($validated['usages'])) {
+            $validated['usages'] = implode(', ', $validated['usages']);
+        }
 
         // Call the compareValues function to generate a formatted description based on the didConfigure and validated data
         $formattedDescription = compareValues($didConfigure, $validated);
@@ -192,9 +216,10 @@ class DidConfigureController extends Controller
             'message' => 'Successfully updated did configuration',
         ];
 
-        // Return a JSON response indicating successful update with response code 200(ok)
+        // Return a JSON response indicating successful update with response code 200 (OK)
         return response()->json($response, Response::HTTP_OK);
     }
+
 
     /**
      * Destroy a did configure record by ID.
