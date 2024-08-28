@@ -42,6 +42,7 @@ use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\SoundController;
+use App\Http\Controllers\Api\VariableController;
 use App\Http\Controllers\Api\WalletTransactionController;
 use App\Http\Controllers\S3Controller;
 use App\Http\Controllers\UtilityController;
@@ -677,7 +678,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::delete('configure/destroy/{id}', 'destroy');
 
             // To get the particular configuration by Id
-            Route::get('configure/show/{id}', 'show');            
+            Route::get('configure/show/{id}', 'show');
         });
     });
 
@@ -750,6 +751,26 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
         // To destroy the call-center-queue by Id
         Route::delete('call-center-agent/destroy/{id}', 'callCentreAgentDelete');
+    });
+
+    // 
+    Route::controller(VariableController::class)->group(function () {
+        Route::prefix('variables')->group(function () {
+            // To get all the variables
+            Route::get('all', 'index');
+
+            // To get the particular variable by Id
+            Route::get('show/{id}', 'show');
+
+            // To update the particular variable by Id
+            Route::put('update/{id}', 'update');
+
+            // To store new variable
+            Route::post('store', 'store');
+
+            // To destroy the variable by Id
+            Route::delete('destroy/{id}', 'destroy');
+        });
     });
 });
 
