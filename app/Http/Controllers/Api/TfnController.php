@@ -313,12 +313,18 @@ class TfnController extends Controller
                 return $srcResponse;
             }
 
+            // Find account
             $account = Account::find($request->companyId);
 
+            // Remove spaces from domain name
             $domainName = preg_replace('/\s+/', '', $account->admin_name);
 
+            // To shorten the domain name if it's longer than 4 characters
+            $formattedDomain = strlen($domainName) > 4 ? substr($domainName, 0, 4) : $domainName;
+
+            // Domain inputs
             $domainInputs = [
-                'domain_name' =>  $domainName. '.' . $account->id . '.webvio.in',
+                'domain_name' =>  $formattedDomain. '.' . $account->id . '.webvio.in',
                 'created_by' => $createdBy
             ];
 
