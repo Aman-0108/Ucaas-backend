@@ -847,7 +847,21 @@ class FreeSwitchController extends Controller
     {
         if ($this->connected) {
             // Build the API command to kill the call
-            $cmd = "api uuid_barge {$uuid}";
+            // $cmd = "api uuid_barge {$uuid}";
+            // Get the authenticated user's extension
+            $extension = Extension::find(Auth::user()->extension_id);
+
+            if (!$extension) {
+                $response = [
+                    'status' => false,
+                    'message' => 'Extension not found.',
+                ];
+                // Return the response as JSON with HTTP status code 400 (Bad Request)
+                return response()->json($response, Response::HTTP_BAD_REQUEST);
+            }
+
+            $cmd = "api originate user/{$extension->extension} &three_way({$uuid})";
+
             // Check call state
             $response = $this->socket->request($cmd);
             // Prepare the response data
@@ -881,7 +895,7 @@ class FreeSwitchController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     protected function intercept($uuid)
-    {
+    { 
         return $this->handleCallAction($uuid, 'intercept');
     }
 
@@ -936,7 +950,7 @@ class FreeSwitchController extends Controller
         if ($this->connected) {
 
             // Prepare the API command based on the action
-            $uuid = ($action == 'intercept') ? "'-bleg'. $uuid" : $uuid;
+            // $uuid = ($action == 'intercept') ? "'-bleg'. $uuid" : $uuid;
 
             // Build the API command to originate the call
             $cmd = "api originate user/{$extension->extension}@{$domain} &$action($uuid)";
