@@ -34,11 +34,21 @@ class VariableController extends Controller
         // Start building the query to fetch variables
         $variables = Variable::query();
 
+        if($request->has('search')) {
+            $search = $request->input('search');
+            $variables = $variables->where('command', 'like', '%'.$search.'%')
+                                    ->orWhere('var_value', 'like', '%'.$search.'%')
+                                    ->orWhere('hostname', 'like', '%'.$search.'%')
+                                    ->orWhere('var_name', 'like', '%'.$search.'%')
+                                    ->orWhere('category', 'like', '%'.$search.'%')
+                                    ->orWhere('enabled', 'like', '%'.$search.'%');
+        }
+
         // Get the number of rows per page from the global configuration
         $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
 
         // Execute the query to fetch variables
-        $variables = $variables->orderBy('id', 'asc')->paginate($ROW_PER_PAGE);
+        $variables = $variables->orderBy('id', 'desc')->paginate($ROW_PER_PAGE);
 
         // Prepare the response data
         $response = [

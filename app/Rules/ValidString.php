@@ -25,8 +25,8 @@ class ValidString implements Rule
      */
     public function passes($attribute, $value)
     {
-        // Regular expression to allow only alphanumeric characters
-        return preg_match('/^[a-zA-Z0-9]+$/', $value);
+        // Regular expression to allow alphanumeric characters, spaces, and underscores
+        return preg_match('/^[a-zA-Z0-9 _]+$/', $value);
     }
 
     /**
