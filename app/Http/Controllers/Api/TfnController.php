@@ -354,10 +354,11 @@ class TfnController extends Controller
             if ($activeSubscription) {
                 $package = Package::find($activeSubscription->package_id);
 
-                if (!$package) {
+                // Check if there are any users to create 
+                if (!$package || $package->number_of_user < 1) {
                     return response()->json([
                         'status' => false,
-                        'error' => 'Package not found.'
+                        'error' => 'Check Package Details.'
                     ]);
                 }
 
@@ -365,22 +366,29 @@ class TfnController extends Controller
 
                 $intitialExtension = config('globals.EXTENSION_START_FROM');
 
-                for ($i = 0; $i < $number_of_user; $i++) {
-                    Extension::create([
+                for ($i = 0; $i < $number_of_user; $i++) {                   
+
+                    $data = Extension::create([
                         'account_id' => $request->companyId,
                         "domain" => $domain->id,
                         "extension" => $intitialExtension,
                         "password" => $intitialExtension,
                         "voicemail_password" => $intitialExtension,
                     ]);
+    
+                    // Check if this is the first extension
+                    if ($i == 0) {
+                        // Insert the first extension into the user table                    
+                        $userdata = User::find($request->user()->id);
+                        $userdata->extension_id = $data->id;
+                        $userdata->save();
+    
+                        // Update the extension in the extension table
+                        Extension::where('id', $data->id)->update(['user' => $request->user()->id]);
+                    }
 
                     $intitialExtension++;
                 }
-
-                // $response = [
-                //     'status' => true,
-                //     'message' => 'Domain created successfully.'
-                // ];
             }
 
             return $response;
