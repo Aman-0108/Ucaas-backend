@@ -121,11 +121,11 @@ class CallRateController extends Controller
             $request->all(),
             [
                 'destination_name' => 'string|max:255',
-                'account_id' => 'required|exists:accounts,id',
+                'account_id' => 'exists:accounts,id|nullable',
                 'destination' => 'string|required',
                 'selling_billing_block' => 'required|integer',
-                'sell_rate' => 'nullable|numeric|between:0,99999999.99',
-                'buy_rate' => 'nullable|numeric|between:0,99999999.99',
+                'sell_rate' => 'required|numeric|between:0,99999999.99',
+                'buy_rate' => 'required|numeric|between:0,99999999.99',
                 'gateway_id' => 'required|integer',
             ]
         );      
@@ -205,7 +205,7 @@ class CallRateController extends Controller
             $request->all(),
             [
                 'destination_name' => 'nullable|string|max:255,' . $id, // Nullable for updates
-                'account_id' => 'exists:accounts,id',
+                'account_id' => 'exists:accounts,id|nullable',
                 'destination' => 'nullable|string', // Assuming you might not require 'destination' on update
                 'selling_billing_block' => 'nullable|integer', // Nullable for updates
                 'sell_rate' => 'nullable|numeric|between:0,99999999.99',

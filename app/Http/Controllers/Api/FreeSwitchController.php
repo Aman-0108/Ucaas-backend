@@ -655,8 +655,11 @@ class FreeSwitchController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
      */
-    public function checkActiveExtensionOnServer(): JsonResponse
+    public function checkActiveExtensionOnServer(Request $request): JsonResponse
     {
+        $userId = $request->user()->id;
+        $userType = $request->user()->usertype;
+
         // Check if the socket is connected
         if ($this->connected) {
             // Make a request to the server API to show registrations
@@ -746,9 +749,9 @@ class FreeSwitchController extends Controller
             // Prepare final response
             $response = [
                 'status' => true, // Indicates the success status of the request
-                'data' => $activeExts, // Contains the fetched extensions
-                'new' => $formattedArray, // Contains the formatted new data
-                'result' => $differences, // Contains the differences found
+                // 'data' => $activeExts, // Contains the fetched extensions
+                // 'new' => $formattedArray, // Contains the formatted new data
+                // 'result' => $differences, // Contains the differences found
                 'message' => 'Successfully updated',
             ];
 

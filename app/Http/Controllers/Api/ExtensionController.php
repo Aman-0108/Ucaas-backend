@@ -49,16 +49,18 @@ class ExtensionController extends Controller
      */
     public function index(Request $request)
     {
+        $userId = $request->user()->id;
+        $userType = $request->user()->usertype;
+
         // Fetch all extensions from the database
         $extensions = Extension::with(['followmes', 'domain']);
 
-        // Start building the query to fetch extensions
-        // $extensions = Extension::query();
-
         // Check if the request contains an 'account' parameter
-        if ($request->has('account')) {
+        if (isset($userType) && $userType == 'Company') {
             // If 'account' parameter is provided, filter extensions by account ID
-            $extensions->where('account_id', $request->account);
+            $extensions->where('account_id', $request->user()->account_id);
+        } else {
+            $extensions->where('user', $userId);
         }
 
         // Check if the request contains a 'search' parameter

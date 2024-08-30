@@ -16,7 +16,7 @@ class CreateCallRatesPlansTable extends Migration
         Schema::create('call_rates_plans', function (Blueprint $table) {
             $table->id();
             $table->string('destination_name', 150)->default('default');
-            $table->foreignId('account_id')->references('id')->on('accounts')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('account_id')->nullable()->references('id')->on('accounts')->onUpdate('cascade')->onDelete('cascade');
             $table->string('destination', 5)->comment('(*) can dial any destination');
             $table->smallInteger('selling_billing_block');
             $table->decimal('sell_rate', 10, 2);
