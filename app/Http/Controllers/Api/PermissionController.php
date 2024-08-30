@@ -93,7 +93,7 @@ class PermissionController extends Controller
         $response = [
             'status' => true,
             'data' => $formattedData,
-            'message' => 'Successfully fetched..'
+            'message' => 'Successfully assigned permissions.'
         ];
 
         // Return a JSON response with user data and success message
