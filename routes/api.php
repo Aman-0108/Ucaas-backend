@@ -1,51 +1,18 @@
 <?php
 
-use App\Http\Controllers\Api\AccountController;
-use App\Http\Controllers\Api\AccountDetailsController;
-use App\Http\Controllers\Api\Admin\DocumentController;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\BillingAddressController;
-use App\Http\Controllers\Api\CallCentreController;
-use App\Http\Controllers\Api\CardController;
-use App\Http\Controllers\Api\ChannelHangupController;
-use App\Http\Controllers\Api\DialplanController;
-use App\Http\Controllers\Api\DomainController;
-use App\Http\Controllers\Api\ExtensionController;
-use App\Http\Controllers\Api\FeatureController;
-use App\Http\Controllers\Api\FollowmeController;
-use App\Http\Controllers\Api\FreeSwitchController;
-use App\Http\Controllers\Api\GatewayController;
-use App\Http\Controllers\Api\InboundRoutingController;
-use App\Http\Controllers\Api\OutboundRoutingController;
-use App\Http\Controllers\Api\PackageController;
-use App\Http\Controllers\Api\PaymentGatewayController;
-use App\Http\Controllers\Api\RinggroupController;
-use App\Http\Controllers\Api\RinggroupdestinationController;
-use App\Http\Controllers\Api\RoleController;
-use App\Http\Controllers\Api\Sofia\SipProfileController;
-use App\Http\Controllers\Api\Sofia\SipProfileDomainController;
-use App\Http\Controllers\Api\Sofia\SipProfileSettingController;
-use App\Http\Controllers\Api\Sofia\SofiaGlobalSettingController;
-use App\Http\Controllers\Api\TimezoneController;
-use App\Http\Controllers\Api\UidController;
-use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\PaymentController;
-use App\Http\Controllers\Api\StripeController;
-use App\Http\Controllers\Api\CommioController;
-use App\Http\Controllers\Api\ContactController;
-use App\Http\Controllers\Api\DidConfigureController;
-use App\Http\Controllers\Api\DiddetailsController;
-use App\Http\Controllers\Api\TfnController;
-use App\Http\Controllers\Api\DidRateController;
-use App\Http\Controllers\Api\DidVendorController;
-use App\Http\Controllers\Api\InvoiceController;
-use App\Http\Controllers\Api\LeadController;
-use App\Http\Controllers\Api\PermissionController;
-use App\Http\Controllers\Api\SoundController;
-use App\Http\Controllers\Api\VariableController;
-use App\Http\Controllers\Api\WalletTransactionController;
+use App\Http\Controllers\Api\{
+    AccountController, AccountDetailsController, Admin\DocumentController, AuthController, BillingAddressController,
+    CallCentreController, CardController, ChannelHangupController, DialplanController, DomainController, ExtensionController,
+    FeatureController, FollowmeController, FreeSwitchController, GatewayController, InboundRoutingController, OutboundRoutingController,
+    PackageController, PaymentGatewayController, RinggroupController, RinggroupdestinationController, RoleController, Sofia\SipProfileController,
+    Sofia\SipProfileDomainController, Sofia\SipProfileSettingController, Sofia\SofiaGlobalSettingController, TimezoneController, UidController,
+    UserController, PaymentController, StripeController, CommioController, ContactController, DidConfigureController, DiddetailsController,
+    TfnController, DidRateController, DidVendorController, InvoiceController, LeadController, PermissionController, SoundController,
+    VariableController, WalletTransactionController
+};
 use App\Http\Controllers\S3Controller;
 use App\Http\Controllers\UtilityController;
+
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -773,8 +740,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         });
     });
 });
-
-
 
 // Stripe
 Route::controller(StripeController::class)->group(function () {

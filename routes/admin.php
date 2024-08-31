@@ -1,22 +1,25 @@
 <?php
 
-use App\Http\Controllers\Api\Admin\DocumentController;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\CallRateController;
-use App\Http\Controllers\Api\DestinationController;
-use App\Http\Controllers\Api\DestinationRateController;
-use App\Http\Controllers\Api\DidRateController;
-use App\Http\Controllers\Api\DidVendorController;
-use App\Http\Controllers\Api\DomainController;
-use App\Http\Controllers\Api\FeatureController;
-use App\Http\Controllers\Api\LeadController;
-use App\Http\Controllers\Api\PackageController;
-use App\Http\Controllers\Api\PermissionController;
-use App\Http\Controllers\Api\RateController;
-use App\Http\Controllers\Api\RatingPlanController;
-use App\Http\Controllers\Api\RatingProfileController;
-use App\Http\Controllers\Api\RoleController;
-use App\Http\Controllers\Api\TimezoneController;
+// Importing controllers from the Api namespace
+use App\Http\Controllers\Api\{
+    AuthController,
+    Admin\DocumentController,
+    CallRateController,
+    DestinationController,
+    DestinationRateController,
+    DidRateController,
+    DidVendorController,
+    DomainController,
+    FeatureController,
+    LeadController,
+    PackageController,
+    PermissionController,
+    RateController,
+    RatingPlanController,
+    RatingProfileController,
+    RoleController,
+    TimezoneController
+};
 use Illuminate\Support\Facades\Route;
 
 // Guest mode
