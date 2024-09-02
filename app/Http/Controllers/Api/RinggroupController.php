@@ -66,21 +66,13 @@ class RinggroupController extends Controller
             [
                 // Validation rules for each field
                 'account_id' => 'required:exists:accounts,id',
-                'name' => 'required|string|unique:ringgroups,name',
-                // 'extension' => [
-                //     'required',
-                //     'string',
-                //     function ($attribute, $value, $fail) {
-                //         if (DB::table('extensions')->where('extension', $value)->exists()) {
-                //             $fail('This ' . $attribute . ' is for Users.');
-                //         }
-                //     },
-                //     Rule::unique('ringgroups', 'extension')
-                //         ->ignore($request->id)
-                //         ->where(function ($query) use ($request) {
-                //             return $query->where('account_id', $request->account_id);
-                //         }),
-                // ],
+                'name' => [
+                    'required',
+                    'string',
+                    Rule::unique('ringgroups')->where(function ($query) use ($request) {
+                        return $query->where('account_id', $request->input('account_id'));
+                    }),
+                ],
                 'strategy' => 'in:enterprise,sequence,simultaneously,random,rollover,',
                 'timeout_destination' => 'string|nullable',
                 'call_timeout' => 'required|string',
@@ -102,7 +94,6 @@ class RinggroupController extends Controller
                 'greeting' => 'string|nullable',
                 'status' => 'in:active,inactive',
                 'description' => 'string|nullable',
-                // 'type' => 'required|in:RingGroup',
             ]
         );
 
@@ -149,7 +140,7 @@ class RinggroupController extends Controller
         // Fetch all existing extensions
         $existingExtensions = Ringgroup::where('account_id', $request->account_id)
             ->pluck('extension')
-            ->toArray();        
+            ->toArray();
 
         // Generate a list of potential extensions
         $potentialExtensions = range($startingPoint, $maxExtension + 1); // Include +1 to cover the edge case
@@ -290,19 +281,14 @@ class RinggroupController extends Controller
             [
                 // Validation rules for each field
                 'account_id' => 'exists:accounts,id',
-                'name' => 'required|string|unique:ringgroups,name,' . $id,
-                // 'extension' => [
-                //     'required',
-                //     'string',
-                //     Rule::unique('ringgroups', 'extension')->ignore($id)->where(function ($query) use ($request) {
-                //         return $query->where('account_id', $request->account_id);
-                //     }),
-                //     function ($attribute, $value, $fail) {
-                //         if (DB::table('extensions')->where('extension', $value)->exists()) {
-                //             $fail('This ' . $attribute . ' is only for users.');
-                //         }
-                //     },
-                // ],
+                'name' => [
+                    'string',
+                    Rule::unique('ringgroups')
+                        ->where(function ($query) use ($request) {
+                            return $query->where('account_id', $request->input('account_id'));
+                        })
+                        ->ignore($id), // Assuming 'id' is the route parameter
+                ],
                 'strategy' => 'in:enterprise,sequence,simultaneously,random,rollover,',
                 'timeout_destination' => 'string|nullable',
                 'call_timeout' => 'string',

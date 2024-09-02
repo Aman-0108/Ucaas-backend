@@ -41,7 +41,7 @@ class CallCentreController extends Controller
         // Retrieve all call centre queues from the database
         $call_centre_queues = CallCenterQueue::with('agents');
 
-        if($account_id) {
+        if ($account_id) {
             $call_centre_queues = $call_centre_queues->where('account_id', $account_id);
         }
 
@@ -79,40 +79,14 @@ class CallCentreController extends Controller
             $request->all(),
             [
                 'account_id' => 'required|exists:accounts,id',
-                'queue_name' => 'required|unique:call_center_queues,queue_name',
+                'queue_name' => [
+                    'required',
+                    'string',
+                    Rule::unique('call_center_queues')->where(function ($query) use ($request) {
+                        return $query->where('account_id', $request->input('account_id'));
+                    }),
+                ],
                 'greeting' => 'string|nullable',
-                // 'extension' => [
-                //     'required',
-                //     'string',
-                //     function ($attribute, $value, $fail) use ($request) {
-                //         // Check if extension exists in call_center_queues table with account_id 
-                //         if (DB::table('call_center_queues')
-                //             ->where('extension', $value)
-                //             ->where('account_id', $request->account_id)
-                //             ->exists()
-                //         ) {
-                //             $fail('The extension already exists in the call_center_queues table for this account.');
-                //         }
-
-                //         // Check if extension exists in extensions table with account_id
-                //         if (DB::table('extensions')
-                //             ->where('extension', $value)
-                //             ->where('account_id', $request->account_id)
-                //             ->exists()
-                //         ) {
-                //             $fail('The extension already exists in the extensions table.');
-                //         }
-
-                //         // Check if extension exists in ringgroups table with account_id
-                //         if (DB::table('ringgroups')
-                //             ->where('extension', $value)
-                //             ->where('account_id', $request->account_id)
-                //             ->exists()
-                //         ) {
-                //             $fail('The extension already exists in the ringgroups.');
-                //         }
-                //     }
-                // ],
                 'strategy' => 'in:' . implode(',', config('enums.agent.strategy')),
                 'moh_sound' => 'string|nullable',
                 'time_base_score' => 'in:queue,system',
@@ -332,39 +306,16 @@ class CallCentreController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                'queue_name' => 'unique:call_center_queues,queue_name,' . $id,
+                'queue_name' => [
+                    'string',
+                    Rule::unique('call_center_queues')
+                        ->where(function ($query) use ($request) {
+                            return $query->where('account_id', $request->input('account_id'));
+                        })
+                        ->ignore($id), // Assuming 'id' is the route parameter
+                ],
                 'account_id' => 'required|exists:accounts,id',
                 'greeting' => 'string|nullable',
-                // 'extension' => 'string|unique:call_center_queues,extension,' . $id . ',id,account_id,' . $call_centre_queue->account_id,
-                // 'extension' => [
-                //     'required',
-                //     'string',
-                //     function ($attribute, $value, $fail) use ($request) { 
-                //         // Check if extension exists in extensions table with account_id
-                //         if (DB::table('extensions')
-                //             ->where('extension', $value)
-                //             ->where('account_id', $request->account_id)
-                //             ->exists()
-                //         ) {
-                //             $fail('The extension already exists in the extensions table.');
-                //         }
-
-                //         // Check if extension exists in ringgroups table with account_id
-                //         if (DB::table('ringgroups')
-                //             ->where('extension', $value)
-                //             ->where('account_id', $request->account_id)
-                //             ->exists()
-                //         ) {
-                //             $fail('The extension already exists in the ringgroups.');
-                //         }
-                //     },
-                //     // Ensure the extension is unique in call_center_queues table within the specific account
-                //     Rule::unique('call_center_queues', 'extension')
-                //         ->ignore($id)
-                //         ->where(function ($query) use ($request) {
-                //             return $query->where('account_id', $request->account_id);
-                //         }),
-                // ],
                 'strategy' => 'in:' . implode(',', config('enums.agent.strategy')),
                 'moh_sound' => 'string|nullable',
                 'time_base_score' => 'in:queue,system',

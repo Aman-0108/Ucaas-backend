@@ -32,7 +32,7 @@ class CreateRingGroupTable extends Migration
             $table->id();
 
             $table->integer('account_id');
-            $table->string('name')->unique()->comment('Enter Ring Group Name Here');
+            $table->string('name')->comment('Enter Ring Group Name Here');
             $table->string('extension')->comment('Enter Extension');
             $table->string('domain_name')->comment('Domain assigned to account_id');
             $table->enum('strategy', ['enterprise', 'sequence', 'simultaneously', 'random', 'rollover'])->default('enterprise');
