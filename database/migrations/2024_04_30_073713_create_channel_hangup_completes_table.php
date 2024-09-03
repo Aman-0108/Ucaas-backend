@@ -79,6 +79,9 @@ class CreateChannelHangupCompletesTable extends Migration
 
             $table->string('recording_path')->nullable();
 
+            $table->string('application_state')->nullable();
+            $table->string('application_state_to')->nullable();
+
             $table->softDeletes();
 
             // $table->timestamp('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));

@@ -718,6 +718,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
         // To destroy the call-center-queue by Id
         Route::delete('call-center-agent/destroy/{id}', 'callCentreAgentDelete');
+
+        // To update the particular call-center-agent
+        Route::put('call-center-agent/update/{id}', 'callCentreAgentUpdate');
     });
 
     // 

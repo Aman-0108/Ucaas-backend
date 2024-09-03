@@ -556,4 +556,61 @@ class CallCentreController extends Controller
         // Return the response as JSON with HTTP status code 200 (OK)
         return response()->json($response, Response::HTTP_OK);
     }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function callCentreAgentUpdate(Request $request, $id) 
+    {       
+        // Retrieve the ID of the authenticated user making the request
+        $account_id = $request->user()->account_id;
+
+        // Find the call centre agent by ID
+        $data = CallCenterAgent::find($id);
+
+        if (!$data) {
+            // If the call centre agent is not found, return a 404 Not Found response
+            $response = [
+                'status' => false,
+                'error' => 'Agent not found'
+            ];
+
+            return response()->json($response, Response::HTTP_NOT_FOUND);
+        }
+
+
+        // Retrieve the call centre queue ID from the call centre agent
+        $call_center_queue_id = $data->call_center_queue_id;
+
+        // Find the call centre queue by ID
+        $callCenter = CallCenterQueue::where('id', $call_center_queue_id)->first();
+
+        // Check if the authenticated user making the request is authorized to update the call centre agent
+        if($callCenter->account_id != $account_id) {
+            // If the user is not authorized, return a 401 Unauthorized response
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized'
+            ], 401);
+        }
+
+        // Update the status of the call centre agent
+        $data->status = $request->status;
+
+        // Save the changes to the call centre agent
+        $data->save();
+
+        // Prepare the response data
+        $response = [
+            'status' => true,
+            'message' => 'Successfully updated call centre agent'
+        ];
+
+        // Return the response as JSON with HTTP status code 200 (OK)
+        return response()->json($response, Response::HTTP_OK);
+    }
 }
