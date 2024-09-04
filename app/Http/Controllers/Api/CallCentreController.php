@@ -611,9 +611,23 @@ class CallCentreController extends Controller
 
         if ($request->status == 'Available') {
             if ($data->status == 'On Break') {
-                AgentBreak::where('call_center_agent_id', $id)
+                // Find the ongoing break record for the agent
+                $ongoingBreak = AgentBreak::where('call_center_agent_id', $id)
                     ->whereNull('end_time')
-                    ->update(['end_time' => now()]);
+                    ->first();
+
+                if ($ongoingBreak) {
+                    // Update the end_time of the ongoing break
+                    $ongoingBreak->end_time = now();
+                    $ongoingBreak->save();
+
+                    // Calculate the duration of the break
+                    $breakDuration = $ongoingBreak->end_time->diffInSeconds($ongoingBreak->start_time);
+
+                    // Update the total_break_time for this specific break record
+                    $ongoingBreak->total_break_time = $breakDuration;
+                    $ongoingBreak->save();
+                }
             }
         }
 

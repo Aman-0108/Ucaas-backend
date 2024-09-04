@@ -18,6 +18,8 @@ class CreateAgentBreaksTable extends Migration
             $table->foreignId('call_center_agent_id')->references('id')->on('call_center_agents')->onUpdate('cascade')->onDelete('cascade');  
             $table->timestamp('start_time');
             $table->timestamp('end_time')->nullable();
+            $table->integer('total_break_time')->default(0);
+            $table->timestamps();
         });
     }
 
