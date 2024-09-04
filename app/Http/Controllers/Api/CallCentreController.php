@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AgentBreak;
 use App\Models\CallCenterAgent;
 use App\Models\CallCenterQueue;
 use App\Models\Dialplan;
@@ -564,8 +565,8 @@ class CallCentreController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function callCentreAgentUpdate(Request $request, $id) 
-    {       
+    public function callCentreAgentUpdate(Request $request, $id)
+    {
         // Retrieve the ID of the authenticated user making the request
         $account_id = $request->user()->account_id;
 
@@ -582,6 +583,8 @@ class CallCentreController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
+        // Begin database transaction
+        DB::beginTransaction();
 
         // Retrieve the call centre queue ID from the call centre agent
         $call_center_queue_id = $data->call_center_queue_id;
@@ -590,12 +593,28 @@ class CallCentreController extends Controller
         $callCenter = CallCenterQueue::where('id', $call_center_queue_id)->first();
 
         // Check if the authenticated user making the request is authorized to update the call centre agent
-        if($callCenter->account_id != $account_id) {
+        if ($callCenter->account_id != $account_id) {
             // If the user is not authorized, return a 401 Unauthorized response
             return response()->json([
                 'status' => false,
                 'message' => 'Unauthorized'
-            ], 401);
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
+        if ($request->status == 'On Break') {
+            AgentBreak::create([
+                'call_center_agent_id' => $id,
+                'start_time' => now(),
+                'end_time' => null,
+            ]);
+        }
+
+        if ($request->status == 'Available') {
+            if ($data->status == 'On Break') {
+                AgentBreak::where('call_center_agent_id', $id)
+                    ->whereNull('end_time')
+                    ->update(['end_time' => now()]);
+            }
         }
 
         // Update the status of the call centre agent
@@ -603,6 +622,9 @@ class CallCentreController extends Controller
 
         // Save the changes to the call centre agent
         $data->save();
+
+        // Commit the changes to the database
+        DB::commit();
 
         // Prepare the response data
         $response = [

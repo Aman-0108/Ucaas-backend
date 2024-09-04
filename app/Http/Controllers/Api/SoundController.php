@@ -44,18 +44,18 @@ class SoundController extends Controller
             $query->where('account_id', $request->account_id);
         }
 
-        if($request->has('type')) {
+        if ($request->has('type')) {
             $query->where('type', $request->type);
         }
 
         // Execute the query to fetch audios
         $audios = $query->orderBy('id', 'desc')->get();
 
-        $audios->each(function ($audio) {
-            if ($audio->path && $audio->name) {
-                $audio->url = Storage::url($audio->path.'/'.$audio->name);
-            }
-        });
+        // $audios->each(function ($audio) {
+        //     if ($audio->path && $audio->name) {
+        //         $audio->url = Storage::url($audio->path . '/' . $audio->name);
+        //     }
+        // });
 
         // Prepare the response data
         $response = [
@@ -153,12 +153,20 @@ class SoundController extends Controller
 
         $file = $request->file('path');
         $fileName = $file->getClientOriginalName();
-        $filePath = $file->storeAs($path, $fileName); // Store file in storage/app/audios
+
+        // $filePath = $file->storeAs($path, $fileName); // Store file in storage/app/audios
+
+        // Upload file to S3
+        $filePath = $file->storeAs('audios', $fileName, 's3'); // Specify 's3' disk
+
+        // Retrieve the S3 URL of the uploaded file
+        $s3Url = Storage::disk('s3')->url($filePath);
 
         $validated = [
             'account_id' => $request->account_id,
             'name' => $fileName,
-            'path' => $path,
+            // 'path' => $path,
+            'path' => $s3Url,
             'type' => $request->type
         ];
 

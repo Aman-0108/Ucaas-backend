@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -147,21 +148,42 @@ class UserController extends Controller
     public function checkUserName(Request $request)
     {
         try {
+            
+            $account_id = $request->user() ? $request->user()->account_id : null;
+
+            if(!$account_id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'You dont have permission to perform this action',
+                ], Response::HTTP_CONFLICT);
+            }
+
+            $request->merge([
+                'account_id' => $account_id
+            ]);
+
             // Validate the request data
-            $validateUser = Validator::make(
+            $validator = Validator::make(
                 $request->all(),
                 [
-                    'username' => 'required|unique:users,username,'
+                    'username' => [
+                        'required',
+                        'string',
+                        Rule::unique('users')->where(function ($query) use ($request) {
+                            return $query->where('account_id', $request->input('account_id'));
+                        }),
+                    ],
+                    'account_id' => 'required|integer|exists:accounts,id', // Ensure account_id exists
                 ]
             );
 
             // Check if validation fails
-            if ($validateUser->fails()) {
+            if ($validator->fails()) {
                 // If validation fails, prepare error response with validation errors
                 return response()->json([
                     'status' => false,
                     'message' => 'validation error',
-                    'errors' => $validateUser->errors()
+                    'errors' => $validator->errors()
                 ], Response::HTTP_NOT_ACCEPTABLE);
             }
 
