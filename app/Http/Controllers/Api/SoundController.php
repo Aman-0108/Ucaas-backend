@@ -266,23 +266,35 @@ class SoundController extends Controller
 
         if ($request->hasFile('path')) {
 
-            $existingpath = $audio->path . '/' . $audio->name;
+            // $existingpath = $audio->path . '/' . $audio->name;
 
-            $exists = Storage::exists($existingpath);
+            // $exists = Storage::exists($existingpath);
 
-            if ($exists) {
-                // Delete associated file from storage
-                Storage::delete($path);
+            // if ($exists) {
+            //     // Delete associated file from storage
+            //     Storage::delete($path);
+            // }
+            $filePath = parse_url($audio->path, PHP_URL_PATH); // Get the path part of the URL
+            // Check if the file exists on S3
+            if (Storage::disk('s3')->exists($filePath)) {
+                // Delete the file from S3
+                Storage::disk('s3')->delete($filePath);
             }
 
             $file = $request->file('path');
             $fileName = $file->getClientOriginalName();
-            $filePath = $file->storeAs($path, $fileName);
+            // $filePath = $file->storeAs($path, $fileName);
+
+            // Upload file to S3
+            $filePath = $file->storeAs('audios', $fileName, 's3'); // Specify 's3' disk
+
+            // Retrieve the S3 URL of the uploaded file
+            $s3Url = Storage::disk('s3')->url($filePath);
 
             $validated = [
                 'account_id' => $request->account_id,
                 'name' => $fileName,
-                'path' => $path,
+                'path' => $s3Url,
                 'type' => null
             ];
         }
@@ -346,13 +358,21 @@ class SoundController extends Controller
             return response()->json($response, Response::HTTP_FORBIDDEN);
         }
 
-        $path = $audio->path . '/' . $audio->name;
+        // $path = $audio->path . '/' . $audio->name;
 
-        $exists = Storage::exists($path);
+        // $exists = Storage::exists($path);
 
-        if ($exists) {
-            // Delete associated file from storage
-            Storage::delete($path);
+        // if ($exists) {
+        //     // Delete associated file from storage
+        //     Storage::delete($path);
+        // }
+
+        // Delete the file from S3
+        $filePath = parse_url($audio->path, PHP_URL_PATH); // Get the path part of the URL
+        // Check if the file exists on S3
+        if (Storage::disk('s3')->exists($filePath)) {
+            // Delete the file from S3
+            Storage::disk('s3')->delete($filePath);
         }
 
         // Delete the audio from the database
@@ -361,7 +381,7 @@ class SoundController extends Controller
         // Prepare success response
         $response = [
             'status' => true,
-            'data' => $path,
+            'data' => $filePath,
             'message' => 'Successfully deleted audio'
         ];
 
