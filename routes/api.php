@@ -7,7 +7,7 @@ use App\Http\Controllers\Api\{
     PackageController, PaymentGatewayController, RinggroupController, RinggroupdestinationController, RoleController, Sofia\SipProfileController,
     Sofia\SipProfileDomainController, Sofia\SipProfileSettingController, Sofia\SofiaGlobalSettingController, TimezoneController, UidController,
     UserController, PaymentController, StripeController, CommioController, ContactController, DidConfigureController, DiddetailsController,
-    TfnController, DidRateController, DidVendorController, InvoiceController, LeadController, PermissionController, SoundController,
+    TfnController, DidRateController, DidVendorController, InvoiceController, LeadController, PermissionController, PortController, SoundController,
     VariableController, WalletTransactionController
 };
 use App\Http\Controllers\S3Controller;
@@ -723,7 +723,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::put('call-center-agent/update/{id}', 'callCentreAgentUpdate');
     });
 
-    // 
+    // Variables
     Route::controller(VariableController::class)->group(function () {
         Route::prefix('variables')->group(function () {
             // To get all the variables
@@ -740,6 +740,26 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
             // To destroy the variable by Id
             Route::delete('destroy/{id}', 'destroy');
+        });
+    });
+
+    // Ports
+    Route::controller(PortController::class)->group(function () {
+        Route::prefix('ports')->name('port.')->group(function () {
+            // To get all the addresses
+            Route::get('all', 'index')->name('browse');
+
+            // To get the particular address by Id
+            Route::get('show/{id}', 'show')->name('read');
+
+            // To update the particular address by Id
+            Route::put('update/{id}', 'update')->name('edit');
+
+            // To store new address
+            Route::post('store', 'store')->name('add');
+
+            // To destroy the address by Id
+            Route::delete('destroy/{id}', 'destroy')->name('delete');
         });
     });
 });
