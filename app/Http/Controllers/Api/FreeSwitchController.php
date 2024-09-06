@@ -556,96 +556,131 @@ class FreeSwitchController extends Controller
         }
     }
 
+    /**
+     * Adds an agent to the call center via the API.
+     *
+     * @param string $agent_name The name of the agent to add.
+     * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
+     */
     public function callcenter_config_agent_add($agent_name): JsonResponse
     {
         if ($this->socket->is_connected()) {
+            // Send API request to add an agent
             $cmd = "api callcenter_config agent add {$agent_name}";
 
             $response = $this->socket->request($cmd);
 
             $status = false;
 
-            // Check if the string contains "+OK"
+            // Check if the response contains "+OK" indicating success
             if (strpos($response, "+OK") !== false) {
-                // If it does, remove this substring
+                // If it does, set status to true
                 $status = true;
             }
 
             // Prepare the response data
-            $response = [
+            $responseData = [
                 'status' => $status, // Indicates the success status of the request
-                'data' => $response, // Contains the fetched extensions
-                'message' => 'Successfully agent add'
+                'data' => $response, // Contains the response from the server
+                'message' => 'Successfully added agent'
             ];
 
             // Return the response as JSON with HTTP status code 200 (OK)
-            return response()->json($response, Response::HTTP_OK);
+            return response()->json($responseData, Response::HTTP_OK);
         } else {
+            // If the socket is not connected, return a disconnected response
             return $this->disconnected();
         }
     }
 
+    /**
+     * Sets the tier of an agent in a call center via the API.
+     *
+     * @param string $queueName The name of the queue to set the tier for.
+     * @param string $agentName The name of the agent to set the tier for.
+     * @param int|null $level The level to set the agent at. If not provided, the agent will be set to the first available level.
+     * @param int|null $position The position to set the agent at. If not provided, the agent will be set to the first available position.
+     * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
+     */
     public function callcenter_config_tier_set($queueName, $agentName, $level = null, $position = null): JsonResponse
     {
         if ($this->socket->is_connected()) {
 
+            // Construct the command to set the tier of the agent
             $cmd = "api callcenter_config tier set level/position {$queueName} {$agentName}";
 
+            // If both level and position are provided, append them to the command
             if (!empty($level) && !empty($position)) {
                 $cmd .= " {$level}/$position";
-            } elseif (!empty($level)) {
+            }
+            // If only level is provided, append it to the command
+            elseif (!empty($level)) {
                 $cmd .= " {$level}";
-            } elseif (!empty($position)) {
+            }
+            // If only position is provided, append it to the command
+            elseif (!empty($position)) {
                 $cmd .= " {$position}";
             }
 
+            // Send the command to the FreeSwitch server and get the response
             $response = $this->socket->request($cmd);
 
+            // Initialize the status to false
             $status = false;
 
-            // Check if the string contains "+OK"
+            // Check if the response contains "+OK" indicating success
             if (strpos($response, "+OK") !== false) {
-                // If it does, remove this substring
+                // If it does, set status to true
                 $status = true;
             }
 
             // Prepare the response data
             $response = [
                 'status' => $status, // Indicates the success status of the request
-                'data' => $response,
+                'data' => $response, // Contains the response from the server
                 'message' => 'Successfully tier set.'
             ];
 
             // Return the response as JSON with HTTP status code 200 (OK)
             return response()->json($response, Response::HTTP_OK);
         } else {
+            // If the socket is not connected, return a disconnected response
             return $this->disconnected();
         }
     }
 
+    /**
+     * Deletes an agent from a call center via the API.
+     *
+     * @param string $agent_name The name of the agent to delete.
+     * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
+     */
     public function callcenter_config_agent_del($agent_name): JsonResponse
     {
         if ($this->socket->is_connected()) {
+            // Send the API request to delete an agent
             $response = $this->socket->request("api callcenter_config agent del $agent_name");
 
+            // Initialize the status to false
             $status = false;
 
-            // Check if the string contains "+OK"
+            // Check if the response contains "+OK" indicating success
             if (strpos($response, "+OK") !== false) {
-                // If it does, remove this substring
+                // If it does, set status to true
                 $status = true;
             }
 
             // Prepare the response data
             $response = [
                 'status' => $status, // Indicates the success status of the request
-                'data' => $response, // Contains the fetched extensions
+                'data' => $response, // Contains the response from the server
                 'message' => 'Successfully agent delete'
             ];
 
             // Return the response as JSON with HTTP status code 200 (OK)
             return response()->json($response, Response::HTTP_OK);
         } else {
+            // If the socket is not connected, return a disconnected response
             return $this->disconnected();
         }
     }
@@ -898,7 +933,7 @@ class FreeSwitchController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     protected function intercept($uuid)
-    { 
+    {
         return $this->handleCallAction($uuid, 'intercept');
     }
 
