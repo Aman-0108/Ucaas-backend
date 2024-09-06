@@ -7,6 +7,7 @@ use App\Models\AgentBreak;
 use App\Models\CallCenterAgent;
 use App\Models\CallCenterQueue;
 use App\Models\Dialplan;
+use App\Models\Domain;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -105,7 +106,7 @@ class CallCentreController extends Controller
                 'discard_abandoned_after' => 'numeric|nullable',
                 'queue_cid_prefix' => 'string|nullable',
                 'created_by' => 'required|exists:users,id',
-                // 'xml' => 'string|nullable'
+                'xml' => 'string|nullable'
             ]
         );
 
@@ -206,12 +207,23 @@ class CallCentreController extends Controller
 
                 $newAgent = CallCenterAgent::create($rvalidated);
 
-                $freeSWitch = new FreeSwitchController();
-                $fsResponse = $freeSWitch->callcenter_config_agent_add($newAgent->agent_name);
+                $account_id = $data->account_id;
+                $domain = Domain::where(['account_id' => $account_id])->first();
 
+                $generatedQueueName = $data->extension . '@' . $domain->domain_name;
+
+                $freeSWitch = new FreeSwitchController();
+
+                $fsResponse = $freeSWitch->callcenter_config_agent_add($newAgent->agent_name);
                 $fsResponse = $fsResponse->getData();
 
-                if (!$fsResponse->status) {
+                $fsLevelResponse = $freeSWitch->callcenter_config_tier_set_level($generatedQueueName, $newAgent->agent_name, $newAgent->tier_level);
+                $fsLevelResponse = $fsLevelResponse->getData();
+
+                $fsPositionResponse = $freeSWitch->callcenter_config_tier_set_position($generatedQueueName, $newAgent->agent_name, $newAgent->tier_position);
+                $fsPositionResponse = $fsPositionResponse->getData();
+
+                if (!$fsResponse->status || !$fsLevelResponse->status || !$fsPositionResponse->status) {
                     $type = config('enums.RESPONSE.ERROR');
                     $status = false;
                     $msg = 'Something went wrong in freeswitch. Please try again later.';
@@ -268,6 +280,11 @@ class CallCentreController extends Controller
         // Find the call_centre_queue by ID
         $call_centre_queue = CallCenterQueue::find($id);
 
+        $account_id = $call_centre_queue->account_id;
+        $domain = Domain::where(['account_id' => $account_id])->first();
+
+        $generatedQueueName = $call_centre_queue->extension . '@' . $domain->domain_name;
+
         // Check if the call_centre_queue exists
         if (!$call_centre_queue) {
             // If the call_centre_queue is not found, return a 404 Not Found response
@@ -309,7 +326,7 @@ class CallCentreController extends Controller
                 'queue_timeout_action' => 'string|nullable',
                 'discard_abandoned_after' => 'numeric|nullable',
                 'queue_cid_prefix' => 'string|nullable',
-                // 'xml' => 'string|nullable'
+                'xml' => 'string|nullable'
             ]
         );
 
@@ -420,26 +437,26 @@ class CallCentreController extends Controller
                     if ($callCenterAgent->call_center_queue_id == $id) {
 
                         $callCenterAgent->update($rvalidated);
-                        
+
                         $freeSWitch = new FreeSwitchController();
 
-                        $qname = $validated['queue_name'];
                         $aname = $rvalidated['agent_name'];
                         $tier_level = $rvalidated['tier_level'];
                         $tier_position = $rvalidated['tier_position'];
 
-                        $fsResponse = $freeSWitch->callcenter_config_tier_set($qname, $aname, $tier_level, $tier_position);
-    
-                        $fsResponse = $fsResponse->getData();
-    
-                        if (!$fsResponse->status) {
+                        $fsLevelResponse = $freeSWitch->callcenter_config_tier_set_level($generatedQueueName, $aname, $tier_level);
+                        $fsLevelResponse = $fsLevelResponse->getData();
+
+                        $fsPositionResponse = $freeSWitch->callcenter_config_tier_set_position($generatedQueueName, $aname, $tier_position);
+                        $fsPositionResponse = $fsPositionResponse->getData();
+
+                        if (!$fsLevelResponse->status || !$fsPositionResponse->status) {
                             $type = config('enums.RESPONSE.ERROR');
                             $status = false;
                             $msg = 'Something went wrong in freeswitch. Please try again later.';
-    
+
                             return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
                         }
-
                     } else {
                         $response = [
                             'status' => false,
@@ -453,11 +470,17 @@ class CallCentreController extends Controller
                     $newAgent = CallCenterAgent::create($rvalidated);
 
                     $freeSWitch = new FreeSwitchController();
-                    $fsResponse = $freeSWitch->callcenter_config_agent_add($newAgent->agent_name);
 
+                    $fsResponse = $freeSWitch->callcenter_config_agent_add($newAgent->agent_name);
                     $fsResponse = $fsResponse->getData();
 
-                    if (!$fsResponse->status) {
+                    $fsLevelResponse = $freeSWitch->callcenter_config_tier_set_level($generatedQueueName, $newAgent->agent_name, $newAgent->tier_level);
+                    $fsLevelResponse = $fsLevelResponse->getData();
+
+                    $fsPositionResponse = $freeSWitch->callcenter_config_tier_set_position($generatedQueueName, $newAgent->agent_name, $newAgent->tier_position);
+                    $fsPositionResponse = $fsPositionResponse->getData();
+
+                    if (!$fsResponse->status || !$fsLevelResponse->status || !$fsPositionResponse->status) {
                         $type = config('enums.RESPONSE.ERROR');
                         $status = false;
                         $msg = 'Something went wrong in freeswitch. Please try again later.';

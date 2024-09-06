@@ -566,9 +566,13 @@ class FreeSwitchController extends Controller
     {
         if ($this->socket->is_connected()) {
             // Send API request to add an agent
-            $cmd = "api callcenter_config agent add {$agent_name}";
+            $cmd = "api callcenter_config agent add {$agent_name} callback";
+
+            Log::info($cmd);
 
             $response = $this->socket->request($cmd);
+
+            Log::info($response);
 
             $status = false;
 
@@ -606,8 +610,8 @@ class FreeSwitchController extends Controller
     {
         if ($this->socket->is_connected()) {
 
-            // Construct the command to set the tier of the agent
-            $cmd = "api callcenter_config tier set level/position {$queueName} {$agentName}";
+            // Construct the command to set the tier of the agent            
+            Log::info($cmd);
 
             // If both level and position are provided, append them to the command
             if (!empty($level) && !empty($position)) {
@@ -615,12 +619,79 @@ class FreeSwitchController extends Controller
             }
             // If only level is provided, append it to the command
             elseif (!empty($level)) {
-                $cmd .= " {$level}";
+                $cmd = "api callcenter_config tier set level {$queueName} {$agentName} {$level}";
             }
             // If only position is provided, append it to the command
             elseif (!empty($position)) {
-                $cmd .= " {$position}";
+                $cmd = "api callcenter_config tier set position {$queueName} {$agentName} {$position}";
             }
+
+            // Send the command to the FreeSwitch server and get the response
+            $response = $this->socket->request($cmd);
+
+            // Initialize the status to false
+            $status = false;
+
+            // Check if the response contains "+OK" indicating success
+            if (strpos($response, "+OK") !== false) {
+                // If it does, set status to true
+                $status = true;
+            }
+
+            // Prepare the response data
+            $response = [
+                'status' => $status, // Indicates the success status of the request
+                'data' => $response, // Contains the response from the server
+                'message' => 'Successfully tier set.'
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
+        } else {
+            // If the socket is not connected, return a disconnected response
+            return $this->disconnected();
+        }
+    }
+
+    public function callcenter_config_tier_set_level($queueName, $agentName, $level): JsonResponse
+    {
+        if ($this->socket->is_connected()) {
+
+            // Construct the command to set the tier of the agent            
+            $cmd = "api callcenter_config tier set level {$queueName} {$agentName} {$level}";
+
+            // Send the command to the FreeSwitch server and get the response
+            $response = $this->socket->request($cmd);
+
+            // Initialize the status to false
+            $status = false;
+
+            // Check if the response contains "+OK" indicating success
+            if (strpos($response, "+OK") !== false) {
+                // If it does, set status to true
+                $status = true;
+            }
+
+            // Prepare the response data
+            $response = [
+                'status' => $status, // Indicates the success status of the request
+                'data' => $response, // Contains the response from the server
+                'message' => 'Successfully tier set.'
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
+        } else {
+            // If the socket is not connected, return a disconnected response
+            return $this->disconnected();
+        }
+    }
+
+    public function callcenter_config_tier_set_position($queueName, $agentName, $position): JsonResponse
+    {
+        if ($this->socket->is_connected()) {
+
+            $cmd = "api callcenter_config tier set position {$queueName} {$agentName} {$position}";
 
             // Send the command to the FreeSwitch server and get the response
             $response = $this->socket->request($cmd);
