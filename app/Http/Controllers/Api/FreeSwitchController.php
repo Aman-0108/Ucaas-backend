@@ -10,7 +10,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 
@@ -530,9 +529,6 @@ class FreeSwitchController extends Controller
             // Send API request to reload mod_callcenter
             $response = $this->socket->request('api reload mod_callcenter');
 
-            // Uncomment the line below to log the response for debugging
-            // Log::info($response);
-
             $status = false;
 
             // Check if the response contains "+OK Reloading XML"
@@ -562,17 +558,13 @@ class FreeSwitchController extends Controller
      * @param string $agent_name The name of the agent to add.
      * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
      */
-    public function callcenter_config_agent_add($agent_name): JsonResponse
+    public function callcenter_config_agent_add($agent_name, $agent_type = null ): JsonResponse
     {
         if ($this->socket->is_connected()) {
             // Send API request to add an agent
-            $cmd = "api callcenter_config agent add {$agent_name} callback";
-
-            Log::info($cmd);
+            $cmd = "api callcenter_config agent add {$agent_name} $agent_type";
 
             $response = $this->socket->request($cmd);
-
-            Log::info($response);
 
             $status = false;
 
@@ -598,61 +590,13 @@ class FreeSwitchController extends Controller
     }
 
     /**
-     * Sets the tier of an agent in a call center via the API.
-     *
-     * @param string $queueName The name of the queue to set the tier for.
-     * @param string $agentName The name of the agent to set the tier for.
-     * @param int|null $level The level to set the agent at. If not provided, the agent will be set to the first available level.
-     * @param int|null $position The position to set the agent at. If not provided, the agent will be set to the first available position.
+     * Sets the tier level of an agent in a call center via the API.
+     * 
+     * @param string $queueName The name of the call center queue.
+     * @param string $agentName The name of the agent to set the tier level for.
+     * @param int $level The tier level to set (1-10).
      * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
      */
-    public function callcenter_config_tier_set($queueName, $agentName, $level = null, $position = null): JsonResponse
-    {
-        if ($this->socket->is_connected()) {
-
-            // Construct the command to set the tier of the agent            
-            Log::info($cmd);
-
-            // If both level and position are provided, append them to the command
-            if (!empty($level) && !empty($position)) {
-                $cmd .= " {$level}/$position";
-            }
-            // If only level is provided, append it to the command
-            elseif (!empty($level)) {
-                $cmd = "api callcenter_config tier set level {$queueName} {$agentName} {$level}";
-            }
-            // If only position is provided, append it to the command
-            elseif (!empty($position)) {
-                $cmd = "api callcenter_config tier set position {$queueName} {$agentName} {$position}";
-            }
-
-            // Send the command to the FreeSwitch server and get the response
-            $response = $this->socket->request($cmd);
-
-            // Initialize the status to false
-            $status = false;
-
-            // Check if the response contains "+OK" indicating success
-            if (strpos($response, "+OK") !== false) {
-                // If it does, set status to true
-                $status = true;
-            }
-
-            // Prepare the response data
-            $response = [
-                'status' => $status, // Indicates the success status of the request
-                'data' => $response, // Contains the response from the server
-                'message' => 'Successfully tier set.'
-            ];
-
-            // Return the response as JSON with HTTP status code 200 (OK)
-            return response()->json($response, Response::HTTP_OK);
-        } else {
-            // If the socket is not connected, return a disconnected response
-            return $this->disconnected();
-        }
-    }
-
     public function callcenter_config_tier_set_level($queueName, $agentName, $level): JsonResponse
     {
         if ($this->socket->is_connected()) {
@@ -676,7 +620,7 @@ class FreeSwitchController extends Controller
             $response = [
                 'status' => $status, // Indicates the success status of the request
                 'data' => $response, // Contains the response from the server
-                'message' => 'Successfully tier set.'
+                'message' => 'Successfully set tier level.'
             ];
 
             // Return the response as JSON with HTTP status code 200 (OK)
@@ -687,11 +631,20 @@ class FreeSwitchController extends Controller
         }
     }
 
+    /**
+     * Sets the tier position of an agent in a call center via the API.
+     *
+     * @param string $queueName The name of the call center queue.
+     * @param string $agentName The name of the agent to set the tier position for.
+     * @param int $position The tier position to set (1-10).
+     * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
+     */
     public function callcenter_config_tier_set_position($queueName, $agentName, $position): JsonResponse
     {
         if ($this->socket->is_connected()) {
 
-            $cmd = "api callcenter_config tier set position {$queueName} {$agentName} {$position}";
+            // Construct the command to set the tier of the agent
+            $cmd = "api callcenter_config tier set position {$queueName} {$agentName} {$position}".PHP_EOL;
 
             // Send the command to the FreeSwitch server and get the response
             $response = $this->socket->request($cmd);
@@ -709,7 +662,7 @@ class FreeSwitchController extends Controller
             $response = [
                 'status' => $status, // Indicates the success status of the request
                 'data' => $response, // Contains the response from the server
-                'message' => 'Successfully tier set.'
+                'message' => 'Successfully set tier position.'
             ];
 
             // Return the response as JSON with HTTP status code 200 (OK)
@@ -952,11 +905,20 @@ class FreeSwitchController extends Controller
         }
     }
 
+    /**
+     * Barge on a call using the provided UUID
+     *
+     * This method makes a request to the FreeSwitch server to originate a call
+     * to the authenticated user's extension with the three_way application
+     * and the provided UUID as an argument. The three_way application will
+     * barge on the call with the provided UUID.
+     *
+     * @param string $uuid The unique identifier of the call to barge on
+     * @return \Illuminate\Http\JsonResponse The JSON response indicating the status of the request
+     */
     protected function barge($uuid)
     {
         if ($this->connected) {
-            // Build the API command to kill the call
-            // $cmd = "api uuid_barge {$uuid}";
             // Get the authenticated user's extension
             $extension = Extension::find(Auth::user()->extension_id);
 
@@ -969,15 +931,18 @@ class FreeSwitchController extends Controller
                 return response()->json($response, Response::HTTP_BAD_REQUEST);
             }
 
+            // Construct the command to barge on the call
             $cmd = "api originate user/{$extension->extension} &three_way({$uuid})";
 
             // Check call state
             $response = $this->socket->request($cmd);
+
             // Prepare the response data
             $response = [
                 'status' => true, // Indicates the success status of the request
                 'message' => 'Successfully barge call.',
             ];
+
             // Return the response as JSON with HTTP status code 200 (OK)
             return response()->json($response, Response::HTTP_OK);
         } else {

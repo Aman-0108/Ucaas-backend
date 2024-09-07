@@ -214,22 +214,22 @@ class CallCentreController extends Controller
 
                 $freeSWitch = new FreeSwitchController();
 
-                $fsResponse = $freeSWitch->callcenter_config_agent_add($newAgent->agent_name);
+                $fsResponse = $freeSWitch->callcenter_config_agent_add($newAgent->agent_name, $newAgent->type);
                 $fsResponse = $fsResponse->getData();
 
-                $fsLevelResponse = $freeSWitch->callcenter_config_tier_set_level($generatedQueueName, $newAgent->agent_name, $newAgent->tier_level);
-                $fsLevelResponse = $fsLevelResponse->getData();
+                // $fsLevelResponse = $freeSWitch->callcenter_config_tier_set_level($generatedQueueName, $newAgent->agent_name, $newAgent->tier_level);
+                // $fsLevelResponse = $fsLevelResponse->getData();
 
-                $fsPositionResponse = $freeSWitch->callcenter_config_tier_set_position($generatedQueueName, $newAgent->agent_name, $newAgent->tier_position);
-                $fsPositionResponse = $fsPositionResponse->getData();
+                // $fsPositionResponse = $freeSWitch->callcenter_config_tier_set_position($generatedQueueName, $newAgent->agent_name, $newAgent->tier_position);
+                // $fsPositionResponse = $fsPositionResponse->getData();
 
-                if (!$fsResponse->status || !$fsLevelResponse->status || !$fsPositionResponse->status) {
-                    $type = config('enums.RESPONSE.ERROR');
-                    $status = false;
-                    $msg = 'Something went wrong in freeswitch. Please try again later.';
+                // if (!$fsResponse->status || !$fsLevelResponse->status || !$fsPositionResponse->status) {
+                //     $type = config('enums.RESPONSE.ERROR');
+                //     $status = false;
+                //     $msg = 'Something went wrong in freeswitch. Please try again later.';
 
-                    return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
-                }
+                //     return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+                // }
             }
         }
 

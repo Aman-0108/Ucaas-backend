@@ -64,6 +64,7 @@ class CreateRingGroupTable extends Migration
             $table->integer('created_by');
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->text('description')->nullable();
+            $table->boolean('recording_enabled')->default(false)->comment('0 for disable, 1 for enable');
 
             $table->timestamps();
         });
