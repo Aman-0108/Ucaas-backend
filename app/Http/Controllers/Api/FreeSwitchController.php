@@ -709,6 +709,36 @@ class FreeSwitchController extends Controller
         }
     }
 
+    public function callcenter_queue_load($queueName): JsonResponse
+    {
+        if ($this->socket->is_connected()) {
+            // Send the API request to delete an agent
+            $response = $this->socket->request("api callcenter_config queue load $queueName");
+
+            // Initialize the status to false
+            $status = false;
+
+            // Check if the response contains "+OK" indicating success
+            if (strpos($response, "+OK") !== false) {
+                // If it does, set status to true
+                $status = true;
+            }
+
+            // Prepare the response data
+            $response = [
+                'status' => $status, // Indicates the success status of the request
+                'data' => $response, // Contains the response from the server
+                'message' => 'Successfully queue loaded'
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
+        } else {
+            // If the socket is not connected, return a disconnected response
+            return $this->disconnected();
+        }
+    }
+
     /**
      * Check active extensions on the server and update database accordingly.
      *

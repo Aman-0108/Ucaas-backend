@@ -17,9 +17,7 @@ class CreateChannelHangupCompletesTable extends Migration
         Schema::create('channel_hangup_completes', function (Blueprint $table) {
             $table->id();
 
-            $table->string('Call-Direction')->nullable();
-
-            $table->string('fs_call_uuid')->nullable();
+            $table->string('Call-Direction')->nullable();           
 
             $table->string('Hangup-Cause')->nullable();
             $table->string('variable_DIALSTATUS')->nullable();
@@ -81,6 +79,7 @@ class CreateChannelHangupCompletesTable extends Migration
 
             $table->string('application_state')->nullable();
             $table->string('application_state_to')->nullable();
+            $table->string('application_state_to_ext')->nullable();
 
             $table->boolean('a_leg_recording_enabled')->default(false)->comment('0 for disable, 1 for enable');
             $table->boolean('b_leg_recording_enabled')->default(false)->comment('0 for disable, 1 for enable');
