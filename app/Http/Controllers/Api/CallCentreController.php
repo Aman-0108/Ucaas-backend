@@ -106,7 +106,7 @@ class CallCentreController extends Controller
                 'discard_abandoned_after' => 'numeric|nullable',
                 'queue_cid_prefix' => 'string|nullable',
                 'created_by' => 'required|exists:users,id',
-                'xml' => 'string|nullable'
+                'recording_enabled' => 'boolean|nullable',
             ]
         );
 
@@ -326,7 +326,7 @@ class CallCentreController extends Controller
                 'queue_timeout_action' => 'string|nullable',
                 'discard_abandoned_after' => 'numeric|nullable',
                 'queue_cid_prefix' => 'string|nullable',
-                'xml' => 'string|nullable'
+                'recording_enabled' => 'boolean|nullable',
             ]
         );
 

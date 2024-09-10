@@ -94,6 +94,7 @@ class RinggroupController extends Controller
                 'greeting' => 'string|nullable',
                 'status' => 'in:active,inactive',
                 'description' => 'string|nullable',
+                'recording_enabled' => 'boolean|nullable',
             ]
         );
 
@@ -310,6 +311,7 @@ class RinggroupController extends Controller
                 'greeting' => 'string|nullable',
                 'status' => 'in:active,inactive',
                 'description' => 'string|nullable',
+                'recording_enabled' => 'boolean|nullable',
             ]
         );
 
