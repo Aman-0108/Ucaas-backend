@@ -123,7 +123,7 @@ class CallCentreController extends Controller
         $validated = $validator->validated();
 
         // Begin a database transaction
-        DB::beginTransaction();
+        // DB::beginTransaction();
 
         $startingPoint = config('globals.CALLCENTRE_START_FROM');
 
@@ -157,32 +157,32 @@ class CallCentreController extends Controller
 
         $freeSWitch = new FreeSwitchController();
 
-        $fsReloadXmlResponse = $freeSWitch->reloadXml();
-        $fsReloadXmlResponse = $fsReloadXmlResponse->getData();
+        // $fsReloadXmlResponse = $freeSWitch->reloadXml();
+        // $fsReloadXmlResponse = $fsReloadXmlResponse->getData();
 
-        if (!$fsReloadXmlResponse->status) {
-            $type = config('enums.RESPONSE.ERROR');
-            $status = false;
-            $msg = 'Something went wrong in freeswitch while reloading xml. Please try again later.';
+        // if (!$fsReloadXmlResponse->status) {
+        //     $type = config('enums.RESPONSE.ERROR');
+        //     $status = false;
+        //     $msg = 'Something went wrong in freeswitch while reloading xml. Please try again later.';
 
-            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
-        }
+        //     return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+        // }
 
         $account_id = $data->account_id;
         $domain = Domain::where(['account_id' => $account_id])->first();
 
         $generatedQueueName = $data->extension . '@' . $domain->domain_name;
 
-        $queueLoadResponse = $freeSWitch->callcenter_queue_load($generatedQueueName);
-        $queueLoadResponse = $queueLoadResponse->getData();
+        // $queueLoadResponse = $freeSWitch->callcenter_queue_load($generatedQueueName);
+        // $queueLoadResponse = $queueLoadResponse->getData();
 
-        if (!$queueLoadResponse->status) {
-            $type = config('enums.RESPONSE.ERROR');
-            $status = false;
-            $msg = 'Something went wrong in freeswitch while loading queue. Please try again later.';
+        // if (!$queueLoadResponse->status) {
+        //     $type = config('enums.RESPONSE.ERROR');
+        //     $status = false;
+        //     $msg = 'Something went wrong in freeswitch while loading queue. Please try again later.';
 
-            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
-        }
+        //     return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+        // }
 
         $call_center_queue_id = $data->id;
 
@@ -231,10 +231,10 @@ class CallCentreController extends Controller
                 // Retrieve the validated input
                 $rvalidated = $agentValidator->validated();
 
-                $newAgent = CallCenterAgent::create($rvalidated);              
+                $newAgent = CallCenterAgent::create($rvalidated);
 
-                $fsResponse = $freeSWitch->callcenter_config_agent_add($newAgent->agent_name, $newAgent->type);
-                $fsResponse = $fsResponse->getData();
+                // $fsResponse = $freeSWitch->callcenter_config_agent_add($newAgent->agent_name, $newAgent->type);
+                // $fsResponse = $fsResponse->getData();
 
                 // $fsLevelResponse = $freeSWitch->callcenter_config_tier_set_level($generatedQueueName, $newAgent->agent_name, $newAgent->tier_level);
                 // $fsLevelResponse = $fsLevelResponse->getData();
@@ -242,18 +242,30 @@ class CallCentreController extends Controller
                 // $fsPositionResponse = $freeSWitch->callcenter_config_tier_set_position($generatedQueueName, $newAgent->agent_name, $newAgent->tier_position);
                 // $fsPositionResponse = $fsPositionResponse->getData();
 
-                // if (!$fsResponse->status || !$fsLevelResponse->status || !$fsPositionResponse->status) {
+                // || !$fsLevelResponse->status || !$fsPositionResponse->status
+                // if (!$fsResponse->status) {
                 //     $type = config('enums.RESPONSE.ERROR');
                 //     $status = false;
-                //     $msg = 'Something went wrong in freeswitch. Please try again later.';
+                //     $msg = 'Something went wrong in freeswitch while adding an agent. Please try again later.';
 
                 //     return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
                 // }
             }
         }
 
+        $reloadmodResponse = $freeSWitch->reload_mod_callcenter();
+        $reloadmodResponse = $reloadmodResponse->getData();
+
+        if (!$reloadmodResponse->status) {
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'Something went wrong in freeswitch while reloading mod call canter. Please try again later.';
+
+            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+        }
+
         // Commit the database transaction
-        DB::commit();
+        // DB::commit();
 
         // Prepare the response data
         $response = [
@@ -490,19 +502,16 @@ class CallCentreController extends Controller
 
                     $freeSWitch = new FreeSwitchController();
 
-                    $fsResponse = $freeSWitch->callcenter_config_agent_add($newAgent->agent_name);
+                    $fsResponse = $freeSWitch->callcenter_config_agent_add($newAgent->agent_name, $newAgent->type);
                     $fsResponse = $fsResponse->getData();
 
-                    $fsLevelResponse = $freeSWitch->callcenter_config_tier_set_level($generatedQueueName, $newAgent->agent_name, $newAgent->tier_level);
-                    $fsLevelResponse = $fsLevelResponse->getData();
+                    $fsTierResponse = $freeSWitch->callcenter_config_tier_add($generatedQueueName, $newAgent->agent_name, $newAgent->tier_level, $newAgent->tier_position);
+                    $fsTierResponse = $fsTierResponse->getData();
 
-                    $fsPositionResponse = $freeSWitch->callcenter_config_tier_set_position($generatedQueueName, $newAgent->agent_name, $newAgent->tier_position);
-                    $fsPositionResponse = $fsPositionResponse->getData();
-
-                    if (!$fsResponse->status || !$fsLevelResponse->status || !$fsPositionResponse->status) {
+                    if (!$fsResponse->status || !$fsTierResponse->status) {
                         $type = config('enums.RESPONSE.ERROR');
                         $status = false;
-                        $msg = 'Something went wrong in freeswitch. Please try again later.';
+                        $msg = 'Something went wrong in freeswitch while creating agent. Please try again later.';
 
                         return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
                     }
@@ -539,17 +548,24 @@ class CallCentreController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
+        $call_center_queue_id = $callCentreAgent->call_center_queue_id;
+        $call_centre_queue = CallCenterQueue::where(['id' => $call_center_queue_id])->first();
+        $account_id = $call_centre_queue->account_id;
+        $domain = Domain::where(['account_id' => $account_id])->first();
+
+        $generatedQueueName = $call_centre_queue->extension . '@' . $domain->domain_name;
+
         DB::beginTransaction();
 
         $freeSWitch = new FreeSwitchController();
-        $fsResponse = $freeSWitch->callcenter_config_agent_del($callCentreAgent->agent_name);
+        $fsResponse = $freeSWitch->callcenter_config_tier_del($generatedQueueName, $callCentreAgent->agent_name);
 
         $fsResponse = $fsResponse->getData();
 
         if (!$fsResponse->status) {
             $type = config('enums.RESPONSE.ERROR');
             $status = false;
-            $msg = 'Something went wrong in freeswitch. Please try again later.';
+            $msg = 'Something went wrong in freeswitch while deleting agent. Please try again later.';
 
             return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
         }

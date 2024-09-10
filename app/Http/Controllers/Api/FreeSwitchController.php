@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 
 class FreeSwitchController extends Controller
@@ -558,13 +559,17 @@ class FreeSwitchController extends Controller
      * @param string $agent_name The name of the agent to add.
      * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
      */
-    public function callcenter_config_agent_add($agent_name, $agent_type = null ): JsonResponse
+    public function callcenter_config_agent_add($agent_name, $agent_type = null): JsonResponse
     {
         if ($this->socket->is_connected()) {
             // Send API request to add an agent
             $cmd = "api callcenter_config agent add {$agent_name} $agent_type";
 
+            Log::info($cmd);
+
             $response = $this->socket->request($cmd);
+
+            Log::info($response);
 
             $status = false;
 
@@ -589,6 +594,38 @@ class FreeSwitchController extends Controller
         }
     }
 
+    public function callcenter_config_tier_add($queueName, $agentName, $level, $position)
+    {
+        if ($this->socket->is_connected()) {
+            $cmd = "api callcenter_config tier add {$queueName} {$agentName} {$level} {$position}" . PHP_EOL;
+
+            // Send the command to the FreeSwitch server and get the response
+            $response = $this->socket->request($cmd);
+
+            // Initialize the status to false
+            $status = false;
+
+            // Check if the response contains "+OK" indicating success
+            if (strpos($response, "+OK") !== false) {
+                // If it does, set status to true
+                $status = true;
+            }
+
+            // Prepare the response data
+            $response = [
+                'status' => $status, // Indicates the success status of the request
+                'data' => $response, // Contains the response from the server
+                'message' => 'Successfully set tier position.'
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
+        } else {
+            // If the socket is not connected, return a disconnected response
+            return $this->disconnected();
+        }
+    }
+
     /**
      * Sets the tier level of an agent in a call center via the API.
      * 
@@ -604,8 +641,12 @@ class FreeSwitchController extends Controller
             // Construct the command to set the tier of the agent            
             $cmd = "api callcenter_config tier set level {$queueName} {$agentName} {$level}";
 
+            log::info($cmd);
+
             // Send the command to the FreeSwitch server and get the response
             $response = $this->socket->request($cmd);
+
+            Log::info($response);
 
             // Initialize the status to false
             $status = false;
@@ -644,7 +685,7 @@ class FreeSwitchController extends Controller
         if ($this->socket->is_connected()) {
 
             // Construct the command to set the tier of the agent
-            $cmd = "api callcenter_config tier set position {$queueName} {$agentName} {$position}".PHP_EOL;
+            $cmd = "api callcenter_config tier set position {$queueName} {$agentName} {$position}" . PHP_EOL;
 
             // Send the command to the FreeSwitch server and get the response
             $response = $this->socket->request($cmd);
@@ -709,11 +750,43 @@ class FreeSwitchController extends Controller
         }
     }
 
-    public function callcenter_queue_load($queueName): JsonResponse
+    public function callcenter_config_tier_del($queueName, $agentName): JsonResponse
     {
         if ($this->socket->is_connected()) {
             // Send the API request to delete an agent
-            $response = $this->socket->request("api callcenter_config queue load $queueName");
+            $response = $this->socket->request("api callcenter_config tier del {$queueName} {$agentName}");
+
+            // Initialize the status to false
+            $status = false;
+
+            // Check if the response contains "+OK" indicating success
+            if (strpos($response, "+OK") !== false) {
+                // If it does, set status to true
+                $status = true;
+            }
+
+            // Prepare the response data
+            $response = [
+                'status' => $status, // Indicates the success status of the request
+                'data' => $response, // Contains the response from the server
+                'message' => 'Successfully agent delete'
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
+        } else {
+            // If the socket is not connected, return a disconnected response
+            return $this->disconnected();
+        }
+    }
+
+    public function callcenter_queue_load($queueName): JsonResponse
+    {
+        if ($this->socket->is_connected()) {
+            $cmd = "api callcenter_config queue load {$queueName}" . PHP_EOL;
+            Log::info($cmd);
+            // Send the API request to delete an agent
+            $response = $this->socket->request($cmd);
 
             // Initialize the status to false
             $status = false;
