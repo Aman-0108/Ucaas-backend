@@ -585,8 +585,9 @@ class CallCentreController extends Controller
         return response()->json($response, Response::HTTP_OK);
     }
 
+   
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified call centre queue from storage.
      *
      * @param int $id
      * @return \Illuminate\Http\JsonResponse
@@ -594,7 +595,7 @@ class CallCentreController extends Controller
     public function destroy($id)
     {
         // Find the call centre queue by ID
-        $call_centre_queue = CallCenterQueue::find($id);
+        $call_centre_queue = CallCenterQueue::with('agents')->find($id);
 
         if (!$call_centre_queue) {
             // If the call centre queue is not found, return a 404 Not Found response
@@ -608,17 +609,56 @@ class CallCentreController extends Controller
 
         DB::beginTransaction();
 
+        // Create an instance of FreeSWitchController
         $freeSWitch = new FreeSwitchController();
 
+        // Get the account ID and domain name from the call centre queue
         $account_id = $call_centre_queue->account_id;
         $domain = Domain::where(['account_id' => $account_id])->first();
 
+        // Generate the queue name by concatenating the queue extension and domain name
         $generatedQueueName = $call_centre_queue->extension . '@' . $domain->domain_name;
 
-        $queueUnloadResponse = $freeSWitch->callcenter_queue_load($generatedQueueName);
+        // Get the agents associated with the call centre queue
+        $agents = $call_centre_queue->agents;
+
+        // Iterate through each agent and remove it from the queue
+        foreach ($agents as $agent) {
+
+            // Get the count of agents with the same agent name
+            $count = CallCenterAgent::where(['agent_name' => $agent->agent_name])->count();
+
+            // Remove the agent from the queue
+            $fsResponse = $freeSWitch->callcenter_config_tier_del($generatedQueueName, $agent->agent_name);
+            $fsResponse = $fsResponse->getData();
+
+            if (!$fsResponse->status) {
+                // If there is an error, set the status and message
+                $type = config('enums.RESPONSE.ERROR');
+                $status = false;
+                $msg = 'Something went wrong in freeswitch while removing agent. Please try again later.';
+            }
+
+            // If there is only one agent left with the same name, delete it
+            if ($count == 1) {
+                $fsAgentDeleteResponse = $freeSWitch->callcenter_config_agent_del($agent->agent_name);
+                $fsAgentDeleteResponse = $fsAgentDeleteResponse->getData();
+
+                if (!$fsAgentDeleteResponse->status) {
+                    // If there is an error, set the status and message
+                    $type = config('enums.RESPONSE.ERROR');
+                    $status = false;
+                    $msg = 'Something went wrong in freeswitch while deleting agent. Please try again later.';
+                }
+            }
+        }
+
+        // Unload the queue
+        $queueUnloadResponse = $freeSWitch->callcenter_queue_unload($generatedQueueName);
         $queueUnloadResponse = $queueUnloadResponse->getData();
 
         if (!$queueUnloadResponse->status) {
+            // If there is an error, set the status and message
             $type = config('enums.RESPONSE.ERROR');
             $status = false;
             $msg = 'Something went wrong in freeswitch while unloading queue. Please try again later.';
