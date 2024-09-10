@@ -73,9 +73,6 @@ class CallCentreController extends Controller
      */
     public function store(Request $request)
     {
-        // Retrieve the ID of the authenticated user making the request
-        // $userId = $request->user()->id;
-
         // Validate incoming request data
         $validator = Validator::make(
             $request->all(),
@@ -158,6 +155,35 @@ class CallCentreController extends Controller
         // Create a new record with validated data
         $data = CallCenterQueue::create($validated);
 
+        $freeSWitch = new FreeSwitchController();
+
+        $fsReloadXmlResponse = $freeSWitch->reloadXml();
+        $fsReloadXmlResponse = $fsReloadXmlResponse->getData();
+
+        if (!$fsReloadXmlResponse->status) {
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'Something went wrong in freeswitch while reloading xml. Please try again later.';
+
+            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+        }
+
+        $account_id = $data->account_id;
+        $domain = Domain::where(['account_id' => $account_id])->first();
+
+        $generatedQueueName = $data->extension . '@' . $domain->domain_name;
+
+        $queueLoadResponse = $freeSWitch->callcenter_queue_load($generatedQueueName);
+        $queueLoadResponse = $queueLoadResponse->getData();
+
+        if (!$queueLoadResponse->status) {
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'Something went wrong in freeswitch while loading queue. Please try again later.';
+
+            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+        }
+
         $call_center_queue_id = $data->id;
 
         //data for child table group call_centre_agent
@@ -205,14 +231,7 @@ class CallCentreController extends Controller
                 // Retrieve the validated input
                 $rvalidated = $agentValidator->validated();
 
-                $newAgent = CallCenterAgent::create($rvalidated);
-
-                $account_id = $data->account_id;
-                $domain = Domain::where(['account_id' => $account_id])->first();
-
-                $generatedQueueName = $data->extension . '@' . $domain->domain_name;
-
-                $freeSWitch = new FreeSwitchController();
+                $newAgent = CallCenterAgent::create($rvalidated);              
 
                 $fsResponse = $freeSWitch->callcenter_config_agent_add($newAgent->agent_name, $newAgent->type);
                 $fsResponse = $fsResponse->getData();
@@ -571,8 +590,30 @@ class CallCentreController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
+        DB::beginTransaction();
+
+        $freeSWitch = new FreeSwitchController();
+
+        $account_id = $call_centre_queue->account_id;
+        $domain = Domain::where(['account_id' => $account_id])->first();
+
+        $generatedQueueName = $call_centre_queue->extension . '@' . $domain->domain_name;
+
+        $queueUnloadResponse = $freeSWitch->callcenter_queue_load($generatedQueueName);
+        $queueUnloadResponse = $queueUnloadResponse->getData();
+
+        if (!$queueUnloadResponse->status) {
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'Something went wrong in freeswitch while unloading queue. Please try again later.';
+
+            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+        }
+
         // Delete the call centre queue
         $call_centre_queue->delete();
+
+        DB::commit();
 
         // Prepare the response data
         $response = [
