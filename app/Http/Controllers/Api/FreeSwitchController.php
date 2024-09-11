@@ -598,9 +598,11 @@ class FreeSwitchController extends Controller
     {
         if ($this->socket->is_connected()) {
             $cmd = "api callcenter_config tier add {$queueName} {$agentName} {$level} {$position}" . PHP_EOL;
-
+            Log::info($cmd);
             // Send the command to the FreeSwitch server and get the response
             $response = $this->socket->request($cmd);
+
+            Log::info($response);
 
             // Initialize the status to false
             $status = false;

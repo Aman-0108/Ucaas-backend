@@ -106,6 +106,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
         // To check username is available or not
         Route::post('check/username', 'checkUserName');
+
+        // 
+        Route::get('voicemails', 'getVoicemails');
     });
 
     // Account

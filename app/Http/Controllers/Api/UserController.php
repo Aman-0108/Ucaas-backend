@@ -87,7 +87,6 @@ class UserController extends Controller
                     'status' => $request->status,
                     'created_by' => $userId
                 ]);
-
             } else {
                 $user = User::create([
                     'name' => $request->name,
@@ -148,10 +147,10 @@ class UserController extends Controller
     public function checkUserName(Request $request)
     {
         try {
-            
+
             $account_id = $request->user() ? $request->user()->account_id : null;
 
-            if(!$account_id) {
+            if (!$account_id) {
                 return response()->json([
                     'status' => false,
                     'message' => 'You dont have permission to perform this action',
@@ -551,5 +550,54 @@ class UserController extends Controller
         $user = User::create($userCredentials);
 
         return $user;
+    }
+
+    /**
+     * Retrieves a list of all voicemail recordings associated with the authenticated account.
+     *
+     * This method returns a JSON response containing a list of all voicemail recordings
+     * associated with the authenticated account. The list is paginated with a page size
+     * of 10 records. The response includes the total number of records in the 'meta' key.
+     *
+     * @param Request $request The HTTP request object.
+     *
+     * @return \Illuminate\Http\JsonResponse A JSON response containing the list of voicemail recordings.
+     */
+    public function getVoicemails(Request $request)
+    {
+        // Get the account ID from the authenticated user
+        $account_id = $request->user() ? $request->user()->account_id : null;
+
+        // If the user is not authenticated, deny access
+        if (!$account_id) {
+            return response()->json([
+                'status' => false,
+                'message' => 'You dont have permission to perform this action',
+            ], Response::HTTP_FORBIDDEN);
+        }
+
+        // Get all voicemail recordings associated with the account
+        $voicemailsQuery = DB::table('voicemail_recording');
+
+        // Apply the account_id filter if present
+        if ($account_id) {
+            $voicemailsQuery->where('account_id', $account_id);
+        }
+
+        // COMING FROM GLOBAL CONFIG
+        $rowsPerPage = config('globals.PAGINATION.ROW_PER_PAGE');
+
+        // Execute the query, order by 'id' in descending order, and paginate
+        $voicemails = $voicemailsQuery->orderBy('id', 'desc')->paginate($rowsPerPage);
+
+        // Prepare the response data
+        $response = [
+            'status' => true,
+            'data' => $voicemails,
+            'message' => 'Successfully fetched all voicemails'
+        ];
+
+        // Return the response as JSON
+        return response()->json($response, Response::HTTP_OK);
     }
 }
