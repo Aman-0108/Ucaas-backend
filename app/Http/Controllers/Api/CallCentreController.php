@@ -278,6 +278,12 @@ class CallCentreController extends Controller
         return response()->json($response, Response::HTTP_CREATED);
     }
 
+    /**
+     * Display the specified call centre queue by ID.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
     public function show($id)
     {
         // Find the call_centre_queue by ID
@@ -502,19 +508,31 @@ class CallCentreController extends Controller
 
                     $freeSWitch = new FreeSwitchController();
 
-                    $fsResponse = $freeSWitch->callcenter_config_agent_add($newAgent->agent_name, $newAgent->type);
-                    $fsResponse = $fsResponse->getData();
+                    $count = CallCenterAgent::where(['agent_name' => $newAgent->agent_name])->count();
 
-                    $fsTierResponse = $freeSWitch->callcenter_config_tier_add($generatedQueueName, $newAgent->agent_name, $newAgent->tier_level, $newAgent->tier_position);
-                    $fsTierResponse = $fsTierResponse->getData();
+                    if ($count > 0) {
+                        $fsTierResponse = $freeSWitch->callcenter_config_tier_add($generatedQueueName, $newAgent->agent_name, $newAgent->tier_level, $newAgent->tier_position);
+                        $fsTierResponse = $fsTierResponse->getData();
 
-                    if (!$fsResponse->status || !$fsTierResponse->status) {
-                        $type = config('enums.RESPONSE.ERROR');
-                        $status = false;
-                        $msg = 'Something went wrong in freeswitch while creating agent. Please try again later.';
+                        if (!$fsTierResponse->status) {
+                            $type = config('enums.RESPONSE.ERROR');
+                            $status = false;
+                            $msg = 'Something went wrong in freeswitch while setting tier for agent. Please try again later.';
+    
+                            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+                        }
+                    } else {
+                        $fsResponse = $freeSWitch->callcenter_config_agent_add($newAgent->agent_name, $newAgent->type);
+                        $fsResponse = $fsResponse->getData();
 
-                        return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
-                    }
+                        if (!$fsResponse->status) {
+                            $type = config('enums.RESPONSE.ERROR');
+                            $status = false;
+                            $msg = 'Something went wrong in freeswitch while creating agent. Please try again later.';
+    
+                            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+                        }
+                    }                    
                 }
             }
         }
@@ -532,6 +550,12 @@ class CallCentreController extends Controller
         return response()->json($response, Response::HTTP_OK);
     }
 
+    /**
+     * Delete the specified call centre agent from storage.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function callCentreAgentDelete($id)
     {
         // Find the call centre agent by ID
@@ -548,31 +572,46 @@ class CallCentreController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
+        // Find the call centre queue associated with the agent
+        // and the domain associated with the call centre queue
         $call_center_queue_id = $callCentreAgent->call_center_queue_id;
         $call_centre_queue = CallCenterQueue::where(['id' => $call_center_queue_id])->first();
         $account_id = $call_centre_queue->account_id;
         $domain = Domain::where(['account_id' => $account_id])->first();
 
+        // Generate the queue name by concatenating the queue extension and domain name
         $generatedQueueName = $call_centre_queue->extension . '@' . $domain->domain_name;
 
+        // Start a database transaction
         DB::beginTransaction();
 
+        // Get an instance of FreeSwitchController
         $freeSWitch = new FreeSwitchController();
+
+        // Call the callcenter_config_tier_del API to delete the agent from the queue
         $fsResponse = $freeSWitch->callcenter_config_tier_del($generatedQueueName, $callCentreAgent->agent_name);
 
+        // Get the response data from the API call
         $fsResponse = $fsResponse->getData();
 
+        // Check if the API call was successful
         if (!$fsResponse->status) {
+            // If the API call failed, roll back the database transaction
+            DB::rollBack();
+
+            // Prepare an error response
             $type = config('enums.RESPONSE.ERROR');
             $status = false;
             $msg = 'Something went wrong in freeswitch while deleting agent. Please try again later.';
 
+            // Return the error response as JSON with HTTP status code 417 Expectation Failed
             return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
         }
 
         // Delete the call centre agent
         $callCentreAgent->delete();
 
+        // Commit the database transaction
         DB::commit();
 
         // Prepare the response data
@@ -585,7 +624,6 @@ class CallCentreController extends Controller
         return response()->json($response, Response::HTTP_OK);
     }
 
-   
     /**
      * Remove the specified call centre queue from storage.
      *
