@@ -63,7 +63,7 @@ class AccountController extends Controller
             'billingAddress:account_id,id,fullname,contact_no,email,address,zip,city,state,country,default',
             'cardDetails' => function ($query) {
                 $query->select('account_id', 'id', 'name', 'card_number', 'exp_month', 'exp_year', 'cvc', 'default')
-                ->where('save_card', 1);
+                    ->where('save_card', 1);
             },
             'package' => function ($query) {
                 $query->select('id', 'name', 'number_of_user', 'description', 'subscription_type', 'regular_price', 'offer_price');
@@ -120,7 +120,7 @@ class AccountController extends Controller
             'billingAddress:account_id,id,fullname,contact_no,email,address,zip,city,state,country,default',
             'cardDetails' => function ($query) {
                 $query->select('account_id', 'id', 'name', 'card_number', 'exp_month', 'exp_year', 'cvc', 'default')
-                ->where('save_card', 1);
+                    ->where('save_card', 1);
             },
             'package' => function ($query) {
                 $query->select('id', 'name', 'number_of_user', 'description', 'subscription_type', 'regular_price', 'offer_price');
@@ -635,5 +635,32 @@ class AccountController extends Controller
 
         // Return the newly created account
         return $account;
+    }
+
+    /**
+     * Retrieves the balance of the account associated with the authenticated user.
+     *
+     * @param Request $request The request containing the user object.
+     * @return \Illuminate\Http\JsonResponse The JSON response with the account balance.
+     */
+    public function getAccountBalance(Request $request)
+    {
+        // Get the account ID from the authenticated user
+        $account_id = $request->user()->account_id;
+
+        // Retrieve the account balance using the account ID
+        $accountBalance = AccountBalance::where('account_id', $account_id)->first();
+
+        $amount = isset($accountBalance) ? $accountBalance->amount : 0;
+
+        // Prepare the response data
+        $response = [
+            'status' => true,
+            'data' => $amount,
+            'message' => 'Balance fetched successfully.'
+        ];
+
+        // Return a JSON response with HTTP status code 200 (OK)
+        return response()->json($response, Response::HTTP_OK);
     }
 }

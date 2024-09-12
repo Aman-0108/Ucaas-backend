@@ -136,6 +136,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
         // document verification
         Route::post('document-verify', 'postDocumentVerify');
+
+        // get account balance
+        Route::get('account/balance', 'getAccountBalance');
     });
 
     // Billing Address
