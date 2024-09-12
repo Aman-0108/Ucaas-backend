@@ -257,8 +257,8 @@ if (!function_exists('channelHangupCompleteDataFormat')) {
             $response['Other-Leg-Network-Addr'] = $data['Other-Leg-Network-Addr'];
         }
 
-        if (array_key_exists("account_id", $data)) {
-            $response['account_id'] = $data['account_id'];
+        if (array_key_exists("variable_account_id", $data)) {
+            $response['account_id'] = $data['variable_account_id'];
         }
 
         return $response;
