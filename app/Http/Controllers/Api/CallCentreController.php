@@ -73,6 +73,8 @@ class CallCentreController extends Controller
      */
     public function store(Request $request)
     {
+        $userId = $request->user()->id;
+
         // Validate incoming request data
         $validator = Validator::make(
             $request->all(),
@@ -155,6 +157,11 @@ class CallCentreController extends Controller
         // Create a new record with validated data
         $data = CallCenterQueue::create($validated);
 
+        $action = 'store';
+        $type = $this->type;
+
+        accessLog($action, $type, $validated, $userId);
+
         $freeSWitch = new FreeSwitchController();
 
         // $fsReloadXmlResponse = $freeSWitch->reloadXml();
@@ -232,6 +239,11 @@ class CallCentreController extends Controller
                 $rvalidated = $agentValidator->validated();
 
                 $newAgent = CallCenterAgent::create($rvalidated);
+
+                $action = 'store';
+                $type = 'call_centre_agent';
+        
+                accessLog($action, $type, $rvalidated, $userId);
 
                 // $fsResponse = $freeSWitch->callcenter_config_agent_add($newAgent->agent_name, $newAgent->type);
                 // $fsResponse = $fsResponse->getData();
@@ -314,6 +326,8 @@ class CallCentreController extends Controller
 
     public function update(Request $request, $id)
     {
+        $userId = $request->user()->id;
+
         // Find the call_centre_queue by ID
         $call_centre_queue = CallCenterQueue::find($id);
 
@@ -387,13 +401,16 @@ class CallCentreController extends Controller
 
         // Defining action and type for creating UID
         $action = 'update';
-        $type = $this->type;
+        $type = $this->type;       
 
         // Begin a database transaction
         DB::beginTransaction();
 
         // Update the gateway with the validated data
         $call_centre_queue->update($validated);
+
+        // Log the action
+        accessLog($action, $type, $formattedDescription, $userId);
 
         //data for child table group call_centre_agent
         if ($request->has('agents')) {

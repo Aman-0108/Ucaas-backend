@@ -58,6 +58,7 @@ class PortController extends Controller
      */
     public function store(Request $request)
     {
+        $userId = $request->user() ? $request->user()->id : null;
         // Validate incoming request data
         $validator = Validator::make(
             $request->all(),
@@ -94,6 +95,11 @@ class PortController extends Controller
         // Create a new Port record with validated data
         $data = Port::create($validated);
 
+        $action = 'store';
+        $type = $this->type;
+
+        accessLog($action, $type, $validated, $userId);
+
         // Commit the database transaction
         DB::commit();
 
@@ -122,6 +128,8 @@ class PortController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $userId = $request->user() ? $request->user()->id : null;
+
         // Find the Port with the given ID
         $port = Port::find($id);
 
@@ -168,6 +176,12 @@ class PortController extends Controller
 
         // Update the Port record with validated data
         $port->update($validated);
+
+        $action = 'update';
+        $type = $this->type;
+
+        // Log the action
+        accessLog($action, $type, $validated, $userId);
 
         // Prepare the response data
         $response = [

@@ -16,7 +16,6 @@ use App\Models\Extension;
 use App\Models\Package;
 use App\Models\Subscription;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class TfnController extends Controller

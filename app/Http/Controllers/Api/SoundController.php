@@ -176,6 +176,12 @@ class SoundController extends Controller
         // Create a new audio record in the database
         $data = Sound::create($validated);
 
+        $action = 'create';
+        $type = $this->type;
+
+        // Log the action
+        accessLog($action, $type, $validated, $userId);
+
         // Commit the database transaction
         DB::commit();
 
@@ -301,6 +307,12 @@ class SoundController extends Controller
 
         // Update the audio with the validated data
         $audio->update($validated);
+
+        $action = 'update';
+        $type = $this->type;
+
+        // Log the update action
+        accessLog($action, $type, $validated, $userId);
 
         // Prepare success response
         $response = [

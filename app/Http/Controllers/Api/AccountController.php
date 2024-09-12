@@ -8,7 +8,6 @@ use App\Models\AccountBalance;
 use App\Models\AccountDetail;
 use App\Models\Document;
 use App\Models\Domain;
-use App\Models\Payment;
 use App\Notifications\NewAccountRegistered;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -19,6 +18,17 @@ use Illuminate\Support\Facades\Validator;
 
 class AccountController extends Controller
 {
+    protected $type;
+
+    /**
+     * Constructor function initializes the 'type' property to 'Account'.
+     */
+    public function __construct()
+    {
+        // Perform initialization 
+        $this->type = 'Account';
+    }
+
     /**
      * Retrieve all accounts.
      *
@@ -63,7 +73,7 @@ class AccountController extends Controller
             'billingAddress:account_id,id,fullname,contact_no,email,address,zip,city,state,country,default',
             'cardDetails' => function ($query) {
                 $query->select('account_id', 'id', 'name', 'card_number', 'exp_month', 'exp_year', 'cvc', 'default')
-                ->where('save_card', 1);
+                    ->where('save_card', 1);
             },
             'package' => function ($query) {
                 $query->select('id', 'name', 'number_of_user', 'description', 'subscription_type', 'regular_price', 'offer_price');
@@ -120,7 +130,7 @@ class AccountController extends Controller
             'billingAddress:account_id,id,fullname,contact_no,email,address,zip,city,state,country,default',
             'cardDetails' => function ($query) {
                 $query->select('account_id', 'id', 'name', 'card_number', 'exp_month', 'exp_year', 'cvc', 'default')
-                ->where('save_card', 1);
+                    ->where('save_card', 1);
             },
             'package' => function ($query) {
                 $query->select('id', 'name', 'number_of_user', 'description', 'subscription_type', 'regular_price', 'offer_price');
@@ -224,7 +234,7 @@ class AccountController extends Controller
         $data = Account::create($validated);
 
         // Encrypt the Account ID
-        $encryptedId = Crypt::encrypt($data->id);
+        // $encryptedId = Crypt::encrypt($data->id);
 
         // Generate dynamic URL with account_id
         // $dynamicUrl = env('FRONTEND_URL', url()) . '/document-upload?id=' . $encryptedId;
@@ -264,6 +274,8 @@ class AccountController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $userId = $request->user()->id;
+
         // Find the account by ID
         $account = Account::find($id);
 
@@ -309,8 +321,21 @@ class AccountController extends Controller
         // Retrieve the validated input
         $validated = $validator->validated();
 
+        $formattedDescription = compareValues($account, $validated);
+
+        // Defining action and type for creating UID
+        $action = 'update';
+        $type = $this->type;
+
+        DB::beginTransaction();
+
+        // Log the action
+        accessLog($action, $type, $formattedDescription, $userId);
+
         // Update the account with the validated input
         $account->update($validated);
+
+        DB::commit();
 
         $type = config('enums.RESPONSE.SUCCESS');
         $status = true;

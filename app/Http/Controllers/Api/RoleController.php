@@ -155,8 +155,8 @@ class RoleController extends Controller
         $action = 'create';
         $type = $this->type;
 
-        // Generate UID and attach it to the validated data
-        createUid($action, $type, $validated, $userId);
+        // Log the action
+        accessLog($action, $type, $validated, $userId);
 
         // Create a new role record with validated data
         $data = Role::create($validated);
@@ -238,7 +238,7 @@ class RoleController extends Controller
         $type = $this->type;
 
         // Generate UID and attach it to the validated data
-        createUid($action, $type, $formattedDescription, $userId);
+        accessLog($action, $type, $formattedDescription, $userId);
 
         // Update the role record with validated data
         $role->update($validated);

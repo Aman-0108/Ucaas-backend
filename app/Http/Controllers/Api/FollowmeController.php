@@ -27,12 +27,25 @@ class FollowmeController extends Controller
 
         // Extract specific fields from the request data
         $inputData = $request->only([
-            'account_id', 'extension_id',
-            'callforward', 'callforwardTo', 'onbusy',
-            'onbusyTo', 'noanswer', 'noanswerTo',
-            'notregistered', 'notregisteredTo', 'dnd',
-            'followme', 'ignorebusy', 'callTimeOut',
-            'voicemailEnabled', 'voiceEmailTo', 'record', 'blockIncomingStatus', 'blockOutGoingStatus'
+            'account_id',
+            'extension_id',
+            'callforward',
+            'callforwardTo',
+            'onbusy',
+            'onbusyTo',
+            'noanswer',
+            'noanswerTo',
+            'notregistered',
+            'notregisteredTo',
+            'dnd',
+            'followme',
+            'ignorebusy',
+            'callTimeOut',
+            'voicemailEnabled',
+            'voiceEmailTo',
+            'record',
+            'blockIncomingStatus',
+            'blockOutGoingStatus'
         ]);
 
         // Create a validator instance to validate extension data
@@ -118,13 +131,13 @@ class FollowmeController extends Controller
         $action = 'update';
         $type = 'Extension';
 
-        // // Generate UID and attach it to the validated data
-        $extensionData['uid_no'] = createUid($action, $type, $formattedDescription, $userId);
-
         // Update the extension model with the provided data
         unset($inputData['extension_id']);
 
         $extension->update($inputData);
+
+        // Log the action
+        accessLog($action, $type, $formattedDescription, $userId);
 
         // Prepare the response data
         $response = [
@@ -211,10 +224,22 @@ class FollowmeController extends Controller
 
         // Extract specific fields from the request data
         $extensionData = $request->only([
-            'callforward', 'callforwardTo', 'onbusy',
-            'onbusyTo', 'noanswer', 'noanswerTo',
-            'notregistered', 'notregisteredTo', 'dnd',
-            'followme', 'ignorebusy', 'voicemailEnabled', 'voiceEmailTo', 'record', 'blockIncomingStatus', 'blockOutGoingStatus'
+            'callforward',
+            'callforwardTo',
+            'onbusy',
+            'onbusyTo',
+            'noanswer',
+            'noanswerTo',
+            'notregistered',
+            'notregisteredTo',
+            'dnd',
+            'followme',
+            'ignorebusy',
+            'voicemailEnabled',
+            'voiceEmailTo',
+            'record',
+            'blockIncomingStatus',
+            'blockOutGoingStatus'
         ]);
 
         // Create a validator instance to validate extension data
@@ -302,11 +327,11 @@ class FollowmeController extends Controller
         $action = 'update';
         $type = 'Extension';
 
-        // Generate UID and attach it to the validated data
-        $extensionData['uid_no'] = createUid($action, $type, $formattedDescription, $userId);
-
         // Update the extension model with the provided data
         $extension->update($extensionData);
+
+        // Log the action
+        accessLog($action, $type, $formattedDescription, $userId);
 
         // Commit the database transaction
         DB::commit();

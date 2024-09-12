@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AccessLog;
 use App\Models\PaymentGateway;
 use App\Models\Uid;
 use Illuminate\Support\Str;
@@ -43,6 +44,34 @@ if (!function_exists('createUid')) {
         Uid::create($uidData);
 
         return $uuid; // Return the generated UUID
+    }
+}
+
+if (!function_exists('accessLog')) {
+    function accessLog($action, $type, $requestData = null, $userId = null)
+    {
+        // If action is not 'update', convert request data to JSON
+        if ($action !== 'update') {
+            $requestData = json_encode($requestData);
+        }
+
+        // Format the action
+        $formattedAction = strtolower($type) . '_' . $action . '';
+
+        // Prepare data for storing in the database
+        $uidData = [
+            "date" => date("Y-m-d"),
+            "time" => date("H:m:i"),
+            "server_timezone" => date("Y-m-d H:i:s"),
+            'user_id' => $userId,
+            'action' => $formattedAction,
+            "description" => $requestData,
+        ];
+
+        // Store data in the database
+        AccessLog::create($uidData);
+
+        return true; // Return true
     }
 }
 

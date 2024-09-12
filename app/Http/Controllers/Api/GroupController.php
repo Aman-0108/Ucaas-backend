@@ -136,8 +136,8 @@ class GroupController extends Controller
         $action = 'create';
         $type = $this->type;
 
-        // Generate UID and attach it to the validated data
-        createUid($action, $type, $validated, $userId);
+        // Log the action
+        accessLog($action, $type, $validated, $userId);
 
         // Create a new group record with validated data
         $data = Group::create($validated);
@@ -218,8 +218,8 @@ class GroupController extends Controller
         $action = 'update';
         $type = $this->type;
 
-        // Generate UID and attach it to the validated data
-        createUid($action, $type, $formattedDescription, $userId);
+        // Log the action
+        accessLog($action, $type, $formattedDescription, $userId);
 
         // Update the group record with validated data
         $group->update($validated);

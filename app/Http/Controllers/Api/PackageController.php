@@ -11,6 +11,17 @@ use Illuminate\Validation\Rule;
 
 class PackageController extends Controller
 {
+    protected $type;
+
+    /**
+     * Constructor function initializes the 'type' property to 'Package'.
+     */
+    public function __construct()
+    {
+        // Perform initialization 
+        $this->type = 'Package';
+    }
+
     /**
      * Retrieve all packages.
      *
@@ -85,6 +96,8 @@ class PackageController extends Controller
      */
     public function store(Request $request)
     {
+        $userId = $request->user() ? $request->user()->id : null;
+
         // Perform validation on the request data
         $validator = Validator::make(
             $request->all(),
@@ -116,6 +129,12 @@ class PackageController extends Controller
         // Create a new package with the validated input
         $data = Package::create($validated);
 
+        $action = 'store';
+        $type = $this->type;
+
+        // log the action
+        accessLog($action, $type, $validated, $userId);
+
         // Prepare a success response with the stored package data
         $response = [
             'status' => true,
@@ -141,6 +160,8 @@ class PackageController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $userId = $request->user() ? $request->user()->id : null;
+        
         // Find the package by ID
         $package = Package::find($id);
 
@@ -192,6 +213,12 @@ class PackageController extends Controller
 
         // Update the package with the validated input
         $package->update($validated);
+
+        $action = 'update';
+        $type = $this->type;
+
+        // Log the action
+        accessLog($action, $type, $validated, $userId);
 
         // Prepare a success response with updated package data
         $response = [

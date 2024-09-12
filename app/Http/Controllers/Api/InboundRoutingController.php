@@ -139,8 +139,8 @@ class InboundRoutingController extends Controller
         $action = 'create';
         $type = $this->type;
 
-        // Generate UID and attach it to the validated data
-        createUid($action, $type, $validated, $userId);
+        // Log the action
+        accessLog($action, $type, $validated, $userId);
 
         // Create a new inbound routing record with validated data
         $data = InboundRouting::create($validated);
@@ -225,8 +225,8 @@ class InboundRoutingController extends Controller
         $action = 'update';
         $type = $this->type;
 
-        // Generate UID and attach it to the validated data
-        createUid($action, $type, $formattedDescription, $userId);
+        // Log the action
+        accessLog($action, $type, $formattedDescription, $userId);
 
         // Update the inbound routing record with validated data
         $inboundRouting->update($validated);

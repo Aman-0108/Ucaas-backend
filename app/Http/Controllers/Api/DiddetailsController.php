@@ -29,12 +29,12 @@ class DiddetailsController extends Controller
     public function index(Request $request)
     {
         // Define a base query for did's
-        $query = DidDetail::with(['dialplan','configuration']);
+        $query = DidDetail::with(['dialplan', 'configuration']);
 
         $userId = $request->user()->id;
         $account_id = User::find($userId)->account_id;
 
-        if($account_id){
+        if ($account_id) {
             $query->where('account_id', $account_id);
         }
 
@@ -110,6 +110,9 @@ class DiddetailsController extends Controller
 
         // Create a new did details record with validated data
         $data = DidDetail::create($validated);
+
+        // Log the action
+        accessLog($action, $type, $validated, $userId);
 
         // Commit the database transaction
         DB::commit();
@@ -197,6 +200,9 @@ class DiddetailsController extends Controller
         // Update the did details record with validated data
         $didDetail->update($validated);
 
+        // Log the action
+        accessLog($action, $type, $formattedDescription, $userId);
+
         // Prepare the response data
         $response = [
             'status' => true,
@@ -239,7 +245,7 @@ class DiddetailsController extends Controller
         $accountHolderId = Auth::user()->account_id;
 
         // Check if the user has permission to disconnect the did details
-        if($usertype !== 'Company' || $accountHolderId !== $didDetail->account_id) {
+        if ($usertype !== 'Company' || $accountHolderId !== $didDetail->account_id) {
             return response()->json(['success' => false, 'message' => `You don't have permission to perform this action.`], 403);
         }
 
@@ -258,7 +264,7 @@ class DiddetailsController extends Controller
         $authToken = $didVendor->token;
         $username = $didVendor->username;
 
-        if(!$authToken || !$username) {
+        if (!$authToken || !$username) {
             return response()->json(['success' => false, 'message' => 'Vendor details not found.'], 404);
         }
 

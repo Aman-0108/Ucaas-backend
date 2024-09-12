@@ -237,18 +237,18 @@ class ExtensionController extends Controller
                     $validated['extension'] = $extension + $i;
 
                     // Generate UID and attach it to the validated data
-                    createUid($action, $type, $validated, $userId);
+                    accessLog($action, $type, $validated, $userId);
 
                     $data = Extension::create($validated);
                     $newArr[] = $validated;
                 }
             }
         } else {
-            // Generate UID and attach it to the validated data
-            createUid($action, $type, $validated, $userId);
-
             // If 'range' is not provided, create a single extension
             $data = Extension::create($validated);
+
+            // Log the action
+            accessLog($action, $type, $validated, $userId);
         }
 
         // Commit the database transaction
@@ -514,8 +514,6 @@ class ExtensionController extends Controller
         // Retrieve the validated input
         $validated = $validator->validated();
 
-        // $validated['created_by'] = $userId;
-
         // Call the compareValues function to generate a formatted description based on the extension and validated data
         $formattedDescription = compareValues($extension, $validated);
 
@@ -523,11 +521,11 @@ class ExtensionController extends Controller
         $action = 'update';
         $type = $this->type;
 
-        // Generate UID and attach it to the validated data
-        createUid($action, $type, $formattedDescription, $userId);
-
         // Update the extension with the validated data
         $extension->update($validated);
+
+        // Log the action
+        accessLog($action, $type, $formattedDescription, $userId);
 
         // Prepare the response data
         $response = [
