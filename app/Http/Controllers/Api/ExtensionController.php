@@ -53,7 +53,8 @@ class ExtensionController extends Controller
         $userType = $request->user()->usertype;
 
         // Fetch all extensions from the database
-        $extensions = Extension::with(['followmes', 'domain']);
+        // $extensions = Extension::with(['followmes', 'domain']);
+        $extensions = Extension::query();
 
         // Check if the request contains an 'account' parameter
         if (isset($userType) && $userType == 'Company') {

@@ -449,3 +449,16 @@ if (!function_exists('activeCallDataFormat')) {
         return $calls;
     }
 }
+
+if (!function_exists('addQuotesIfHasSpace')) {
+    function addQuotesIfHasSpace($string)
+    {
+        // Check if the string contains a space
+        if (strpos($string, ' ') !== false) {
+            // Wrap the string in single quotes
+            return "'" . $string . "'";
+        }
+        // Return the original string if no spaces are found
+        return $string;
+    }
+}

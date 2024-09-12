@@ -518,7 +518,7 @@ class CallCentreController extends Controller
                             $type = config('enums.RESPONSE.ERROR');
                             $status = false;
                             $msg = 'Something went wrong in freeswitch while setting tier for agent. Please try again later.';
-    
+
                             return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
                         }
                     } else {
@@ -529,10 +529,10 @@ class CallCentreController extends Controller
                             $type = config('enums.RESPONSE.ERROR');
                             $status = false;
                             $msg = 'Something went wrong in freeswitch while creating agent. Please try again later.';
-    
+
                             return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
                         }
-                    }                    
+                    }
                 }
             }
         }
@@ -747,6 +747,9 @@ class CallCentreController extends Controller
         // Begin database transaction
         DB::beginTransaction();
 
+        // Create an instance of FreeSWitchController
+        $freeSWitch = new FreeSwitchController();
+
         // Retrieve the call centre queue ID from the call centre agent
         $call_center_queue_id = $data->call_center_queue_id;
 
@@ -790,6 +793,21 @@ class CallCentreController extends Controller
                     $ongoingBreak->save();
                 }
             }
+        }
+
+        // Set the status of the call centre agent
+        $fsStatus = addQuotesIfHasSpace($request->status);
+        // callcenter_config_agent_set_status
+        $agentResponse = $freeSWitch->callcenter_config_agent_set_status($data->agent_name, $fsStatus);
+        $agentResponse = $agentResponse->getData();
+
+        if (!$agentResponse->status) {
+            // If there is an error, set the status and message
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'Something went wrong in freeswitch while setting status. Please try again later.';
+
+            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
         }
 
         // Update the status of the call centre agent

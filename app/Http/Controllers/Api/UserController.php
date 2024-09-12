@@ -47,7 +47,14 @@ class UserController extends Controller
                     'name' => 'required',
                     'email' => 'required|email|unique:users,email',
                     'password' => 'required',
-                    'username' => 'required|unique:users,username',
+                    // 'username' => 'required|unique:users,username',
+                    'username' => [
+                        'required',
+                        'string',
+                        Rule::unique('users')->where(function ($query) use ($request) {
+                            return $query->where('account_id', $request->input('account_id'));
+                        }),
+                    ],
                     'timezone_id' => 'required|exists:timezones,id',
                     'status' => 'required|in:E,D',
                     'role_id' => 'required|integer|exists:roles,id',
@@ -55,6 +62,7 @@ class UserController extends Controller
                         'required',
                         'array'
                     ],
+                    'account_id' => 'required|integer|exists:accounts,id',
                     'permissions.*' => 'required|integer',
                 ]
             );

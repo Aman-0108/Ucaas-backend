@@ -716,6 +716,41 @@ class FreeSwitchController extends Controller
         }
     }
 
+    public function callcenter_config_agent_set_status($agent_name, $status)
+    {
+        if ($this->connected) {
+            
+            $cmd = "api callcenter_config agent set status $agent_name $status";
+
+            Log::info($cmd);
+
+            // Send the API request to delete an agent
+            $response = $this->socket->request($cmd);
+
+            // Initialize the status to false
+            $status = false;
+
+            // Check if the response contains "+OK" indicating success
+            if (strpos($response, "+OK") !== false) {
+                // If it does, set status to true
+                $status = true;
+            }
+
+            // Prepare the response data
+            $response = [
+                'status' => $status, // Indicates the success status of the request
+                'data' => $response, // Contains the response from the server
+                'message' => 'Successfully agent delete'
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
+        } else {
+            // If the socket is not connected, return a disconnected response
+            return $this->disconnected();
+        }
+    }
+
     /**
      * Deletes an agent from a call center via the API.
      *
