@@ -526,9 +526,13 @@ class FreeSwitchController extends Controller
     public function reload_mod_callcenter(): JsonResponse
     {
         // Check if the socket is connected
-        if ($this->socket->is_connected()) {
+        if ($this->connected) {
+
+            // Prepare the command to reload mod_callcenter
+            $cmd = 'api reload mod_callcenter' . PHP_EOL;
+
             // Send API request to reload mod_callcenter
-            $response = $this->socket->request('api reload mod_callcenter');
+            $response = $this->socket->request($cmd);
 
             $status = false;
 
@@ -561,15 +565,11 @@ class FreeSwitchController extends Controller
      */
     public function callcenter_config_agent_add($agent_name, $agent_type = null): JsonResponse
     {
-        if ($this->socket->is_connected()) {
+        if ($this->connected) {
             // Send API request to add an agent
-            $cmd = "api callcenter_config agent add {$agent_name} $agent_type";
-
-            Log::info($cmd);
+            $cmd = "api callcenter_config agent add {$agent_name} $agent_type" . PHP_EOL;
 
             $response = $this->socket->request($cmd);
-
-            Log::info($response);
 
             $status = false;
 
@@ -594,14 +594,29 @@ class FreeSwitchController extends Controller
         }
     }
 
+    /**
+     * Adds an agent to a tier in a call center via the API.
+     *
+     * @param string $queueName The name of the call center queue.
+     * @param string $agentName The name of the agent to add to the tier.
+     * @param int    $level     The tier level to set (1-10).
+     * @param int    $position  The position to set the agent at in the tier.
+     *
+     * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
+     */
     public function callcenter_config_tier_add($queueName, $agentName, $level, $position)
     {
-        if ($this->socket->is_connected()) {
+        if ($this->connected) {
+            // Construct the command to add the agent to a tier in the call center
             $cmd = "api callcenter_config tier add {$queueName} {$agentName} {$level} {$position}" . PHP_EOL;
+
+            // Log the command for debugging purposes
             Log::info($cmd);
+
             // Send the command to the FreeSwitch server and get the response
             $response = $this->socket->request($cmd);
 
+            // Log the response for debugging purposes
             Log::info($response);
 
             // Initialize the status to false
@@ -638,10 +653,10 @@ class FreeSwitchController extends Controller
      */
     public function callcenter_config_tier_set_level($queueName, $agentName, $level): JsonResponse
     {
-        if ($this->socket->is_connected()) {
+        if ($this->connected) {
 
             // Construct the command to set the tier of the agent            
-            $cmd = "api callcenter_config tier set level {$queueName} {$agentName} {$level}";
+            $cmd = "api callcenter_config tier set level {$queueName} {$agentName} {$level}" . PHP_EOL;
 
             log::info($cmd);
 
@@ -684,7 +699,7 @@ class FreeSwitchController extends Controller
      */
     public function callcenter_config_tier_set_position($queueName, $agentName, $position): JsonResponse
     {
-        if ($this->socket->is_connected()) {
+        if ($this->connected) {
 
             // Construct the command to set the tier of the agent
             $cmd = "api callcenter_config tier set position {$queueName} {$agentName} {$position}" . PHP_EOL;
@@ -716,13 +731,62 @@ class FreeSwitchController extends Controller
         }
     }
 
-    public function callcenter_config_agent_set_status($agent_name, $status)
+    /**
+     * Sets the status of an agent in a call center via the API.
+     * 
+     * @param string $agent_name The name of the agent to set the status for.
+     * @param string $status The status to set (e.g. "Available" or "Unavailable").
+     * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
+     */
+    public function callcenter_config_agent_set_status($agent_name, $status): JsonResponse
     {
         if ($this->connected) {
             
-            $cmd = "api callcenter_config agent set status $agent_name $status";
+            // Construct the command to set the status of the agent
+            $cmd = "api callcenter_config agent set status $agent_name $status" . PHP_EOL;
 
+            // Log the command for debugging purposes
             Log::info($cmd);
+
+            // Send the command to the FreeSwitch server and get the response
+            $response = $this->socket->request($cmd);
+
+            // Initialize the status to false
+            $status = false;
+
+            // Check if the response contains "+OK" indicating success
+            if (strpos($response, "+OK") !== false) {
+                // If it does, set status to true
+                $status = true;
+            }
+
+            // Prepare the response data
+            $response = [
+                'status' => $status, // Indicates the success status of the request
+                'data' => $response, // Contains the response from the server
+                'message' => 'Successfully set agent status.'
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
+        } else {
+            // If the socket is not connected, return a disconnected response
+            return $this->disconnected();
+        }
+    }
+
+    /**
+     * Deletes an agent from a call center via the API.
+     *
+     * @param string $agent_name The name of the agent to delete.
+     * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
+     */
+    public function callcenter_config_agent_del($agent_name): JsonResponse
+    {
+        if ($this->connected) {
+
+            // Construct the command to delete the agent
+            $cmd = "api callcenter_config agent del $agent_name" . PHP_EOL;
 
             // Send the API request to delete an agent
             $response = $this->socket->request($cmd);
@@ -752,46 +816,21 @@ class FreeSwitchController extends Controller
     }
 
     /**
-     * Deletes an agent from a call center via the API.
+     * Deletes an agent from a tier in a call center via the API.
      *
-     * @param string $agent_name The name of the agent to delete.
+     * @param string $queueName The name of the call center queue.
+     * @param string $agentName The name of the agent to delete.
      * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
      */
-    public function callcenter_config_agent_del($agent_name): JsonResponse
-    {
-        if ($this->socket->is_connected()) {
-            // Send the API request to delete an agent
-            $response = $this->socket->request("api callcenter_config agent del $agent_name");
-
-            // Initialize the status to false
-            $status = false;
-
-            // Check if the response contains "+OK" indicating success
-            if (strpos($response, "+OK") !== false) {
-                // If it does, set status to true
-                $status = true;
-            }
-
-            // Prepare the response data
-            $response = [
-                'status' => $status, // Indicates the success status of the request
-                'data' => $response, // Contains the response from the server
-                'message' => 'Successfully agent delete'
-            ];
-
-            // Return the response as JSON with HTTP status code 200 (OK)
-            return response()->json($response, Response::HTTP_OK);
-        } else {
-            // If the socket is not connected, return a disconnected response
-            return $this->disconnected();
-        }
-    }
-
     public function callcenter_config_tier_del($queueName, $agentName): JsonResponse
     {
-        if ($this->socket->is_connected()) {
+        if ($this->connected) {
+
+            // Construct the command to delete an agent from a tier in the call center
+            $cmd = "api callcenter_config tier del {$queueName} {$agentName}" . PHP_EOL;
+
             // Send the API request to delete an agent
-            $response = $this->socket->request("api callcenter_config tier del {$queueName} {$agentName}");
+            $response = $this->socket->request($cmd);
 
             // Initialize the status to false
             $status = false;
@@ -817,12 +856,22 @@ class FreeSwitchController extends Controller
         }
     }
 
+    /**
+     * Loads a queue into the call center via the API.
+     *
+     * @param string $queueName The name of the queue to load.
+     * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
+     */
     public function callcenter_queue_load($queueName): JsonResponse
     {
-        if ($this->socket->is_connected()) {
+        if ($this->connected) {
+            // Construct the command to load the queue
             $cmd = "api callcenter_config queue load {$queueName}" . PHP_EOL;
+
+            // Log the command for debugging purposes
             Log::info($cmd);
-            // Send the API request to delete an agent
+
+            // Send the API request to load the queue
             $response = $this->socket->request($cmd);
 
             // Initialize the status to false
@@ -849,11 +898,21 @@ class FreeSwitchController extends Controller
         }
     }
 
+    /**
+     * Unloads a queue from the call center via the API.
+     *
+     * @param string $queueName The name of the queue to unload.
+     * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
+     */
     public function callcenter_queue_unload($queueName): JsonResponse
     {
-        if ($this->socket->is_connected()) {
-            // Send the API request to delete an agent
-            $response = $this->socket->request("api callcenter_config queue unload $queueName");
+        if ($this->connected) {
+
+            // Construct the command to unload the queue
+            $cmd = "api callcenter_config queue unload {$queueName}" . PHP_EOL;
+
+            // Send the API request to unload the queue
+            $response = $this->socket->request($cmd);
 
             // Initialize the status to false
             $status = false;
@@ -868,7 +927,7 @@ class FreeSwitchController extends Controller
             $response = [
                 'status' => $status, // Indicates the success status of the request
                 'data' => $response, // Contains the response from the server
-                'message' => 'Successfully queue loaded'
+                'message' => 'Successfully queue unloaded'
             ];
 
             // Return the response as JSON with HTTP status code 200 (OK)

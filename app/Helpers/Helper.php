@@ -4,7 +4,6 @@ use App\Models\PaymentGateway;
 use App\Models\Uid;
 use Illuminate\Support\Str;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Generates a unique identifier (UUID) and stores it along with relevant data in the database.
@@ -450,6 +449,16 @@ if (!function_exists('activeCallDataFormat')) {
     }
 }
 
+/**
+ * Add single quotes around a string if it contains spaces.
+ *
+ * This is useful for formatting strings to be used in
+ * shell commands.
+ *
+ * @param string $string The string to check and quote if necessary
+ *
+ * @return string The formatted string
+ */
 if (!function_exists('addQuotesIfHasSpace')) {
     function addQuotesIfHasSpace($string)
     {
@@ -458,6 +467,7 @@ if (!function_exists('addQuotesIfHasSpace')) {
             // Wrap the string in single quotes
             return "'" . $string . "'";
         }
+
         // Return the original string if no spaces are found
         return $string;
     }
