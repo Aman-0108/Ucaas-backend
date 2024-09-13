@@ -84,6 +84,9 @@ class CreateChannelHangupCompletesTable extends Migration
             $table->boolean('a_leg_recording_enabled')->default(false)->comment('0 for disable, 1 for enable');
             $table->boolean('b_leg_recording_enabled')->default(false)->comment('0 for disable, 1 for enable');
 
+            $table->string('uuid', 100)->nullable();
+            $table->string('call_cost', 50)->nullable();
+
             $table->softDeletes();
 
             // $table->timestamp('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));

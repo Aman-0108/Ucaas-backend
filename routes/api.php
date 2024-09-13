@@ -7,7 +7,7 @@ use App\Http\Controllers\Api\{
     PackageController, PaymentGatewayController, RinggroupController, RinggroupdestinationController, RoleController, Sofia\SipProfileController,
     Sofia\SipProfileDomainController, Sofia\SipProfileSettingController, Sofia\SofiaGlobalSettingController, TimezoneController, UidController,
     UserController, PaymentController, StripeController, CommioController, ContactController, DidConfigureController, DiddetailsController,
-    TfnController, DidRateController, DidVendorController, InvoiceController, LeadController, PermissionController, PortController, SoundController,
+    TfnController, DidRateController, DidVendorController, FaxController, InvoiceController, LeadController, PermissionController, PortController, SoundController,
     VariableController, WalletTransactionController
 };
 use App\Http\Controllers\S3Controller;
@@ -767,6 +767,26 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
             // To destroy the address by Id
             Route::delete('destroy/{id}', 'destroy')->name('delete');
+        });
+    });
+
+    // Fax
+    Route::controller(FaxController::class)->group(function () {
+        Route::prefix('fax')->group(function () {
+            // To get all the faxe files
+            Route::get('all', 'index');
+
+            // To get the particular fax file by Id
+            Route::get('show/{id}', 'show');
+
+            // To update the particular fax file by Id
+            Route::put('update/{id}', 'update');
+
+            // To store new fax file
+            Route::post('store', 'store');
+
+            // To destroy the fax file by Id
+            Route::delete('destroy/{id}', 'destroy');
         });
     });
 });
