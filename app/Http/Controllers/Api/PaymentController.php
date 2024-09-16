@@ -97,11 +97,11 @@ class PaymentController extends Controller
             // Prepare a success response with the stored account data
             $response = [
                 'status' => false,
-                'message' => 'Mail exchange is not available'
+                'message' => 'Invalid email. Please send valid email.'
             ];
 
             // Return a JSON response with the success message and stored account data
-            return response()->json($response, Response::HTTP_NOT_FOUND);
+            return response()->json($response, Response::HTTP_FORBIDDEN);
         }
 
         // Find the lead by ID
