@@ -98,7 +98,7 @@ class AuthController extends Controller
             $validateUser = Validator::make(
                 $request->all(),
                 [
-                    'email' => 'required|email',
+                    'email' => 'required',
                     'password' => 'required'
                 ]
             );
@@ -112,12 +112,51 @@ class AuthController extends Controller
                 ], 401);
             }
 
-            // Attempt to authenticate user
-            if (!Auth::attempt($request->only(['email', 'password']))) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Email & Password does not match with our record.',
-                ], 401);
+            // Check if the string contains '@'
+            if (strpos($request->email, '@') !== false) {
+                $checkEmail = User::where('email', $request->email)->first();
+
+                if (!$checkEmail) {
+                    // Use explode to split the string
+                    $parts = explode('@', $request->email);
+
+                    // Check if the split was successful
+                    if (count($parts) === 2) {
+                        $username = $parts[0];
+                        $domain = $parts[1];
+
+                        $domainExist = Domain::where('domain_name', $domain)->first();
+
+                        if ($domainExist) {
+                            $account_id = $domainExist->account_id;
+
+                            $userData = User::where(['account_id' => $account_id, 'username' => $username])->first();
+
+                            if (!$userData || !Hash::check($request->password, $userData->password)) {
+                                return response()->json([
+                                    'status' => false,
+                                    'message' => 'Email & Password does not match with our record.',
+                                ], 401);
+                            }
+
+                            $request->merge(['email' => $userData->email]);
+                            
+                        } else {
+                            return response()->json([
+                                'status' => false,
+                                'message' => 'Email & Password does not match with our record.',
+                            ], 401);
+                        }
+                    }
+                } else {
+                    // Attempt to authenticate user
+                    if (!Auth::attempt($request->only(['email', 'password']))) {
+                        return response()->json([
+                            'status' => false,
+                            'message' => 'Email & Password does not match with our record.',
+                        ], 401);
+                    }
+                }
             }
 
             // Retrieve the authenticated user
@@ -179,7 +218,7 @@ class AuthController extends Controller
         }
 
         $userData->permissions = $permissions;
-        
+
         // $userData->roles = $roles;
 
         $data = [

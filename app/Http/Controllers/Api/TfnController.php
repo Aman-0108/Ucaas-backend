@@ -14,6 +14,7 @@ use App\Models\DidVendor;
 use App\Models\Domain;
 use App\Models\Extension;
 use App\Models\Package;
+use App\Models\Role;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -324,7 +325,7 @@ class TfnController extends Controller
 
             // Domain inputs
             $domainInputs = [
-                'domain_name' =>  $formattedDomain. '.' . $account->id . '.webvio.in',
+                'domain_name' =>  $formattedDomain . '.' . $account->id . '.webvio.in',
                 'created_by' => $createdBy
             ];
 
@@ -366,7 +367,7 @@ class TfnController extends Controller
 
                 $intitialExtension = config('globals.EXTENSION_START_FROM');
 
-                for ($i = 0; $i < $number_of_user; $i++) {                   
+                for ($i = 0; $i < $number_of_user; $i++) {
 
                     $data = Extension::create([
                         'account_id' => $request->companyId,
@@ -375,20 +376,31 @@ class TfnController extends Controller
                         "password" => $intitialExtension,
                         "voicemail_password" => $intitialExtension,
                     ]);
-    
+
                     // Check if this is the first extension
                     if ($i == 0) {
                         // Insert the first extension into the user table                    
                         $userdata = User::find($request->user()->id);
                         $userdata->extension_id = $data->id;
                         $userdata->save();
-    
+
                         // Update the extension in the extension table
                         Extension::where('id', $data->id)->update(['user' => $request->user()->id]);
                     }
 
                     $intitialExtension++;
                 }
+            }
+
+            $roles = ['Admin', 'Manager', 'Agent'];
+
+            foreach ($roles as $role) {
+                $roleInputs = [
+                    'name' => $role,
+                    'created_by' => $createdBy
+                ];
+
+                Role::create($roleInputs);
             }
 
             return $response;
