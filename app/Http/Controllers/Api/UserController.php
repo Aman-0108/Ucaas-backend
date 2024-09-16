@@ -113,7 +113,7 @@ class UserController extends Controller
                     'created_by' => $userId
                 ]);
 
-                if($request->has('extension_id')) {
+                if($request->has('extension_id') && $request->extension_id != null ) {
                     $extension = Extension::where([
                         'account_id' => $request->account_id,
                         'id' => $request->extension_id
