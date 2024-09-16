@@ -7,6 +7,7 @@ use App\Models\Account;
 use App\Models\DidRateChart;
 use App\Models\CardDetail;
 use App\Models\BillingAddress;
+use App\Models\DefaultPermission;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
@@ -15,6 +16,7 @@ use App\Models\Domain;
 use App\Models\Extension;
 use App\Models\Package;
 use App\Models\Role;
+use App\Models\RolePermission;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -400,7 +402,21 @@ class TfnController extends Controller
                     'created_by' => $createdBy
                 ];
 
-                Role::create($roleInputs);
+                $role = Role::create($roleInputs);
+
+                $permissionIds = DefaultPermission::where('setfor', 'New Company')->pluck('permission_id');
+
+                foreach($permissionIds as $permission_id) {
+                    $inputData = [
+                        'role_id' => $role->id,
+                        'permission_id' => $permission_id,
+                        'created_at' => date("Y-m-d H:i:s"),
+                        'updated_at' => date("Y-m-d H:i:s")
+                    ];
+        
+                    RolePermission::create($inputData);
+                }
+                
             }
 
             return $response;
