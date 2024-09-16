@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Domain;
+use App\Models\Extension;
 use App\Models\RolePermission;
 use App\Models\Subscription;
 use App\Models\User;
@@ -39,6 +40,7 @@ class UserController extends Controller
 
             $userId = $request->user()->id;
             $userType = $request->user()->usertype;
+            $account_id = $request->user()->account_id;
 
             // Validate the request data
             $validateUser = Validator::make(
@@ -64,6 +66,21 @@ class UserController extends Controller
                     ],
                     'account_id' => 'required|integer|exists:accounts,id',
                     'permissions.*' => 'required|integer',
+                    'extension_id' => [
+                        'string',
+                        'nullable',
+                        function ($attribute, $value, $fail) use ($request) {
+                            $accountId = $request->input('account_id');
+                            $exists = DB::table('extensions')
+                                ->where('id', $value)
+                                ->where('account_id', $accountId)
+                                ->exists();
+                
+                            if (!$exists) {
+                                $fail('The selected extension_id does not belong to the specified account_id.');
+                            }
+                        },
+                    ]
                 ]
             );
 
@@ -80,7 +97,7 @@ class UserController extends Controller
             DB::beginTransaction();
 
             if ($userType != 'SuperAdmin') {
-                $account_id = User::find($userId)->account_id;
+                
                 $domainId = Domain::where('account_id', $account_id)->first()->id;
 
                 // Create a new user record in the database
@@ -95,6 +112,27 @@ class UserController extends Controller
                     'status' => $request->status,
                     'created_by' => $userId
                 ]);
+
+                if($request->has('extension_id')) {
+                    $extension = Extension::where([
+                        'account_id' => $request->account_id,
+                        'id' => $request->extension_id
+                    ])->first();    
+                    
+                    $checkAssigned = User::where('extension_id', $request->extension_id)->first();
+
+                    if($checkAssigned) {
+                        $checkAssigned->extension_id = null;
+                        $checkAssigned->save();
+                    }
+    
+                    $user->extension_id = $request->extension_id;
+                    $user->save();
+    
+                    $extension->user = $user->id;
+                    $extension->save();
+                }
+
             } else {
                 $user = User::create([
                     'name' => $request->name,
@@ -222,7 +260,7 @@ class UserController extends Controller
         // Retrieve all users from the database
         $users = User::with(['domain', 'extension', 'userRole.roles']);
 
-        $users->where('id', '!=', $userId);
+        // $users->where('id', '!=', $userId);
 
         if ($request->user()->usertype == 'Company') {
             // If 'account' parameter is provided, filter extensions by account ID
