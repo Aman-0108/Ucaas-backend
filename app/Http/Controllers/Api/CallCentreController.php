@@ -288,7 +288,7 @@ class CallCentreController extends Controller
     public function show($id)
     {
         // Find the call_centre_queue by ID
-        $call_centre_queue = CallCenterQueue::find($id);
+        $call_centre_queue = CallCenterQueue::with('agents')->find($id);
 
         // Check if the call_centre_queue exists
         if (!$call_centre_queue) {
