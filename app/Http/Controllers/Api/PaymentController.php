@@ -244,7 +244,7 @@ class PaymentController extends Controller
                 'message' => 'Something went wrong.'
             ];
 
-            // Return a JSON response with the list of accounts with status(200)
+            // Return a JSON response with the list of accounts with status(500)
             return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

@@ -104,6 +104,7 @@ class CallCentreController extends Controller
                 'queue_cid_prefix' => 'string|nullable',
                 'created_by' => 'required|exists:users,id',
                 'recording_enabled' => 'boolean|nullable',
+                'status' => 'boolean',
             ]
         );
 
@@ -364,6 +365,7 @@ class CallCentreController extends Controller
                 'discard_abandoned_after' => 'numeric|nullable',
                 'queue_cid_prefix' => 'string|nullable',
                 'recording_enabled' => 'boolean|nullable',
+                'status' => 'boolean|nullable',
             ]
         );
 

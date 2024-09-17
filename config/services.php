@@ -50,7 +50,13 @@ return [
 
     'websocket' => [
         'port' => env('WEBSOCKET_PORT', 8091),
-        'ip' => env('WEBSOCKET_IP', '127.0.0.1')
+        'ip' => env('WEBSOCKET_IP', '127.0.0.1'),
+        'ssl' => [
+            'local_cert' => env('WEBSOCKET_SSL_LOCAL_CERT', base_path('C:\SSL\server.crt')),
+            'local_pk' => env('WEBSOCKET_SSL_LOCAL_PK', base_path('C:\SSL\server.key')),
+            'allow_self_signed' => true,  // Allow self-signed certs for development
+            'verify_peer' => false,       // Disable peer verification for development
+        ],
     ],
 
     'stripe' => [

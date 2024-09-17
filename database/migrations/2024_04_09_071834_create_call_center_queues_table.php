@@ -44,6 +44,7 @@ class CreateCallCenterQueuesTable extends Migration
 
             $table->foreignId('created_by')->references('id')->on('users');
             $table->boolean('recording_enabled')->default(false)->comment('0 for disable, 1 for enable');
+            $table->boolean('status')->default(false);
 
             $table->timestamps();
         });
