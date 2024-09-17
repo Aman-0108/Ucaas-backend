@@ -380,15 +380,15 @@ class TfnController extends Controller
                     ]);
 
                     // Check if this is the first extension
-                    if ($i == 0) {
-                        // Insert the first extension into the user table                    
-                        $userdata = User::find($request->user()->id);
-                        $userdata->extension_id = $data->id;
-                        $userdata->save();
+                    // if ($i == 0) {
+                    //     // Insert the first extension into the user table                    
+                    //     $userdata = User::find($request->user()->id);
+                    //     $userdata->extension_id = $data->id;
+                    //     $userdata->save();
 
-                        // Update the extension in the extension table
-                        Extension::where('id', $data->id)->update(['user' => $request->user()->id]);
-                    }
+                    //     // Update the extension in the extension table
+                    //     Extension::where('id', $data->id)->update(['user' => $request->user()->id]);
+                    // }
 
                     $intitialExtension++;
                 }
