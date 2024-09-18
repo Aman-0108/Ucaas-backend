@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\AccountBalance;
 use App\Models\AccountDetail;
+use App\Models\DefaultPermission;
 use App\Models\Document;
 use App\Models\Domain;
 use App\Models\Payment;
+use App\Models\Role;
+use App\Models\RolePermission;
 use App\Notifications\NewAccountRegistered;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -663,4 +666,43 @@ class AccountController extends Controller
         // Return a JSON response with HTTP status code 200 (OK)
         return response()->json($response, Response::HTTP_OK);
     }
+
+    /**
+     * Sets default roles with their associated permissions for the given account.
+     * @param int $user_id The ID of the user to set default roles for.
+     * @return void
+     */
+    public function setDefaultRolesWithPermissions($user_id)
+    {
+        // Define the roles to be set as default roles
+        $roles = ['Admin', 'Manager', 'Agent'];
+
+        // Iterate through the roles and set default permissions for each
+        foreach ($roles as $role) {
+            // Create a new role with the given name and created_by set to the user ID
+            $roleInputs = [
+                'name' => $role,
+                'created_by' => $user_id
+            ];
+
+            // Create a new role with the input data
+            $role = Role::create($roleInputs);
+
+            // Get the IDs of the default permissions for the given set (New Company)
+            $permissionIds = DefaultPermission::where('setfor', 'New Company')->pluck('permission_id');
+
+            // Iterate through the permission IDs and set the default permissions for each
+            foreach ($permissionIds as $permission_id) {
+                // Create an input array with the role ID, permission ID and timestamps
+                $inputData = [
+                    'role_id' => $role->id,
+                    'permission_id' => $permission_id,
+                ];
+
+                // Create a new role-permission record with the input data
+                RolePermission::create($inputData);
+            }
+        }
+    }
+
 }

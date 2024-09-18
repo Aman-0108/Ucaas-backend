@@ -5,15 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Jobs\NewUser;
 use App\Jobs\WalletRecharge;
-use App\Mail\NewUserMail;
-use App\Mail\RechargeSuccessfull;
 use App\Models\Account;
 use App\Models\BillingAddress;
 use App\Models\CardDetail;
 use App\Models\Lead;
 use App\Models\Package;
 use App\Models\Payment;
-use App\Models\PaymentGateway;
 use App\Models\TransactionDetail;
 use App\Models\WalletTransaction;
 use Illuminate\Http\Request;
@@ -25,22 +22,40 @@ use Illuminate\Validation\Rule;
 
 class PaymentController extends Controller
 {
-    // All Payments
+    /**
+     * Fetches all payments from the database.
+     *
+     * This function is responsible for fetching all payments from the database and
+     * returning them in a paginated format. It also takes an 'account_id' parameter
+     * which, if provided, will filter the payments by account ID.
+     *
+     * @param Request $request The HTTP request containing the 'account_id' parameter.
+     *
+     * @return JsonResponse The paginated list of payments.
+     */
     public function index(Request $request)
     {
+        $accountId = $request->user() ? $request->user()->account_id : null;
+
+        $userType = $request->user() ? $request->user()->usertype : null;
+
+        // Get all payments
         $payments = Payment::with(['paymentDetails']);
-        // $payments = Payment::query();
 
-        // Check if the request contains an 'account_id' parameter
-        if ($request->has('account_id')) {
-            // If 'account' parameter is provided, filter domains by account ID
-            $payments->where('account_id', $request->account_id);
+        if($userType == 'Company' && $accountId != null) {
+            $payments->where('account_id', $accountId);
         }
-
+       
         // COMING FROM GLOBAL CONFIG
         $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
 
-        // Execute the query to fetch domains
+        /**
+         * Execute the query to fetch domains
+         *
+         * This will execute the query and fetch the payments from the database. The
+         * results will be paginated and sorted in descending order of the 'id'
+         * column.
+         */
         $payments = $payments->orderBy('id', 'desc')->paginate($ROW_PER_PAGE);
 
         // Prepare the response data
@@ -54,7 +69,17 @@ class PaymentController extends Controller
         return response()->json($response, Response::HTTP_OK);
     }
 
-    // payment for new account
+    /**
+     * Initiates payment process for a new account.
+     *
+     * This function is called when a new account is created and the user needs to
+     * make a payment for the subscription. It validates the incoming request data,
+     * saves the payment details in the database, and then calls the `pay` function
+     * to initiate the payment process.
+     *
+     * @param Request $request The HTTP request containing payment details.
+     * @return \Illuminate\Http\JsonResponse JSON response indicating success or failure.
+     */
     public function paymentForNewAccount(Request $request)
     {
         // Validate the incoming request data
@@ -181,6 +206,7 @@ class PaymentController extends Controller
             $accountController = new AccountController();
             $account = $accountController->createAccount($lead->toArray());
 
+            // Get account ID
             $accountId = $account->id;
 
             // Add Billing Address
@@ -189,7 +215,10 @@ class PaymentController extends Controller
 
             // Add user
             $userController = new UserController();
-            $userController->createUser($account);
+            $userResponse = $userController->createUser($account);
+            
+            // Set default Roles & permissions
+            $accountController->setDefaultRolesWithPermissions($userResponse['id']);
 
             // Add Card Details
             $cardInput = [
@@ -200,10 +229,12 @@ class PaymentController extends Controller
                 'cvc' => $request->cvc,
             ];
 
+            // Check if user wants to save card
             if ($request->save_card == 1) {
                 $cardInput['save_card'] = 1;
             }
 
+            // Save Card
             $cardController = new CardController();
             $card = $cardController->saveCard($accountId, $cardInput);
 
@@ -216,6 +247,7 @@ class PaymentController extends Controller
             $subscriptionController = new SubscriptionController();
             $subscriptionController->createSubscription($accountId, $package, $transactionId);
 
+            // prepare user credentials
             $userCredentials = [
                 'company_name' => $account->company_name,
                 'email' => $account->email,
@@ -257,7 +289,9 @@ class PaymentController extends Controller
      */
     public function walletRecharge(Request $request)
     {
+        // Get the logged in user
         $userId = $request->user()->id;
+
         // Define metadata for the transaction
         $metadata = [
             'cause' => 'wallet recharge',
@@ -265,13 +299,19 @@ class PaymentController extends Controller
             // Add more metadata fields as needed
         ];
 
+        // Define payment intent for the recharge transaction
         $description = 'Wallet balance added';
 
+        // Define payment mode
         $paymentMode = 'card';
+
+        // Define transaction type
         $transaction_type = 'debit';
 
+        // Define payment gateway
         $payment_gateway = checkPaymentGateway();
 
+        // Check if payment gateway is configured
         if (!$payment_gateway) {
             return response()->json([
                 'status' => false,
@@ -279,8 +319,10 @@ class PaymentController extends Controller
             ], 400);
         }
 
+        // Get the amount from request
         $amount = $request->amount;
 
+        // Initiate payment
         $paymentResponse = $this->pay($request, $metadata);
 
         // Extract content from response
@@ -301,10 +343,13 @@ class PaymentController extends Controller
                 'descriptor'  => $description,
             ];
 
+            // Add Wallet Transaction
             WalletTransaction::create($walletDataDetail);
 
+            // Get transaction id
             $transactionId = $responseData['transactionId'];
 
+            // Get card details
             if ($request->has('card_id')) {
                 // card details
                 $card = CardDetail::where(['id' => $request->card_id, 'account_id' => $request->account_id, 'cvc' => $request->cvc])->first();
@@ -320,6 +365,7 @@ class PaymentController extends Controller
                 $card = json_decode(json_encode($card));
             }
 
+            // Get billing address
             if ($request->has('address_id')) {
                 $billingAddress = BillingAddress::find($request->address_id);
             } else {
@@ -382,6 +428,13 @@ class PaymentController extends Controller
         }
     }
 
+    /**
+     * Initiates payment process.
+     *
+     * @param Request $request The HTTP request containing payment details.
+     * @param array $metadata Additional metadata for the transaction.
+     * @return \Illuminate\Http\JsonResponse JSON response indicating success or failure.
+     */
     public function pay(Request $request, $metadata)
     {
         // Perform validation on the request data
@@ -475,6 +528,7 @@ class PaymentController extends Controller
         // check peyment gateway options
         $checkGateway = checkPaymentGateway();
 
+        // check payment gateway
         if (!$checkGateway) {
             return response()->json([
                 'status' => false,
@@ -482,6 +536,7 @@ class PaymentController extends Controller
             ], 400);
         }
 
+        // 
         $transactionId = '';
 
         if ($checkGateway == 'Stripe') {
@@ -500,6 +555,7 @@ class PaymentController extends Controller
                 return response()->json($response, Response::HTTP_FORBIDDEN);
             }
 
+            // Get payment method ID
             $paymentId = $paymentMethodResponse['paymentId'];
 
             // Create payment intent for the recharge transaction
@@ -554,6 +610,7 @@ class PaymentController extends Controller
             $billingAddressController->addData($request->account_id, $billingAddresInputs);
         }
 
+        // prepare response
         $response = [
             'status' => true,
             'transactionId' => $transactionId,

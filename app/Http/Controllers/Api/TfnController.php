@@ -301,7 +301,7 @@ class TfnController extends Controller
                     ], 400);
                 }
 
-                return  commonServerError();
+                return commonServerError();
             }
         }
 
@@ -392,31 +392,6 @@ class TfnController extends Controller
 
                     $intitialExtension++;
                 }
-            }
-
-            $roles = ['Admin', 'Manager', 'Agent'];
-
-            foreach ($roles as $role) {
-                $roleInputs = [
-                    'name' => $role,
-                    'created_by' => $createdBy
-                ];
-
-                $role = Role::create($roleInputs);
-
-                $permissionIds = DefaultPermission::where('setfor', 'New Company')->pluck('permission_id');
-
-                foreach($permissionIds as $permission_id) {
-                    $inputData = [
-                        'role_id' => $role->id,
-                        'permission_id' => $permission_id,
-                        'created_at' => date("Y-m-d H:i:s"),
-                        'updated_at' => date("Y-m-d H:i:s")
-                    ];
-        
-                    RolePermission::create($inputData);
-                }
-                
             }
 
             return $response;
