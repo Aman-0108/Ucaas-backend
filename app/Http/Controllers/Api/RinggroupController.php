@@ -75,7 +75,7 @@ class RinggroupController extends Controller
                 ],
                 'strategy' => 'in:enterprise,sequence,simultaneously,random,rollover,',
                 'timeout_destination' => 'string|nullable',
-                'call_timeout' => 'required|string',
+                'call_timeout' => 'string|nullable',
                 'ring_group_caller_id_name' => 'string|nullable',
                 'ring_group_caller_id_number' => 'string|nullable',
                 'ring_group_cid_name_prefix' => 'string|nullable',
