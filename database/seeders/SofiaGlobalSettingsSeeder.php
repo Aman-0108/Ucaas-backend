@@ -4,9 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\SofiaGlobalSetting;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Log;
 
-class SofiaGlobalsettingsSeeder extends Seeder
+class SofiaGlobalSettingsSeeder extends Seeder
 {
     /**
      * Run the database seeds.

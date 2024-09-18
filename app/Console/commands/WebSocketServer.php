@@ -42,8 +42,6 @@ class WebSocketServer extends Command
      */
     public function handle()
     {
-        $this->info(`WebSocket server started at ws://localhost:config('services.websocket.port')`);
-
         $server = IoServer::factory(
             new HttpServer(
                 new WsServer(
@@ -52,6 +50,8 @@ class WebSocketServer extends Command
             ),
             config('services.websocket.port')
         );
+
+        $this->info("WebSocket server started at ws://localhost:" . config('services.websocket.port'));
 
         $server->run();
 
