@@ -636,7 +636,13 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
         // DID 
         Route::controller(DiddetailsController::class)->group(function () {
+            // To get all the did's
             Route::get('all', 'index');
+            
+            // To store new did
+            Route::post('store', 'store');
+
+            // To delete the particular did by Id
             Route::delete('destroy/{id}', 'destroy');
         });
 

@@ -72,10 +72,12 @@ class DiddetailsController extends Controller
             $request->all(),
             [
                 'account_id' => 'required|exists:accounts,id',
-                'transaction_id' => 'required|exists:payments,transaction_id',
+                'did_vendor_id' => 'required|exists:did_vendors,id',
                 'domain' => 'required|string',
                 'did' => 'required|string',
-                'didSummary' => 'required|string',
+                'cnam' => 'required|boolean',
+                'sms' => 'required|boolean',
+                'e911' => 'required|boolean',
                 'tollfreePrefix' => 'required|string',
                 'npanxx' => 'required|string',
                 'ratecenter' => 'required|string',
@@ -162,6 +164,7 @@ class DiddetailsController extends Controller
             [
                 'domain' => 'string',
                 'did' => 'string',
+                'did_vendor_id' => 'exists:did_vendors,id',
                 'didSummary' => 'string',
                 'tollfreePrefix' => 'string',
                 'npanxx' => 'string',

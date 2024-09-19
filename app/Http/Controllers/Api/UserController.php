@@ -584,7 +584,7 @@ class UserController extends Controller
             'name' => $name,
             'email' => $account->email,
             'username' => $account->company_name,
-            'password' => Hash::make($account->company_name),
+            'password' => Hash::make(str_replace(' ', '', strtolower($account->company_name))),
             'timezone_id' => $account->timezone_id,
             'status' => 'E',
             'usertype' => 'Company',
