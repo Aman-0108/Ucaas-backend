@@ -2,10 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Http\Controllers\Api\FreeSwitchController;
 use App\Services\FreeSwitchService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
 
 class Freeswitch extends Command
 {

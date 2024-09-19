@@ -4,7 +4,6 @@ namespace App\WebSocket;
 
 use App\Models\Extension;
 use App\Models\User;
-use Illuminate\Support\Facades\Log;
 use Ratchet\MessageComponentInterface;
 use Ratchet\ConnectionInterface;
 
@@ -16,7 +15,6 @@ class SocketHandler implements MessageComponentInterface
 
     public function __construct()
     {
-        // $this->clients = new \SplObjectStorage;
         $this->clients = [];
     }
 
@@ -26,8 +24,7 @@ class SocketHandler implements MessageComponentInterface
         echo "New connection! ({$conn->resourceId})\n";
 
         $this->clients[$conn->resourceId] = $conn;
-        // Store authenticated user's connection
-        // $this->clients->attach($conn);
+       
         $query = $conn->httpRequest->getUri()->getQuery();
 
         // Parse query parameters to get user credentials or token
@@ -46,7 +43,6 @@ class SocketHandler implements MessageComponentInterface
                 $conn->close(); // Close connection
                 return;
             } else {
-                // $this->clients[$conn->resourceId] = $conn;
 
                 $resourceId = $conn->resourceId;
 
@@ -129,7 +125,6 @@ class SocketHandler implements MessageComponentInterface
         echo "Connection {$conn->resourceId} has disconnected\n";
 
         // The connection is closed, remove it, as we can no longer send it messages
-        // $this->clients->detach($conn);
         unset($this->clients[$conn->resourceId]);
 
         $querystring = $conn->httpRequest->getUri()->getQuery();

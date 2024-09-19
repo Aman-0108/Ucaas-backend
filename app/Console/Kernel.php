@@ -8,8 +8,10 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 class Kernel extends ConsoleKernel
 {
     protected $commands = [
-    //     \App\Console\Commands\WebSocketServer::class,
-    //     \App\Console\Commands\Freeswitch::class,
+        \App\Console\Commands\RunAllCommands::class,
+        \App\Console\Commands\WebSocketServer::class,
+        \App\Console\Commands\Freeswitch::class,
+        \App\Console\Commands\ActiveCalls::class,
     //     \App\Console\Commands\LowBalanceNotification::class,
     ];
 
@@ -21,7 +23,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('email:send-low-balance')->everyMinute();
+        // $schedule->command('email:send-low-balance')->everyMinute();
         // $schedule->command('websocket:init')->everyMinute();
     }
 

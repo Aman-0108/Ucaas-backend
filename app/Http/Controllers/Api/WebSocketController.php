@@ -13,7 +13,6 @@ class WebSocketController extends Controller
         $serverUrl = 'ws://'.config('services.websocket.ip').':'. config('services.websocket.port').'?type=admin';
         $client = new Client($serverUrl);
 
-        // $client->text("Hello WebSocket.org!");
         $client->send(json_encode($data));
     }    
 }
