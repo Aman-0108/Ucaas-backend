@@ -17,11 +17,9 @@ class CreateDidDetailsTable extends Migration
             $table->id();
             $table->foreignId('account_id')->references('id')->on('accounts');
             $table->string('orderid');
-            //$table->string('transaction_id')->index();
-            //$table->foreign('transaction_id')->references('transaction_id')->on('payments');
+            $table->foreignId('did_vendor_id')->references('id')->on('did_vendors');
             $table->string('domain');
             $table->string('did');
-            //$table->string('didSummary');
             $table->boolean('cnam')->default(false);
             $table->boolean('sms')->default(false);
             $table->boolean('e911')->default(false);

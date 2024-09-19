@@ -8,6 +8,7 @@ use App\Services\SSHService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class ChannelHangupController extends Controller
 {
@@ -44,6 +45,60 @@ class ChannelHangupController extends Controller
         if ($request->has('account')) {
             // If 'account' parameter is provided, filter cdrs by account ID
             $cdrs->where('account_id', $request->account);
+        }
+
+        // if ($request->has('extension')) {
+        //     $cdrs->where('extension', $request->extension);
+        // }
+
+        if ($request->has('callDirection')) {
+            $cdrs->where('Call-Direction', $request->callDirection);
+        }
+
+        // Check if the request contains 'start_date' and 'end_date' for filtering
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $validator = Validator::make($request->all(), [
+                'start_date' => 'date|required',
+                'end_date' => 'date|required|after_or_equal:start_date',
+            ]);
+
+            // Check if validation fails
+            if ($validator->fails()) {
+                // If validation fails, return a 403 Forbidden response with validation errors
+                $response = [
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validator->errors()
+                ];
+
+                return response()->json($response, Response::HTTP_FORBIDDEN);
+            }
+
+            $startDate = $request->input('start_date');
+            $endDate = $request->input('end_date');
+
+            // Filter by date range
+            $cdrs->whereBetween('created_at', [$startDate, $endDate]);
+        }
+
+        // Hangup-Cause
+        if ($request->has('hangupCause')) {
+            $cdrs->where('Hangup-Cause', $request->hangupCause);
+        }
+
+        // origin 
+        if ($request->has('origin')) {
+            $cdrs->where('variable_sip_from_user', $request->origin);
+        }
+
+        // destination
+        if ($request->has('destination')) {
+            $cdrs->where('variable_sip_to_user', $request->destination);
+        }
+        
+        // application_state
+        if ($request->has('application_state')) {
+            $cdrs->where('application_state', $request->application_state);
         }
 
         // COMING FROM GLOBAL CONFIG
@@ -85,17 +140,17 @@ class ChannelHangupController extends Controller
             'calleeUser:id,username'
         ]);
 
-        if($request->has('account_id')) {
+        if ($request->has('account_id')) {
             $query->where('account_id', $request->account_id);
         }
 
-        if($request->has('user_id')) {
+        if ($request->has('user_id')) {
             // If 'user_id' parameter is provided, filter calls by user ID            
             $userId = $request->user_id;
-            
+
             $query->where(function ($q) use ($userId) {
                 $q->where('caller_user_id', $userId)
-                  ->orWhere('callee_user_id', $userId);
+                    ->orWhere('callee_user_id', $userId);
             });
         }
 

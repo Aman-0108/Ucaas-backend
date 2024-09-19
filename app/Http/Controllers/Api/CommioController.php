@@ -260,6 +260,7 @@ class CommioController extends Controller
                             //insert into did detail tbl
                             $ordeDetail = [
                                 'account_id' => $companyId,
+                                'did_vendor_id' => $vendorId,
                                 'orderid' => $responseData['id'],
                                 'domain' => $vendorId,
                                 'did' => $row['did'],
