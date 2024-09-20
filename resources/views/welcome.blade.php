@@ -1,36 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <title>Document</title>
-    </head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
 
-    <body>
-        <h1>Test {{ config('globals.support_mail') }}</h1>
-        {{-- <img src={{ asset('storage/uploads/66Ndx8TdaYuK5INJxh1IhFoyAvozKj4FxXAYFIob.jpg') }} alt="" height="80"
-            width="80"> --}}
+<body>
+    <h1>Test {{ config('globals.support_mail') }}</h1>
 
-        {{-- <script>
-            const userId = 10;
-            const token = '34|LCf5fJO66oSvOPUxY9pwFYE34cI02USDtZ2VTKD0';
+    <script>
 
-            const ws = new WebSocket(`ws://192.168.1.22:8093?token=${token}`);
+        const token = '34|LCf5fJO66oSvOPUxY9pwFYE34cI02USDtZ2VTKD0';
 
-            ws.onopen = function() {
-                console.log('WebSocket connection established.');
-            };
+        const ws = new WebSocket('wss://192.168.1.88:8093');
 
-            ws.onmessage = function(event) {
-                // console.log('Message received:', event.data);
-                let res = JSON.parse(event.data);
-                console.log(res)
-            };
-        </script> --}}
+        ws.onopen = function() {
+            console.log('WebSocket connection established.');
+        };
 
-        <script type="module">
+        ws.onmessage = function(event) {
+            console.log('WebSocket message received:', event.data);
+        };
+
+        ws.onclose = function() {
+            console.log('WebSocket connection closed.');
+        };
+
+        ws.onerror = function(error) {
+            console.error('WebSocket error:', error);
+        };
+    </script>
+
+    <!-- <script type="module">
             // Import the functions you need from the SDKs you need
             import {initializeApp } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-app.js";
             // import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.1/firebase-analytics.js";
@@ -73,7 +77,7 @@
                     // ...
                 });
             });
-        </script>
-    </body>
+        </script> -->
+</body>
 
 </html>

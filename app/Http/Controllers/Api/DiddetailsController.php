@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DidDetail;
 use App\Models\DidOrderStatus;
 use App\Models\DidVendor;
+use App\Models\Domain;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -66,6 +67,15 @@ class DiddetailsController extends Controller
     {
         // Retrieve the ID of the authenticated user making the request
         $userId = $request->user()->id;
+        $account_id = $request->user()->account_id;
+
+        $domain = Domain::where('account_id', $account_id)->first();
+       
+        $request->merge([
+            'account_id' => $account_id,
+            'domain' => $domain->id,
+            'created_by' => $userId
+        ]);
 
         // Validate incoming request data
         $validator = Validator::make(
@@ -73,17 +83,17 @@ class DiddetailsController extends Controller
             [
                 'account_id' => 'required|exists:accounts,id',
                 'did_vendor_id' => 'required|exists:did_vendors,id',
-                'domain' => 'required|string',
+                'domain' => 'required|exists:domains,id',
                 'did' => 'required|string',
-                'cnam' => 'required|boolean',
-                'sms' => 'required|boolean',
-                'e911' => 'required|boolean',
-                'tollfreePrefix' => 'required|string',
-                'npanxx' => 'required|string',
-                'ratecenter' => 'required|string',
-                'thinqTier' => 'required|string',
-                'currency' => 'required|string',
-                'price' => 'required|numeric|between:0,9999999.99',
+                'cnam' => 'boolean|nullable',
+                'sms' => 'boolean|nullable',
+                'e911' => 'boolean|nullable',
+                'tollfreePrefix' => 'string|nullable',
+                'npanxx' => 'string|nullable',
+                'ratecenter' => 'string|nullable',
+                'thinqTier' => 'string|nullable',
+                'currency' => 'string|nullable',
+                'price' => 'nullable|numeric|between:0,9999999.99',
                 'created_by' => 'required'
             ]
         );

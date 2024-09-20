@@ -47,26 +47,26 @@ class WebSocketServer extends Command
     public function handle()
     {
         // Use the default loop
-        $loop = Loop::get();
+        // $loop = Loop::get();
 
-        // Create a regular TCP server
-        $socket = new SecureServer(  
-            new SocketServer($loop, config('services.websocket.port')),  
-            config('services.websocket.ssl')
-        );  
+        // // Create a regular TCP server
+        // $socket = new SecureServer(  
+        //     new SocketServer($loop, config('services.websocket.port')),  
+        //     config('services.websocket.ssl')
+        // );  
 
-        $server = IoServer::factory(
-            new HttpServer(
-                new WsServer(
-                    new SocketHandler()
-                )
-            ),
-            $socket
-        );
+        // $server = IoServer::factory(
+        //     new HttpServer(
+        //         new WsServer(
+        //             new SocketHandler()
+        //         )
+        //     ),
+        //     $socket
+        // );
 
-        $this->info("WebSocket server started at wss://localhost:" . config('services.websocket.port'));
+        // $this->info("WebSocket server started at wss://localhost:" . config('services.websocket.port'));
 
-        $server->run();
+        // $server->run();
 
         $app = new HttpServer(
             new WsServer(
@@ -75,18 +75,22 @@ class WebSocketServer extends Command
         );
 
          // Use the default loop
-        //  $loop = Loop::get();
+        $loop = Loop::get();
         // Create a WebSocket server
-        // $webSock = new SocketServer('0.0.0.0:8080', [], $loop);
+        $webSock = new SocketServer(config('services.websocket.ip') . ':' . config('services.websocket.port'), [], $loop);
 
-        // $webSock = new SecureServer($webSock, $loop, [
-        //     'local_cert' => 'CRT_PATH', 
-        //     'local_pk'=> 'KEY_PATH', 
-        //     'allow_self_signed' => true, 
-        //     'verify_peer' => false
-        // ]);
+        $webSock = new SecureServer($webSock, $loop, [
+            'local_cert' => config('services.websocket.ssl.local_cert'), 
+            'local_pk'=> config('services.websocket.ssl.local_pk'), 
+            'allow_self_signed' => config('services.websocket.ssl.allow_self_signed'), 
+            'verify_peer' => config('services.websocket.ssl.verify_peer')
+        ]);
 
-        // $webSock = new IoServer($app, $webSock, $loop);
+        $webSock = new IoServer($app, $webSock, $loop);
+
+        $this->info("WebSocket server started at wss://" . config('services.websocket.ip') . ":" . config('services.websocket.port'));
+
+        $webSock->run();
 
         return Command::SUCCESS;
     }

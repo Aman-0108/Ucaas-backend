@@ -16,7 +16,7 @@ class CreateDidDetailsTable extends Migration
         Schema::create('did_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('account_id')->references('id')->on('accounts');
-            $table->string('orderid');
+            $table->string('orderid')->nullable();
             $table->foreignId('did_vendor_id')->references('id')->on('did_vendors');
             $table->string('domain');
             $table->string('did');
@@ -28,7 +28,7 @@ class CreateDidDetailsTable extends Migration
             $table->string('ratecenter')->nullable();
             $table->string('thinqTier')->nullable();
             $table->string('currency')->nullable();
-            $table->decimal('price', 10, 2);
+            $table->decimal('price', 10, 2)->default(0.00);
             $table->integer('created_by');
             $table->timestamps();
         });

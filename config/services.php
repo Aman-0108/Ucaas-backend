@@ -52,8 +52,8 @@ return [
         'port' => env('WEBSOCKET_PORT', 8091),
         'ip' => env('WEBSOCKET_IP', '127.0.0.1'),
         'ssl' => [
-            'local_cert' => env('WEBSOCKET_SSL_LOCAL_CERT', base_path('C:\SSL\server.crt')),
-            'local_pk' => env('WEBSOCKET_SSL_LOCAL_PK', base_path('C:\SSL\server.key')),
+            'local_cert' => env('WEBSOCKET_SSL_LOCAL_CERT', base_path('C:\ssl\server.crt')),
+            'local_pk' => env('WEBSOCKET_SSL_LOCAL_PK', base_path('C:\ssl\server.key')),
             'allow_self_signed' => true,  // Allow self-signed certs for development
             'verify_peer' => false,       // Disable peer verification for development
         ],
@@ -65,3 +65,11 @@ return [
     ]
 
 ];
+
+// openssl x509 -in server.crt -text -noout
+// openssl x509 -enddate -noout -in server.crt
+// openssl x509 -startdate -noout -in server.crt
+
+// openssl rsa -in server.key -check
+// openssl rsa -in server.key -text -noout
+// netstat -an | find "8093"
