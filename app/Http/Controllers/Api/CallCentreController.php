@@ -746,6 +746,11 @@ class CallCentreController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
+        $call_centre_queue = CallCenterQueue::find($data->call_center_queue_id);
+        $account_id = $call_centre_queue->account_id;
+        $domain = Domain::where(['account_id' => $account_id])->first();
+        $generatedQueueName = $call_centre_queue->extension . '@' . $domain->domain_name;
+
         // Begin database transaction
         DB::beginTransaction();
 
@@ -794,6 +799,32 @@ class CallCentreController extends Controller
                     $ongoingBreak->total_break_time = $breakDuration;
                     $ongoingBreak->save();
                 }
+            }
+
+            // Add the agent to the queue
+            $fsTierResponse = $freeSWitch->callcenter_config_tier_add($generatedQueueName, $data->agent_name, $data->tier_level, $data->tier_position);
+            $fsTierResponse = $fsTierResponse->getData();
+
+            if (!$fsTierResponse->status) {
+                // If there is an error, set the status and message
+                $type = config('enums.RESPONSE.ERROR');
+                $status = false;
+                $msg = 'Something went wrong in freeswitch while adding tier. Please try again later.';
+            }
+        }
+
+        if ($request->status == 'Logged Out') {
+            // Remove the agent from the queue
+            $fsTierResponse = $freeSWitch->callcenter_config_tier_del($generatedQueueName, $data->agent_name);
+            $fsTierResponse = $fsTierResponse->getData();
+
+            if (!$fsTierResponse->status) {
+                // If there is an error, set the status and message
+                $type = config('enums.RESPONSE.ERROR');
+                $status = false;
+                $msg = 'Something went wrong in freeswitch while deleting tier. Please try again later.';
+
+                return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
             }
         }
 
