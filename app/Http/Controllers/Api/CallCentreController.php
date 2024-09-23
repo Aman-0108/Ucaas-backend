@@ -392,10 +392,23 @@ class CallCentreController extends Controller
         $type = $this->type;
 
         // Begin a database transaction
-        DB::beginTransaction();
+        // DB::beginTransaction();
 
         // Update the gateway with the validated data
         $call_centre_queue->update($validated);
+
+        $freeSWitch = new FreeSwitchController();
+
+        $callQueueReload = $freeSWitch->callcenter_config_queue_reload($generatedQueueName);
+        $callQueueReload = $callQueueReload->getData();
+
+        if (!$callQueueReload->status) {
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'Something went wrong in freeswitch while reloading queue. Please try again later.';
+
+            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+        }
 
         //data for child table group call_centre_agent
         if ($request->has('agents')) {
@@ -506,13 +519,14 @@ class CallCentreController extends Controller
                         return response()->json($response, Response::HTTP_FORBIDDEN);
                     }
                 } else {
+                    $rvalidated['status'] = 'Logged Out';
                     $newAgent = CallCenterAgent::create($rvalidated);
 
-                    $freeSWitch = new FreeSwitchController();
+                    // $freeSWitch = new FreeSwitchController();
 
                     $count = CallCenterAgent::where(['agent_name' => $newAgent->agent_name])->count();
 
-                    if ($count > 0) {
+                    if ($count > 1) {
                         $fsTierResponse = $freeSWitch->callcenter_config_tier_add($generatedQueueName, $newAgent->agent_name, $newAgent->tier_level, $newAgent->tier_position);
                         $fsTierResponse = $fsTierResponse->getData();
 
@@ -534,12 +548,35 @@ class CallCentreController extends Controller
 
                             return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
                         }
+
+                        $setContactRespone = $freeSWitch->callcenter_config_agent_set_contact($newAgent->agent_name, $newAgent->contact);
+                        $setContactRespone = $setContactRespone->getData();
+
+                        if (!$setContactRespone->status) {
+                            $type = config('enums.RESPONSE.ERROR');
+                            $status = false;
+                            $msg = 'Something went wrong in freeswitch while setting contact for agent. Please try again later.';
+
+                            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+                        }
+
+                        $fsTierResponse = $freeSWitch->callcenter_config_tier_add($generatedQueueName, $newAgent->agent_name, $newAgent->tier_level, $newAgent->tier_position);
+                        $fsTierResponse = $fsTierResponse->getData();
+
+                        if (!$fsTierResponse->status) {
+                            $type = config('enums.RESPONSE.ERROR');
+                            $status = false;
+                            $msg = 'Something went wrong in freeswitch while setting tier for agent. Please try again later.';
+
+                            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+                        }
                     }
                 }
             }
         }
 
-        DB::commit();
+        // Commit the database transaction
+        // DB::commit();
 
         // Prepare the response data
         $response = [
@@ -778,6 +815,12 @@ class CallCentreController extends Controller
                 'start_time' => now(),
                 'end_time' => null,
             ]);
+
+            $StateResponse = $this->agentStateChange($generatedQueueName, $data->agent_name, 'standby');
+
+            if ($StateResponse !== true) {
+                return $StateResponse;
+            }
         }
 
         if ($request->status == 'Available') {
@@ -811,6 +854,12 @@ class CallCentreController extends Controller
                 $status = false;
                 $msg = 'Something went wrong in freeswitch while adding tier. Please try again later.';
             }
+
+            $StateResponse = $this->agentStateChange($generatedQueueName, $data->agent_name, 'ready');
+
+            if ($StateResponse !== true) {
+                return $StateResponse;
+            }
         }
 
         if ($request->status == 'Logged Out') {
@@ -828,19 +877,20 @@ class CallCentreController extends Controller
             }
         }
 
-        // Set the status of the call centre agent
-        $fsStatus = addQuotesIfHasSpace($request->status);
-        // callcenter_config_agent_set_status
-        $agentResponse = $freeSWitch->callcenter_config_agent_set_status($data->agent_name, $fsStatus);
-        $agentResponse = $agentResponse->getData();
+        if ($request->status !== 'On Break' && $request->status !== 'Logged Out') {
+            $fsStatus = addQuotesIfHasSpace($request->status);
+            // callcenter_config_agent_set_status
+            $agentResponse = $freeSWitch->callcenter_config_agent_set_status($data->agent_name, $fsStatus);
+            $agentResponse = $agentResponse->getData();
 
-        if (!$agentResponse->status) {
-            // If there is an error, set the status and message
-            $type = config('enums.RESPONSE.ERROR');
-            $status = false;
-            $msg = 'Something went wrong in freeswitch while setting status. Please try again later.';
+            if (!$agentResponse->status) {
+                // If there is an error, set the status and message
+                $type = config('enums.RESPONSE.ERROR');
+                $status = false;
+                $msg = 'Something went wrong in freeswitch while setting status. Please try again later.';
 
-            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+                return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+            }
         }
 
         // Update the status of the call centre agent
@@ -860,5 +910,36 @@ class CallCentreController extends Controller
 
         // Return the response as JSON with HTTP status code 200 (OK)
         return response()->json($response, Response::HTTP_OK);
+    }
+
+    /**
+     * Changes the state of an agent in a call centre queue to either 'standby' or 'ready'.
+     *
+     * @param string $queue The name of the call centre queue.
+     * @param string $agent The name of the agent to change the state of.
+     * @param string $state The state to change the agent to. Can be either 'standby' or 'ready'.
+     * @return \Illuminate\Http\JsonResponse Returns a JSON response indicating success or failure.
+     */
+    protected function agentStateChange($queue, $agent, $state)
+    {
+        // Create an instance of FreeSWitchController
+        $freeSWitch = new FreeSwitchController();
+
+        // Use the callcenter_config_tier_set_state method to change the state of the agent
+        $fsBreakStatus = $freeSWitch->callcenter_config_tier_set_state($queue, $agent, $state);
+        $fsBreakStatus = $fsBreakStatus->getData();
+
+        if (!$fsBreakStatus->status) {
+            // If there is an error, set the status and message
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'Something went wrong in freeswitch while setting agent ' . $state . '. Please try again later.';
+
+            // Return a JSON response with an error message
+            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+        }
+
+        // Return a JSON response with a success message
+        return true;
     }
 }

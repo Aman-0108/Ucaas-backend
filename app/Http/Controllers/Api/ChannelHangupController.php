@@ -37,7 +37,7 @@ class ChannelHangupController extends Controller
      * @return \Illuminate\Http\JsonResponse A JSON response containing the list of cdr.
      */
     public function index(Request $request)
-    {
+    {        
         // Start building the query to fetch cdrs
         $cdrs = ChannelHangupComplete::query();
 
@@ -83,7 +83,7 @@ class ChannelHangupController extends Controller
 
         // Hangup-Cause
         if ($request->has('hangupCause')) {
-            $cdrs->where('Hangup-Cause', $request->hangupCause);
+            $cdrs->where('variable_DIALSTATUS', $request->hangupCause);
         }
 
         // origin 

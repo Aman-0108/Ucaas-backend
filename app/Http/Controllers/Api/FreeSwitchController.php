@@ -557,6 +557,37 @@ class FreeSwitchController extends Controller
         }
     }
 
+    public function callcenter_config_queue_reload($queueName): JsonResponse
+    {
+        if ($this->connected) {
+
+            $cmd = "api callcenter_config queue reload {$queueName}" . PHP_EOL;
+
+            $response = $this->socket->request($cmd);
+
+            $status = false;
+
+            // Check if the response contains "+OK" indicating success
+            if (strpos($response, "+OK") !== false) {
+                // If it does, set status to true
+                $status = true;
+            }
+
+            // Prepare the response data
+            $responseData = [
+                'status' => $status, // Indicates the success status of the request
+                'data' => $response, // Contains the response from the server
+                'message' => 'Successfully reload queue'
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($responseData, Response::HTTP_OK);
+        } else {
+            // If the socket is not connected, return a disconnected response
+            return $this->disconnected();
+        }
+    }
+
     /**
      * Adds an agent to the call center via the API.
      *
@@ -588,6 +619,48 @@ class FreeSwitchController extends Controller
 
             // Return the response as JSON with HTTP status code 200 (OK)
             return response()->json($responseData, Response::HTTP_OK);
+        } else {
+            // If the socket is not connected, return a disconnected response
+            return $this->disconnected();
+        }
+    }
+
+    /**
+     * Sets the contact information for an agent in a call center via the API.
+     *
+     * @param string $agentName The name of the agent to set the contact for.
+     * @param string $contact   The contact information to set for the agent, e.g.
+     *                          "sip:username@domain.tld" or "user/1000".
+     *
+     * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
+     */
+    public function callcenter_config_agent_set_contact($agentName, $contact)
+    {
+        if ($this->connected) {
+            // Construct the command to set the contact information for the agent
+            $cmd = "api callcenter_config agent set contact {$agentName} {$contact}" . PHP_EOL;
+
+            // Send the command to the FreeSwitch server and get the response
+            $response = $this->socket->request($cmd);
+
+            // Initialize the status to false
+            $status = false;
+
+            // Check if the response contains "+OK" indicating success
+            if (strpos($response, "+OK") !== false) {
+                // If it does, set status to true
+                $status = true;
+            }
+
+            // Prepare the response data
+            $response = [
+                'status' => $status, // Indicates the success status of the request
+                'data' => $response, // Contains the response from the server
+                'message' => 'Successfully set contact for agent.'
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
         } else {
             // If the socket is not connected, return a disconnected response
             return $this->disconnected();
@@ -741,7 +814,7 @@ class FreeSwitchController extends Controller
     public function callcenter_config_agent_set_status($agent_name, $status): JsonResponse
     {
         if ($this->connected) {
-            
+
             // Construct the command to set the status of the agent
             $cmd = "api callcenter_config agent set status $agent_name $status" . PHP_EOL;
 
@@ -846,6 +919,48 @@ class FreeSwitchController extends Controller
                 'status' => $status, // Indicates the success status of the request
                 'data' => $response, // Contains the response from the server
                 'message' => 'Successfully agent delete'
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
+        } else {
+            // If the socket is not connected, return a disconnected response
+            return $this->disconnected();
+        }
+    }
+
+    /**
+     * Sets the state of an agent in a call center via the API.
+     * 
+     * @param string $queueName The name of the call center queue.
+     * @param string $agentName The name of the agent to set the state for.
+     * @param string $state The state to set (e.g. "Available" or "Unavailable").
+     * @return \Illuminate\Http\JsonResponse JSON response with status, data, and message
+     */
+    public function callcenter_config_tier_set_state($queueName, $agentName, $state): JsonResponse
+    {
+        if ($this->connected) {
+
+            // Construct the command to set the state of the agent
+            $cmd = "api callcenter_config tier set state {$queueName} {$agentName} {$state}" . PHP_EOL;
+
+            // Send the API request to set the state of the agent
+            $response = $this->socket->request($cmd);
+
+            // Initialize the status to false
+            $status = false;
+
+            // Check if the response contains "+OK" indicating success
+            if (strpos($response, "+OK") !== false) {
+                // If it does, set status to true
+                $status = true;
+            }
+
+            // Prepare the response data
+            $response = [
+                'status' => $status, // Indicates the success status of the request
+                'data' => $response, // Contains the response from the server
+                'message' => "Successfully set agent's state"
             ];
 
             // Return the response as JSON with HTTP status code 200 (OK)
