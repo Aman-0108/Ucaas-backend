@@ -233,6 +233,8 @@ class CallCentreController extends Controller
                 // Retrieve the validated input
                 $rvalidated = $agentValidator->validated();
 
+                $rvalidated['call_timeout'] = $rvalidated['call_timeout'] ? intval ($rvalidated['call_timeout']) : null;
+
                 $newAgent = CallCenterAgent::create($rvalidated);
 
                 // $fsResponse = $freeSWitch->callcenter_config_agent_add($newAgent->agent_name, $newAgent->type);
@@ -485,6 +487,8 @@ class CallCentreController extends Controller
 
                 // Retrieve the validated input
                 $rvalidated = $agentValidator->validated();
+
+                $rvalidated['call_timeout'] = $rvalidated['call_timeout'] ? intval ($rvalidated['call_timeout']) : null;
 
                 if (isset($input['id'])) {
                     $callCenterAgent = CallCenterAgent::find($input['id']);
