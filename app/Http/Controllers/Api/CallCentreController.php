@@ -582,6 +582,17 @@ class CallCentreController extends Controller
             }
         }
 
+        $reloadmodResponse = $freeSWitch->reload_mod_callcenter();
+        $reloadmodResponse = $reloadmodResponse->getData();
+
+        if (!$reloadmodResponse->status) {
+            $type = config('enums.RESPONSE.ERROR');
+            $status = false;
+            $msg = 'Something went wrong in freeswitch while reloading mod call canter. Please try again later.';
+
+            return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+        }
+
         // Commit the database transaction
         // DB::commit();
 
