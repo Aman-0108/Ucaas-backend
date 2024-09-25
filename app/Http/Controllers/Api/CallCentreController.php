@@ -512,7 +512,7 @@ class CallCentreController extends Controller
                         if (!$fsLevelResponse->status || !$fsPositionResponse->status) {
                             $type = config('enums.RESPONSE.ERROR');
                             $status = false;
-                            $msg = 'Something went wrong in freeswitch. Please try again later.';
+                            $msg = 'Something went wrong in freeswitch tier set or level. Please try again later.';
 
                             return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
                         }

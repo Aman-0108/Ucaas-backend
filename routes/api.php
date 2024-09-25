@@ -7,12 +7,12 @@ use App\Http\Controllers\Api\{
     PackageController, PaymentGatewayController, RinggroupController, RinggroupdestinationController, RoleController, Sofia\SipProfileController,
     Sofia\SipProfileDomainController, Sofia\SipProfileSettingController, Sofia\SofiaGlobalSettingController, TimezoneController, UidController,
     UserController, PaymentController, StripeController, CommioController, ContactController, DidConfigureController, DiddetailsController,
-    TfnController, DidRateController, DidVendorController, FaxController, InvoiceController, LeadController, PermissionController, PortController, SoundController,
+    TfnController, DidRateController, DidVendorController, FaxController, InvoiceController, LeadController, MailsettingsController, PermissionController, PortController, SoundController,
     VariableController, WalletTransactionController
 };
 use App\Http\Controllers\S3Controller;
 use App\Http\Controllers\UtilityController;
-
+use App\Models\MailSetting;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -793,6 +793,26 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
             // To destroy the fax file by Id
             Route::delete('destroy/{id}', 'destroy');
+        });
+    });
+
+    // Mail settings
+    Route::controller(MailsettingsController::class)->group(function () {
+        Route::prefix('mail-setting')->group(function () {
+             // To get all the mail settings
+             Route::get('all', 'index');
+
+             // To get the particular mail settings by Id
+             Route::get('show/{id}', 'show');
+ 
+             // To update the particular mail setting by Id
+             Route::put('update/{id}', 'update');
+ 
+             // To store new mail setting
+             Route::post('store', 'store');
+ 
+             // To destroy the mail setting by Id
+             Route::delete('destroy/{id}', 'destroy');
         });
     });
 });
