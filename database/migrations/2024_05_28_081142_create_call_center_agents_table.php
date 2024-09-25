@@ -27,6 +27,7 @@ class CreateCallCenterAgentsTable extends Migration
             $table->unsignedInteger('max_no_answer')->nullable();
             $table->unsignedBigInteger('wrap_up_time')->nullable();
             $table->unsignedBigInteger('reject_delay_time')->nullable();
+            $table->unsignedBigInteger('call_timeout')->nullable();
 
             $table->unsignedBigInteger('busy_delay_time')->nullable();
             $table->unsignedBigInteger('no_answer_delay_time')->nullable();
