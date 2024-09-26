@@ -143,6 +143,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::put('{id}', 'update')->name('edit');
         });
 
+        // All users for messageservice
+        Route::get('user-all', [UserController::class, 'allUsersForMessageservice']);
+
         // To check username is available or not
         Route::post('check/username', 'checkUserName');
 

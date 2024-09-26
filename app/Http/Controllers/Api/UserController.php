@@ -646,4 +646,42 @@ class UserController extends Controller
         // Return the response as JSON
         return response()->json($response, Response::HTTP_OK);
     }
+
+    public function allUsersForMessageservice(Request $request)
+    {
+        $account_id = $request->user()->account_id;
+
+        // Retrieve all users from the database
+        $users = User::with(['extension']);
+
+        $users->where('account_id', $account_id);
+
+        // Check if the request contains a 'search' parameter
+        if ($request->has('search')) {
+            // If 'search' parameter is provided, filter extensions by extension name
+            $searchTerm = $request->search;
+
+            if ($searchTerm) {
+                $users->where(function ($q) use ($searchTerm) {
+                    $q->where('name', 'like', "%$searchTerm%")
+                        ->orWhere('email', 'like', "%$searchTerm%")
+                        ->orWhere('username', 'like', "%$searchTerm%")
+                        ->orWhere('contact', 'like', "%$searchTerm%");
+                });
+            }
+        }
+
+        // Execute the query to fetch users
+        $users = $users->orderBy('id', 'asc')->get();
+
+        // Prepare success response with user data
+        $response = [
+            'status' => true,
+            'data' => $users,
+            'message' => 'Successfully fetched all users'
+        ];
+
+        // Return a JSON response with user data and success message
+        return response()->json($response, Response::HTTP_OK);
+    }
 }
