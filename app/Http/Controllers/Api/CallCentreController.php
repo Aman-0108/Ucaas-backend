@@ -158,32 +158,10 @@ class CallCentreController extends Controller
 
         $freeSWitch = new FreeSwitchController();
 
-        // $fsReloadXmlResponse = $freeSWitch->reloadXml();
-        // $fsReloadXmlResponse = $fsReloadXmlResponse->getData();
-
-        // if (!$fsReloadXmlResponse->status) {
-        //     $type = config('enums.RESPONSE.ERROR');
-        //     $status = false;
-        //     $msg = 'Something went wrong in freeswitch while reloading xml. Please try again later.';
-
-        //     return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
-        // }
-
         $account_id = $data->account_id;
         $domain = Domain::where(['account_id' => $account_id])->first();
 
-        $generatedQueueName = $data->extension . '@' . $domain->domain_name;
-
-        // $queueLoadResponse = $freeSWitch->callcenter_queue_load($generatedQueueName);
-        // $queueLoadResponse = $queueLoadResponse->getData();
-
-        // if (!$queueLoadResponse->status) {
-        //     $type = config('enums.RESPONSE.ERROR');
-        //     $status = false;
-        //     $msg = 'Something went wrong in freeswitch while loading queue. Please try again later.';
-
-        //     return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
-        // }
+        $generatedQueueName = $data->extension . '@' . $domain->domain_name;    
 
         $call_center_queue_id = $data->id;
 
@@ -233,27 +211,10 @@ class CallCentreController extends Controller
                 // Retrieve the validated input
                 $rvalidated = $agentValidator->validated();
 
-                $rvalidated['call_timeout'] = $rvalidated['call_timeout'] ? intval ($rvalidated['call_timeout']) : null;
+                $rvalidated['call_timeout'] = isset($rvalidated['call_timeout']) ? intval ($rvalidated['call_timeout']) : null;
+                $rvalidated['reject_delay_time'] = isset($rvalidated['reject_delay_time']) ? intval ($rvalidated['reject_delay_time']) : null;
 
-                $newAgent = CallCenterAgent::create($rvalidated);
-
-                // $fsResponse = $freeSWitch->callcenter_config_agent_add($newAgent->agent_name, $newAgent->type);
-                // $fsResponse = $fsResponse->getData();
-
-                // $fsLevelResponse = $freeSWitch->callcenter_config_tier_set_level($generatedQueueName, $newAgent->agent_name, $newAgent->tier_level);
-                // $fsLevelResponse = $fsLevelResponse->getData();
-
-                // $fsPositionResponse = $freeSWitch->callcenter_config_tier_set_position($generatedQueueName, $newAgent->agent_name, $newAgent->tier_position);
-                // $fsPositionResponse = $fsPositionResponse->getData();
-
-                // || !$fsLevelResponse->status || !$fsPositionResponse->status
-                // if (!$fsResponse->status) {
-                //     $type = config('enums.RESPONSE.ERROR');
-                //     $status = false;
-                //     $msg = 'Something went wrong in freeswitch while adding an agent. Please try again later.';
-
-                //     return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
-                // }
+                CallCenterAgent::create($rvalidated);                
             }
         }
 
@@ -488,7 +449,8 @@ class CallCentreController extends Controller
                 // Retrieve the validated input
                 $rvalidated = $agentValidator->validated();
 
-                $rvalidated['call_timeout'] = $rvalidated['call_timeout'] ? intval ($rvalidated['call_timeout']) : null;
+                $rvalidated['call_timeout'] = isset($rvalidated['call_timeout']) ? intval ($rvalidated['call_timeout']) : null;
+                $rvalidated['reject_delay_time'] = isset($rvalidated['reject_delay_time']) ? intval ($rvalidated['reject_delay_time']) : null;
 
                 if (isset($input['id'])) {
                     $callCenterAgent = CallCenterAgent::find($input['id']);
