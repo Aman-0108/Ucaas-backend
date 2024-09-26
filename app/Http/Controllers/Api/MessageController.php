@@ -35,15 +35,21 @@ class MessageController extends Controller
         $userId = $request->user()->id;
 
         // Build a query to fetch messages
-        $message = Message::query();
+        $messages = Message::with(['statuses']);
 
-        // Execute the query to fetch messages
-        $messages = $message->get();
+        // Filter messages by user ID
+        $messages = $messages->where('user_id', $userId);
+
+        // COMING FROM GLOBAL CONFIG
+        $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+
+        // Execute the query to fetch features
+        $messages = $messages->orderBy('id', 'desc')->paginate($ROW_PER_PAGE);
 
         // Prepare the response data
         $response = [
             'status' => true,
-            'data' => $message,
+            'data' => $messages,
             'message' => 'Successfully fetched all messages'
         ];
 
