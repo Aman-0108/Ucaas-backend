@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\AgentBreak;
 use App\Models\CallCenterAgent;
 use App\Models\CallCenterQueue;
-use App\Models\Dialplan;
 use App\Models\Domain;
 use App\Models\User;
 use Illuminate\Http\Request;
