@@ -32,16 +32,18 @@ class MessageController extends Controller
      */
     public function index(Request $request)
     {
+        $userId = $request->user()->id;
+
         // Build a query to fetch messages
         $message = Message::query();
 
         // Execute the query to fetch messages
-        $groups = $message->get();
+        $messages = $message->get();
 
         // Prepare the response data
         $response = [
             'status' => true,
-            'data' => $groups,
+            'data' => $message,
             'message' => 'Successfully fetched all messages'
         ];
 

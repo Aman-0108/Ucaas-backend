@@ -211,7 +211,8 @@ class CallCentreController extends Controller
                 $rvalidated = $agentValidator->validated();
 
                 $rvalidated['call_timeout'] = isset($rvalidated['call_timeout']) ? intval ($rvalidated['call_timeout']) : null;
-                $rvalidated['reject_delay_time'] = isset($rvalidated['reject_delay_time']) ? intval ($rvalidated['reject_delay_time']) : null;
+                $rvalidated['reject_delay_time'] = isset($rvalidated['reject_delay_time']) ? intval ($rvalidated['reject_delay_time']) : null;                
+                $rvalidated['max_no_answer'] = isset($rvalidated['max_no_answer']) ? intval ($rvalidated['max_no_answer']) : null;
 
                 CallCenterAgent::create($rvalidated);                
             }
@@ -450,6 +451,8 @@ class CallCentreController extends Controller
 
                 $rvalidated['call_timeout'] = isset($rvalidated['call_timeout']) ? intval ($rvalidated['call_timeout']) : null;
                 $rvalidated['reject_delay_time'] = isset($rvalidated['reject_delay_time']) ? intval ($rvalidated['reject_delay_time']) : null;
+                // max_no_answer
+                $rvalidated['max_no_answer'] = isset($rvalidated['max_no_answer']) ? intval ($rvalidated['max_no_answer']) : null;
 
                 if (isset($input['id'])) {
                     $callCenterAgent = CallCenterAgent::find($input['id']);
