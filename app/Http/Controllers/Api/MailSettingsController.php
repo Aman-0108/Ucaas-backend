@@ -27,7 +27,7 @@ class MailsettingsController extends Controller
         // Retrieve all mail settings from the database
         $query = MailSetting::query();
 
-        $data = $query->where('user_id', $account_id)->get();
+        $data = $query->where('account_id', $account_id)->get();
 
         // Prepare a success response with the list of mail settings
         $response = [
