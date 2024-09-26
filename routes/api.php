@@ -1,18 +1,57 @@
 <?php
 
 use App\Http\Controllers\Api\{
-    AccountController, AccountDetailsController, Admin\DocumentController, AuthController, BillingAddressController,
-    CallCentreController, CardController, ChannelHangupController, DialplanController, DomainController, ExtensionController,
-    FeatureController, FollowmeController, FreeSwitchController, GatewayController, InboundRoutingController, OutboundRoutingController,
-    PackageController, PaymentGatewayController, RinggroupController, RinggroupdestinationController, RoleController, Sofia\SipProfileController,
-    Sofia\SipProfileDomainController, Sofia\SipProfileSettingController, Sofia\SofiaGlobalSettingController, TimezoneController, UidController,
-    UserController, PaymentController, StripeController, CommioController, ContactController, DidConfigureController, DiddetailsController,
-    TfnController, DidRateController, DidVendorController, FaxController, InvoiceController, LeadController, MailsettingsController, PermissionController, PortController, SoundController,
-    VariableController, WalletTransactionController
+    AccountController,
+    AccountDetailsController,
+    Admin\DocumentController,
+    AuthController,
+    BillingAddressController,
+    CallCentreController,
+    CardController,
+    ChannelHangupController,
+    DialplanController,
+    DomainController,
+    ExtensionController,
+    FeatureController,
+    FollowmeController,
+    FreeSwitchController,
+    GatewayController,
+    InboundRoutingController,
+    OutboundRoutingController,
+    PackageController,
+    PaymentGatewayController,
+    RinggroupController,
+    RinggroupdestinationController,
+    RoleController,
+    Sofia\SipProfileController,
+    Sofia\SipProfileDomainController,
+    Sofia\SipProfileSettingController,
+    Sofia\SofiaGlobalSettingController,
+    TimezoneController,
+    UidController,
+    UserController,
+    PaymentController,
+    StripeController,
+    CommioController,
+    ContactController,
+    DidConfigureController,
+    DiddetailsController,
+    TfnController,
+    DidRateController,
+    DidVendorController,
+    FaxController,
+    InvoiceController,
+    LeadController,
+    MailsettingsController,
+    MessageController,
+    PermissionController,
+    PortController,
+    SoundController,
+    VariableController,
+    WalletTransactionController
 };
 use App\Http\Controllers\S3Controller;
 use App\Http\Controllers\UtilityController;
-use App\Models\MailSetting;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -139,7 +178,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
         // get account balance
         Route::get('account-balance', 'getAccountBalance');
-        
     });
 
     // Billing Address
@@ -638,7 +676,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::controller(DiddetailsController::class)->group(function () {
             // To get all the did's
             Route::get('all', 'index');
-            
+
             // To store new did
             Route::post('store', 'store');
 
@@ -799,20 +837,34 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // Mail settings
     Route::controller(MailsettingsController::class)->group(function () {
         Route::prefix('mail-setting')->group(function () {
-             // To get all the mail settings
-             Route::get('all', 'index');
+            // To get all the mail settings
+            Route::get('all', 'index');
 
-             // To get the particular mail settings by Id
-             Route::get('show/{id}', 'show');
- 
-             // To update the particular mail setting by Id
-             Route::put('update/{id}', 'update');
- 
-             // To store new mail setting
-             Route::post('store', 'store');
- 
-             // To destroy the mail setting by Id
-             Route::delete('destroy/{id}', 'destroy');
+            // To get the particular mail settings by Id
+            Route::get('show/{id}', 'show');
+
+            // To update the particular mail setting by Id
+            Route::put('update/{id}', 'update');
+
+            // To store new mail setting
+            Route::post('store', 'store');
+
+            // To destroy the mail setting by Id
+            Route::delete('destroy/{id}', 'destroy');
+        });
+    });
+
+    // Message
+    Route::controller(MessageController::class)->group(function () {
+        Route::prefix('message')->group(function () {
+            // To get all the mail settings
+            Route::get('all', 'index');
+
+            // To get the particular mail settings by Id
+            Route::get('show/{id}', 'show');
+
+            // To destroy the mail setting by Id
+            Route::delete('destroy/{id}', 'destroy');
         });
     });
 });
