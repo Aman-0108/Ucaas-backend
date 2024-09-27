@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Message;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MessageController extends Controller
 {
@@ -34,22 +36,35 @@ class MessageController extends Controller
     {
         $userId = $request->user()->id;
 
-        // Build a query to fetch messages
-        $messages = Message::with(['statuses']);
+        $receiverId = $request->receiver_id;
 
-        // Filter messages by user ID
-        $messages = $messages->where('user_id', $userId);
+        if (!$receiverId) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Receiver ID is required'
+            ], Response::HTTP_BAD_REQUEST);
+        }
 
-        // COMING FROM GLOBAL CONFIG
-        $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+        // Build a query to fetch message
+        $results = DB::table('messages')
+            ->select('messages.*', 'message_statuses.user_id as receiver_user_id', 'message_statuses.receiver_id', 'message_statuses.status')
+            ->join('message_statuses', 'messages.uuid', '=', 'message_statuses.message_uuid')
+            ->where('messages.user_id', $userId)
+            ->where('message_statuses.user_id', $receiverId);       
 
-        // Execute the query to fetch features
-        $messages = $messages->orderBy('id', 'desc')->paginate($ROW_PER_PAGE);
+        $results2 = DB::table('messages')
+            ->select('messages.*', 'message_statuses.user_id as receiver_user_id', 'message_statuses.receiver_id', 'message_statuses.status')
+            ->join('message_statuses', 'messages.uuid', '=', 'message_statuses.message_uuid')
+            ->where('messages.user_id', $receiverId)
+            ->where('message_statuses.user_id', $userId);        
+
+        // Use union to merge both results and order by id in descending order
+        $mergedResults = $results->union($results2)->orderBy('id', 'desc')->paginate(40);
 
         // Prepare the response data
         $response = [
             'status' => true,
-            'data' => $messages,
+            'data' => $mergedResults,
             'message' => 'Successfully fetched all messages'
         ];
 
