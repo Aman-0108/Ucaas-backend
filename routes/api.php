@@ -863,6 +863,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             // To get all the mail settings
             Route::get('all', 'index');
 
+            // To get the list of contacts
+            Route::get('contacts', 'listOfContacts');
+
             // To get the particular mail settings by Id
             Route::get('show/{id}', 'show');
 

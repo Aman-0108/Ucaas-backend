@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Message;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class MessageController extends Controller
 {
@@ -50,13 +50,13 @@ class MessageController extends Controller
             ->select('messages.*', 'message_statuses.user_id as receiver_user_id', 'message_statuses.receiver_id', 'message_statuses.status')
             ->join('message_statuses', 'messages.uuid', '=', 'message_statuses.message_uuid')
             ->where('messages.user_id', $userId)
-            ->where('message_statuses.user_id', $receiverId);       
+            ->where('message_statuses.user_id', $receiverId);
 
         $results2 = DB::table('messages')
             ->select('messages.*', 'message_statuses.user_id as receiver_user_id', 'message_statuses.receiver_id', 'message_statuses.status')
             ->join('message_statuses', 'messages.uuid', '=', 'message_statuses.message_uuid')
             ->where('messages.user_id', $receiverId)
-            ->where('message_statuses.user_id', $userId);        
+            ->where('message_statuses.user_id', $userId);
 
         // Use union to merge both results and order by id in descending order
         $mergedResults = $results->union($results2)->orderBy('id', 'desc')->paginate(40);
@@ -147,4 +147,38 @@ class MessageController extends Controller
         // Return the response as JSON with HTTP status code 200 (OK)
         return response()->json($response, Response::HTTP_OK);
     }
+    
+    /**
+     * Returns a list of contacts for the authenticated user.
+     *
+     * This API endpoint accepts a GET request with no parameters.
+     * It returns a JSON response with HTTP status code 200 (OK)
+     * containing a list of user objects.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function listOfContacts(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        // Fetch all the contacts for the user
+        // by joining the messages table with
+        // the message statuses table and the users table
+        // and selecting distinct user records
+        // with the 'user_id' and 'email' fields
+        // and order by 'user_id' in descending order
+        $results = User::join('message_statuses', 'users.id', '=', 'message_statuses.user_id')
+            ->join('messages', 'message_statuses.message_uuid', '=', 'messages.uuid')
+            ->where('messages.user_id', $userId)
+            ->where('message_statuses.user_id', '!=', $userId)
+            ->select('users.*')
+            ->distinct()
+            ->orderBy('users.id', 'desc')
+            ->get();
+
+        // Return the response as JSON with HTTP status code 200 (OK)
+        return response()->json($results, Response::HTTP_OK);
+    }
+
 }
