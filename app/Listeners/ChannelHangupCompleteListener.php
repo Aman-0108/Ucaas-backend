@@ -5,8 +5,6 @@ namespace App\Listeners;
 use App\Events\ChannelHangupComplete;
 use App\Http\Controllers\Api\WebSocketController;
 use App\Models\AccountBalance;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
 
 class ChannelHangupCompleteListener
@@ -30,6 +28,8 @@ class ChannelHangupCompleteListener
     public function handle(ChannelHangupComplete $response)
     {
         $formattedData = $response->events;
+
+        Log::info($formattedData);
 
         $account_id = $formattedData['account_id'];
 

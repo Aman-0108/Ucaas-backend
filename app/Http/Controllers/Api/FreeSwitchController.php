@@ -1198,7 +1198,8 @@ class FreeSwitchController extends Controller
             // Filter for inbound calls with the status "ACTIVE"
             $filteredCalls = array_filter($activeCalls, function ($call) {
                 // return $call['direction'] === 'inbound' && $call['callstate'] === 'ACTIVE';
-                return $call['direction'] === 'inbound';
+                return $call['callstate'] === 'ACTIVE';
+                // return $call['direction'] === 'inbound';
             });
 
             // Re-index array numerically
