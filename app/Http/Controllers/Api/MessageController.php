@@ -147,13 +147,14 @@ class MessageController extends Controller
         // Return the response as JSON with HTTP status code 200 (OK)
         return response()->json($response, Response::HTTP_OK);
     }
+
     
     /**
-     * Returns a list of contacts for the authenticated user.
+     * Returns a list of all contacts for the current user.
      *
      * This API endpoint accepts a GET request with no parameters.
      * It returns a JSON response with HTTP status code 200 (OK)
-     * containing a list of user objects.
+     * containing a list of contact objects.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
@@ -162,23 +163,25 @@ class MessageController extends Controller
     {
         $userId = $request->user()->id;
 
-        // Fetch all the contacts for the user
-        // by joining the messages table with
-        // the message statuses table and the users table
-        // and selecting distinct user records
-        // with the 'user_id' and 'email' fields
-        // and order by 'user_id' in descending order
+        // Build a query to fetch all contacts
         $results = User::join('message_statuses', 'users.id', '=', 'message_statuses.user_id')
             ->join('messages', 'message_statuses.message_uuid', '=', 'messages.uuid')
+            ->join('extensions as e', 'e.id', '=', 'users.extension_id')
             ->where('messages.user_id', $userId)
             ->where('message_statuses.user_id', '!=', $userId)
-            ->select('users.*')
+            ->select('users.name', 'users.email', 'users.id', 'e.id as extension_id', 'e.extension')
             ->distinct()
             ->orderBy('users.id', 'desc')
             ->get();
 
-        // Return the response as JSON with HTTP status code 200 (OK)
-        return response()->json($results, Response::HTTP_OK);
-    }
+        // Prepare the response data
+        $response = [
+            'status' => true,
+            'data' => $results,
+            'message' => 'Successfully fetched all contacts'
+        ];
 
+        // Return the response as JSON with HTTP status code 200 (OK)
+        return response()->json($response, Response::HTTP_OK);
+    }
 }
