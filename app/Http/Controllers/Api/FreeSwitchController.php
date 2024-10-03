@@ -1524,13 +1524,13 @@ class FreeSwitchController extends Controller
                 ];
                 // Return the response as JSON with HTTP status code 400 (Bad Request)
                 return response()->json($response, Response::HTTP_BAD_REQUEST);
-            }          
+            }
 
             // Extract data from the request
             $user = $request->user;
 
             // Construct the API command to park the call
-            $cmd = "api originate {origination_caller_id_number=$user} user/$user@$domain   *6001 XML webvio";
+            $cmd = "api originate {origination_caller_id_number=$user}user/$user@$domain   *6001 XML webvio";
 
             Log::info($cmd);
 
@@ -1565,6 +1565,12 @@ class FreeSwitchController extends Controller
         }
     }
 
+    /**
+     * Retrieves the available parking slots for calls.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function availableSlots(Request $request)
     {
         if ($this->connected) {
@@ -1582,8 +1588,10 @@ class FreeSwitchController extends Controller
                 return response()->json($response, Response::HTTP_BAD_REQUEST);
             }
 
+            // Construct the API command to retrieve valet info
             $cmd = "api valet_info my_lot@$domain";
 
+            // Send the API request and store the response
             $response = $this->socket->request($cmd);
 
             // Check if the response contains "+OK" indicating success
@@ -1611,9 +1619,16 @@ class FreeSwitchController extends Controller
             foreach ($xml->lot as $lot) {
                 // Loop through each extension within the lot
                 foreach ($lot->extension as $extension) {
+
+                    // Retrieve the data from the database
+                    $data = DB::connection('second_db')->table('basic_calls')
+                        ->where('uuid', '=', $extension['uuid'])
+                        ->first();
+
                     $unavailableSlots[] = [
                         'uuid' => (string) $extension['uuid'],
-                        'park_slot' => (string) $extension
+                        'park_slot' => (string) $extension,
+                        'user' => (!empty($data)) ? $data->cid_num : null
                     ];
                 }
             }
