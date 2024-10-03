@@ -19,6 +19,7 @@ class CreateSoundsTable extends Migration
             $table->string('path');
             $table->string('name');
             $table->enum('type', ['hold','busy', 'ringback'])->default('hold');
+            $table->string('announcement_type')->nullable();
             $table->timestamps();
         });
     }
