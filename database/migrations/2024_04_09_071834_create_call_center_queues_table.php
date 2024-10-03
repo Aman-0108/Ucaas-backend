@@ -25,7 +25,7 @@ class CreateCallCenterQueuesTable extends Migration
             $table->enum('strategy', config('enums.agent.strategy'))->nullable();
 
             $table->string('moh_sound')->nullable();
-            $table->boolean('record_template')->default(false);
+            $table->string('record_template')->nullable();
 
             $table->enum('time_base_score',['queue','system'])->default('queue')->comment('If set to system, it will add the number of seconds since the call was originally answered (or entered the system) to the callers base score');
             $table->boolean('tier_rules_apply')->default(false)->comment(' when a caller advances through a queues tiers. If False, they will use all tiers with no wait.');   
@@ -41,6 +41,11 @@ class CreateCallCenterQueuesTable extends Migration
             $table->string('queue_timeout_action')->nullable();
             $table->unsignedBigInteger('discard_abandoned_after')->nullable();
             $table->string('queue_cid_prefix')->nullable();
+
+            $table->string('queue_description')->nullable();
+            $table->string('queue_announce_sound')->nullable();
+            $table->unsignedBigInteger('queue_announce_frequency')->nullable();
+
 
             $table->foreignId('created_by')->references('id')->on('users');
             $table->boolean('recording_enabled')->default(false)->comment('0 for disable, 1 for enable');
