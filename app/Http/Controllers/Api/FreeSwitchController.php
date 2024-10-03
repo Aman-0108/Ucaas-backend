@@ -1407,10 +1407,57 @@ class FreeSwitchController extends Controller
         }
     }
 
-    public function callUnPark()
+    /**
+     * Unpark a call from the provided slot to the provided user.
+     * 
+     * This method makes a request to the FreeSwitch server to originate a call
+     * to the provided user's extension with the unpark_slot as an argument. The
+     * unpark_slot is the slot where the call is currently parked.
+     *
+     * @param Request $request The request containing the unpark_slot and user
+     * @return \Illuminate\Http\JsonResponse The JSON response indicating the status of the request
+     */
+    public function callUnPark(Request $request)
     {
         if ($this->connected) {
-            $cmd = "api originate {origination_caller_id_number=1011,unpark_slot=6001}user/1011@tush.7.webvio.in   *6000 XML webvio";
+
+            // Validate the request data
+            $validate = Validator::make($request->all(), [
+                'unpark_slot' => 'required|string',
+                'user' => 'required|string',
+            ]);
+
+            if ($validate->fails()) {
+                // If validation fails, return an error response
+                $response = [
+                    'status' => false,
+                    'message' => $validate->errors()->first(),
+                ];
+                // Return the response as JSON with HTTP status code 400 (Bad Request)
+                return response()->json($response, Response::HTTP_BAD_REQUEST);
+            }
+
+            // Extract data from the request
+            $unpark_slot = $request->unpark_slot;
+            $user = $request->user;
+
+            // Get the domain name from the database based on the authenticated user's account_id
+            $account_id = $request->user()->account_id;
+            $domain = Domain::where('account_id', $account_id)->first()->domain_name;
+
+            if (empty($domain)) {
+                // If the domain is not found, return an error response
+                $response = [
+                    'status' => false,
+                    'message' => 'Domain not found.',
+                ];
+                // Return the response as JSON with HTTP status code 400 (Bad Request)
+                return response()->json($response, Response::HTTP_BAD_REQUEST);
+            }
+
+            // Construct the API command to unpark the call
+            $cmd = "api originate {origination_caller_id_number=$user,unpark_slot=$unpark_slot}user/$user@$domain   *6000 XML webvio";
+
             // Check call state
             $response = $this->socket->request($cmd);
 
@@ -1428,13 +1475,13 @@ class FreeSwitchController extends Controller
             // Prepare the response data
             $response = [
                 'status' => true, // Indicates the success status of the request
-                'message' => 'Successfully terminated call.',
+                'message' => 'Successfully unpark call.',
             ];
 
             // Return the response as JSON with HTTP status code 200 (OK)
             return response()->json($response, Response::HTTP_OK);
         } else {
-            // If the socket is not connected,
+            // If the socket is not connected, return an error response
             return $this->disconnected();
         }
     }
