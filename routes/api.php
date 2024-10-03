@@ -577,6 +577,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
             // call unpark
             Route::post('call-unpark', 'callUnPark');
+
+            // available slots
+            Route::get('available-slots', 'availableSlots');
         });
     });
 

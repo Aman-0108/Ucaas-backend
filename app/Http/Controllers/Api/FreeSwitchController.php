@@ -1194,8 +1194,8 @@ class FreeSwitchController extends Controller
             $customizedResponse['result'] = [];
         } else {
             // Process response to get active calls
-            $activeCalls = activeCallDataFormat($response);  
-            
+            $activeCalls = activeCallDataFormat($response);
+
             // Filter for inbound calls with the status "ACTIVE"
             $filteredCalls = array_filter($activeCalls, function ($call) {
                 // return $call['direction'] === 'inbound' && $call['callstate'] === 'ACTIVE';
@@ -1205,7 +1205,6 @@ class FreeSwitchController extends Controller
 
             // // Re-index array numerically
             $customizedResponse['result'] = array_values($filteredCalls);
-          
         }
 
         // Initialize WebSocket controller and send the response
@@ -1515,6 +1514,7 @@ class FreeSwitchController extends Controller
             // Validate the request data
             $validate = Validator::make($request->all(), [
                 'user' => 'required|string',
+                'park_slot' => 'required|string',
             ]);
 
             if ($validate->fails()) {
@@ -1528,30 +1528,33 @@ class FreeSwitchController extends Controller
             }
 
             // Construct the presence_id pattern dynamically
-            $presenceIdPattern = '%@' . $domain;
+            // $presenceIdPattern = '%@' . $domain;
 
-            // Retrieve the data from the database
-            $data = DB::connection('second_db')->table('basic_calls')
-                ->where('presence_id', 'like', $presenceIdPattern)
-                ->orderBy('id', 'desc')
-                ->first();
+            // // Retrieve the data from the database
+            // $data = DB::connection('second_db')->table('basic_calls')
+            //     ->where('presence_id', 'like', $presenceIdPattern)
+            //     ->orderBy('id', 'desc')
+            //     ->first();
 
-            // Get the next available park slot
-            if (empty($data)) {
-                $park_slot = 6001;
-            } else {
-                // Remove the '*' character
-                $park_slot = str_replace('*', '', $data->dest);
+            // // Get the next available park slot
+            // if (empty($data)) {
+            //     $park_slot = 6001;
+            // } else {
+            //     // Remove the '*' character
+            //     $park_slot = str_replace('*', '', $data->dest);
 
-                // Increment the park slot
-                $park_slot = (int)$park_slot + 1;
-            }
+            //     // Increment the park slot
+            //     $park_slot = (int)$park_slot + 1;
+            // }
 
             // Extract data from the request
             $user = $request->user;
+            $park_slot = $request->park_slot;
 
             // Construct the API command to park the call
-            $cmd = "api originate {origination_caller_id_number=$user,park_slot=$park_slot}user/$user   *$park_slot XML webvio";
+            $cmd = "api originate {origination_caller_id_number=$user,park_slot=$park_slot}user/$user@$domain   *$park_slot XML webvio";
+
+            Log::info($cmd);
 
             // Check call state
             $response = $this->socket->request($cmd);
@@ -1562,7 +1565,9 @@ class FreeSwitchController extends Controller
                 $response = [
                     'status' => false, // Indicates the success status of the request
                     'message' => 'Something went wrong. Please try again.',
-                    'originate_msg' => $response
+                    'originate_msg' => $response,
+                    // 'sdb' => $data,
+                    'domain' => $domain
                 ];
                 // Return the response as JSON with HTTP status code 400 (Bad Request)
                 return response()->json($response, Response::HTTP_BAD_REQUEST);
@@ -1578,6 +1583,92 @@ class FreeSwitchController extends Controller
             return response()->json($response, Response::HTTP_OK);
         } else {
             // If the socket is not connected, return an error response
+            return $this->disconnected();
+        }
+    }
+
+    public function availableSlots(Request $request)
+    {
+        if ($this->connected) {
+
+            $account_id = $request->user()->account_id;
+            $domain = Domain::where('account_id', $account_id)->first()->domain_name;
+
+            if (empty($domain)) {
+                // If the domain is not found, return an error response
+                $response = [
+                    'status' => false,
+                    'message' => 'Domain not found.',
+                ];
+                // Return the response as JSON with HTTP status code 400 (Bad Request)
+                return response()->json($response, Response::HTTP_BAD_REQUEST);
+            }
+
+            $cmd = "api valet_info my_lot@$domain";
+
+            $response = $this->socket->request($cmd);
+
+            // Check if the response contains "+OK" indicating success
+            if (strpos($response, "-ERR") !== false) {
+                // If the call does not exist, return an error response
+                $response = [
+                    'status' => false, // Indicates the success status of the request
+                    'message' => 'Something went wrong. Please try again.',
+                    'originate_msg' => $response
+                ];
+                // Return the response as JSON with HTTP status code 400 (Bad Request)
+                return response()->json($response, Response::HTTP_BAD_REQUEST);
+            }
+
+            // Load the XML string
+            $xml = simplexml_load_string($response);
+
+            // Define the total range of parking slots
+            $totalSlots = range(6001, 6010);
+
+            // Initialize an empty array to hold the result
+            $unavailableSlots = [];
+
+            // Loop through each lot
+            foreach ($xml->lot as $lot) {
+                // Loop through each extension within the lot
+                foreach ($lot->extension as $extension) {
+                    $unavailableSlots[] = [
+                        'uuid' => (string) $extension['uuid'],
+                        'park_slot' => (string) $extension
+                    ];
+                }
+            }
+
+            // Convert unavailable slots to a simple array for easy comparison
+            $unavailableSlotsArray = array_map(function ($slot) {
+                return $slot['park_slot'];
+            }, $unavailableSlots);
+
+            // Find the available slots by excluding unavailable ones
+            $availableSlots = array_filter($totalSlots, function ($slot) use ($unavailableSlotsArray) {
+                return !in_array((string)$slot, $unavailableSlotsArray);
+            });
+
+            // Prepare the result array with available slots
+            $result = [];
+            foreach ($availableSlots as $slot) {
+                $result[] = [
+                    'park_slot' => (string)$slot
+                ];
+            }
+
+            // Prepare the response data
+            $response = [
+                'status' => true, // Indicates the success status of the request
+                'message' => 'Successfully fetched available slots for call.',
+                'usedSlots' => $unavailableSlots,
+                'available' => $result
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
+        } else {
             return $this->disconnected();
         }
     }
