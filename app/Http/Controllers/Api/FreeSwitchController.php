@@ -1513,8 +1513,7 @@ class FreeSwitchController extends Controller
 
             // Validate the request data
             $validate = Validator::make($request->all(), [
-                'user' => 'required|string',
-                'park_slot' => 'required|string',
+                'user' => 'required|string'
             ]);
 
             if ($validate->fails()) {
@@ -1525,34 +1524,13 @@ class FreeSwitchController extends Controller
                 ];
                 // Return the response as JSON with HTTP status code 400 (Bad Request)
                 return response()->json($response, Response::HTTP_BAD_REQUEST);
-            }
-
-            // Construct the presence_id pattern dynamically
-            // $presenceIdPattern = '%@' . $domain;
-
-            // // Retrieve the data from the database
-            // $data = DB::connection('second_db')->table('basic_calls')
-            //     ->where('presence_id', 'like', $presenceIdPattern)
-            //     ->orderBy('id', 'desc')
-            //     ->first();
-
-            // // Get the next available park slot
-            // if (empty($data)) {
-            //     $park_slot = 6001;
-            // } else {
-            //     // Remove the '*' character
-            //     $park_slot = str_replace('*', '', $data->dest);
-
-            //     // Increment the park slot
-            //     $park_slot = (int)$park_slot + 1;
-            // }
+            }          
 
             // Extract data from the request
             $user = $request->user;
-            $park_slot = $request->park_slot;
 
             // Construct the API command to park the call
-            $cmd = "api originate {origination_caller_id_number=$user,park_slot=$park_slot}user/$user@$domain   *$park_slot XML webvio";
+            $cmd = "api originate {origination_caller_id_number=$user} user/$user@$domain   *6001 XML webvio";
 
             Log::info($cmd);
 
