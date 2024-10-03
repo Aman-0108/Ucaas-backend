@@ -382,6 +382,7 @@ class UserController extends Controller
                 'username' => 'unique:users,username',
                 'domain_id' => 'exists:domains,id',
                 'account_id' => 'exists:accounts,id',
+                'extension_id' => 'integer|nullable',
                 'timezone_id' => 'exists:timezones,id',
                 'status' => 'in:E,D',
                 'firebase_token' => 'string',
