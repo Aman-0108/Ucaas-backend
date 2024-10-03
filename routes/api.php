@@ -573,6 +573,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::get('checkActiveExtensionOnServer', 'checkActiveExtensionOnServer');
 
             // call park
+            Route::post('call-park', 'callPark');
+
+            // call unpark
             Route::post('call-unpark', 'callUnPark');
         });
     });

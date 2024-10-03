@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 
@@ -1476,6 +1477,98 @@ class FreeSwitchController extends Controller
             $response = [
                 'status' => true, // Indicates the success status of the request
                 'message' => 'Successfully unpark call.',
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
+        } else {
+            // If the socket is not connected, return an error response
+            return $this->disconnected();
+        }
+    }
+
+    /**
+     * Park a call to the specified user.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function callPark(Request $request)
+    {
+        if ($this->connected) {
+
+            // Extract the domain name from the database based on the authenticated user's account_id
+            $account_id = $request->user()->account_id;
+            $domain = Domain::where('account_id', $account_id)->first()->domain_name;
+
+            if (empty($domain)) {
+                // If the domain is not found, return an error response
+                $response = [
+                    'status' => false,
+                    'message' => 'Domain not found.',
+                ];
+                // Return the response as JSON with HTTP status code 400 (Bad Request)
+                return response()->json($response, Response::HTTP_BAD_REQUEST);
+            }
+
+            // Validate the request data
+            $validate = Validator::make($request->all(), [
+                'user' => 'required|string',
+            ]);
+
+            if ($validate->fails()) {
+                // If validation fails, return an error response
+                $response = [
+                    'status' => false,
+                    'message' => $validate->errors()->first(),
+                ];
+                // Return the response as JSON with HTTP status code 400 (Bad Request)
+                return response()->json($response, Response::HTTP_BAD_REQUEST);
+            }
+
+            // Construct the presence_id pattern dynamically
+            $presenceIdPattern = '%@' . $domain;
+
+            // Retrieve the data from the database
+            $data = DB::connection('second_db')->table('basic_calls')
+                ->where('presence_id', 'like', $presenceIdPattern)
+                ->orderBy('id', 'desc')
+                ->first();
+
+            // Get the next available park slot
+            if (empty($data)) {
+                $park_slot = 6001;
+            } else {
+                // Remove the '*' character
+                $park_slot = str_replace('*', '', $data->dest);
+
+                // Increment the park slot
+                $park_slot = (int)$park_slot + 1;
+            }
+
+            // Extract data from the request
+            $user = $request->user;
+
+            // Construct the API command to park the call
+            $cmd = "api originate {origination_caller_id_number=$user,park_slot=$park_slot}user/$user   *$park_slot XML webvio";
+
+            // Check call state
+            $response = $this->socket->request($cmd);
+
+            if (trim($response) == "-ERR!") {
+                // If the call does not exist, return an error response
+                $response = [
+                    'status' => false, // Indicates the success status of the request
+                    'message' => 'Something went wrong. Please try again.',
+                ];
+                // Return the response as JSON with HTTP status code 400 (Bad Request)
+                return response()->json($response, Response::HTTP_BAD_REQUEST);
+            }
+
+            // Prepare the response data
+            $response = [
+                'status' => true, // Indicates the success status of the request
+                'message' => 'Successfully parked call.',
             ];
 
             // Return the response as JSON with HTTP status code 200 (OK)
