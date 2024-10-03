@@ -1406,4 +1406,36 @@ class FreeSwitchController extends Controller
             return $this->disconnected();
         }
     }
+
+    public function callUnPark()
+    {
+        if ($this->connected) {
+            $cmd = "api originate {origination_caller_id_number=1011,unpark_slot=6001}user/1011@tush.7.webvio.in   *6000 XML webvio";
+            // Check call state
+            $response = $this->socket->request($cmd);
+
+            if (trim($response) == "-ERR No such channel!") {
+                // If the call does not exist, return an error response
+                $response = [
+                    'status' => false, // Indicates the success status of the request
+                    'message' => 'Wrong channel. Please try again.',
+                ];
+
+                // Return the response as JSON with HTTP status code 400 (Bad Request)
+                return response()->json($response, Response::HTTP_BAD_REQUEST);
+            }
+
+            // Prepare the response data
+            $response = [
+                'status' => true, // Indicates the success status of the request
+                'message' => 'Successfully terminated call.',
+            ];
+
+            // Return the response as JSON with HTTP status code 200 (OK)
+            return response()->json($response, Response::HTTP_OK);
+        } else {
+            // If the socket is not connected,
+            return $this->disconnected();
+        }
+    }
 }
