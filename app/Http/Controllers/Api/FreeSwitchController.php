@@ -1628,6 +1628,7 @@ class FreeSwitchController extends Controller
                     $unavailableSlots[] = [
                         'uuid' => (string) $extension['uuid'],
                         'park_slot' => (string) $extension,
+                        'parked_by' =>  $data->parked_by,
                         'user' => (!empty($data)) ? $data->cid_num : null
                     ];
                 }
