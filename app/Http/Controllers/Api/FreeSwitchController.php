@@ -1194,17 +1194,18 @@ class FreeSwitchController extends Controller
             $customizedResponse['result'] = [];
         } else {
             // Process response to get active calls
-            $activeCalls = activeCallDataFormat($response);
-
+            $activeCalls = activeCallDataFormat($response);  
+            
             // Filter for inbound calls with the status "ACTIVE"
             $filteredCalls = array_filter($activeCalls, function ($call) {
                 // return $call['direction'] === 'inbound' && $call['callstate'] === 'ACTIVE';
-                return $call['callstate'] === 'ACTIVE';
+                return $call['callstate'] === 'ACTIVE' || $call['callee_direction'] === 'ACTIVE';
                 // return $call['direction'] === 'inbound';
             });
 
-            // Re-index array numerically
+            // // Re-index array numerically
             $customizedResponse['result'] = array_values($filteredCalls);
+          
         }
 
         // Initialize WebSocket controller and send the response
@@ -1532,7 +1533,7 @@ class FreeSwitchController extends Controller
             // Retrieve the data from the database
             $data = DB::connection('second_db')->table('basic_calls')
                 ->where('presence_id', 'like', $presenceIdPattern)
-                ->orderBy('id', 'desc')
+                // ->orderBy('id', 'desc')
                 ->first();
 
             // Get the next available park slot
@@ -1555,11 +1556,13 @@ class FreeSwitchController extends Controller
             // Check call state
             $response = $this->socket->request($cmd);
 
-            if (trim($response) == "-ERR!") {
+            // Check if the response contains "+OK" indicating success
+            if (strpos($response, "-ERR") !== false) {
                 // If the call does not exist, return an error response
                 $response = [
                     'status' => false, // Indicates the success status of the request
                     'message' => 'Something went wrong. Please try again.',
+                    'originate_msg' => $response
                 ];
                 // Return the response as JSON with HTTP status code 400 (Bad Request)
                 return response()->json($response, Response::HTTP_BAD_REQUEST);

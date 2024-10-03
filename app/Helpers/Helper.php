@@ -442,6 +442,15 @@ if (!function_exists('activeCallDataFormat')) {
             $values = explode(',', $line);
 
             // Combine the headers and values into an associative array
+            // $call = array_combine($headers, $values);
+
+            // Ensure the number of elements in values matches the number of headers
+            $values = array_slice($values, 0, count($headers)); // Truncate extra values
+            while (count($values) < count($headers)) {
+                $values[] = ''; // Pad missing values with empty strings
+            }
+
+            // Combine the headers and values into an associative array
             $call = array_combine($headers, $values);
 
             // Add the call to the array
