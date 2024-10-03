@@ -1533,7 +1533,7 @@ class FreeSwitchController extends Controller
             // Retrieve the data from the database
             $data = DB::connection('second_db')->table('basic_calls')
                 ->where('presence_id', 'like', $presenceIdPattern)
-                // ->orderBy('id', 'desc')
+                ->orderBy('id', 'desc')
                 ->first();
 
             // Get the next available park slot
