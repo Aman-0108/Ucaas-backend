@@ -75,7 +75,7 @@ class UserController extends Controller
                                 ->where('id', $value)
                                 ->where('account_id', $accountId)
                                 ->exists();
-                
+
                             if (!$exists) {
                                 $fail('The selected extension_id does not belong to the specified account_id.');
                             }
@@ -97,7 +97,7 @@ class UserController extends Controller
             DB::beginTransaction();
 
             if ($userType != 'SuperAdmin') {
-                
+
                 $domainId = Domain::where('account_id', $account_id)->first()->id;
 
                 // Create a new user record in the database
@@ -113,26 +113,25 @@ class UserController extends Controller
                     'created_by' => $userId
                 ]);
 
-                if($request->has('extension_id') && $request->extension_id != null ) {
+                if ($request->has('extension_id') && $request->extension_id != null) {
                     $extension = Extension::where([
                         'account_id' => $request->account_id,
                         'id' => $request->extension_id
-                    ])->first();    
-                    
+                    ])->first();
+
                     $checkAssigned = User::where('extension_id', $request->extension_id)->first();
 
-                    if($checkAssigned) {
+                    if ($checkAssigned) {
                         $checkAssigned->extension_id = null;
                         $checkAssigned->save();
                     }
-    
+
                     $user->extension_id = $request->extension_id;
                     $user->save();
-    
+
                     $extension->user = $user->id;
                     $extension->save();
                 }
-
             } else {
                 $user = User::create([
                     'name' => $request->name,
@@ -615,20 +614,28 @@ class UserController extends Controller
         // Get the account ID from the authenticated user
         $account_id = $request->user() ? $request->user()->account_id : null;
 
-        // If the user is not authenticated, deny access
-        if (!$account_id) {
-            return response()->json([
-                'status' => false,
-                'message' => 'You dont have permission to perform this action',
-            ], Response::HTTP_FORBIDDEN);
-        }
+        $userType = $request->user() ? $request->user()->usertype : null;
 
         // Get all voicemail recordings associated with the account
         $voicemailsQuery = DB::table('voicemail_recording');
 
-        // Apply the account_id filter if present
-        if ($account_id) {
+        if ($userType == 'Company') {
+            // Apply the account_id filter if present
             $voicemailsQuery->where('account_id', $account_id);
+        }
+
+        if (!$userType) {
+            $extension_id = $request->user() ? $request->user()->extension_id : null;
+
+            $extension = Extension::where('id', $extension_id)->first();
+
+            if (!empty($extension)) {
+                // Apply the extension_id filter if present
+                $voicemailsQuery->where(function ($query) use ($extension) {
+                    $query->where('src', $extension->extension)
+                          ->orWhere('dest', $extension->extension);
+                });
+            }
         }
 
         // COMING FROM GLOBAL CONFIG
