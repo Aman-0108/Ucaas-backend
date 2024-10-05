@@ -41,8 +41,8 @@ class DidConfigureController extends Controller
             $request->all(),
             [
                 'did_id' => 'required|exists:did_details,id',
-                'usages' => 'required|array', // Validate 'usages' as an array
-                'usages.*' => 'string', // Optionally, validate each item in the 'usages' array as a string
+                'usages' => 'required|string', // Validate 'usages' as an array
+                // 'usages.*' => 'string', // Optionally, validate each item in the 'usages' array as a string
                 'action' => 'required|string',
                 'forward' => 'required|in:disabled,pstn,direct',
                 'forward_to' => 'string|nullable',
@@ -66,7 +66,7 @@ class DidConfigureController extends Controller
         $validated = $validator->validated();
 
         // Convert the usages array to a comma-separated string
-        $validated['usages'] = implode(', ', $validated['usages']);
+        // $validated['usages'] = implode(', ', $validated['usages']);
 
         // Begin a database transaction
         DB::beginTransaction();
@@ -170,8 +170,8 @@ class DidConfigureController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                'usages' => 'array|nullable', // Validate 'usages' as an array and allow it to be null
-                'usages.*' => 'string', // Optionally, validate each item in the 'usages' array as a string
+                'usages' => 'string|nullable', // Validate 'usages' as an array and allow it to be null
+                // 'usages.*' => 'string', // Optionally, validate each item in the 'usages' array as a string
                 'action' => 'string|nullable',
                 'forward' => 'in:disabled,pstn,direct|nullable',
                 'forward_to' => 'string|nullable',
@@ -197,9 +197,9 @@ class DidConfigureController extends Controller
         $validated = $validator->validated();
 
         // Convert the usages array to a comma-separated string if it's present
-        if (isset($validated['usages'])) {
-            $validated['usages'] = implode(', ', $validated['usages']);
-        }
+        // if (isset($validated['usages'])) {
+        //     $validated['usages'] = implode(', ', $validated['usages']);
+        // }
 
         // Call the compareValues function to generate a formatted description based on the didConfigure and validated data
         $formattedDescription = compareValues($didConfigure, $validated);
