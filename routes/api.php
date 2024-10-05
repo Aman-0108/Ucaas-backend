@@ -41,6 +41,8 @@ use App\Http\Controllers\Api\{
     DidVendorController,
     FaxController,
     InvoiceController,
+    IvrmasterController,
+    IvroptionsController,
     LeadController,
     MailsettingsController,
     MessageController,
@@ -879,6 +881,46 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::get('show/{id}', 'show');
 
             // To destroy the mail setting by Id
+            Route::delete('destroy/{id}', 'destroy');
+        });
+    });
+
+    // IVR Master
+    Route::controller(IvrmasterController::class)->group(function () {
+        Route::prefix('ivr-master')->group(function () {
+            // To get all the IVR Master
+            Route::get('all', 'index');
+
+            // To get the particular IVR Master by Id
+            Route::get('show/{id}', 'show');
+
+            // To update the particular IVR Master by Id
+            Route::put('update/{id}', 'update');
+
+            // To store new IVR Master
+            Route::post('store', 'store');
+
+            // To destroy the IVR Master by Id
+            Route::delete('destroy/{id}', 'destroy');
+        });
+    });
+
+    // IVR Option
+    Route::controller(IvroptionsController::class)->group(function () {
+        Route::prefix('ivr-option')->group(function () {
+            // To get all the IVR Options
+            Route::get('all', 'index');
+
+            // To get the particular IVR Option by Id
+            Route::get('show/{id}', 'show');
+
+            // To update the particular IVR Option by Id   
+            Route::put('update/{id}', 'update');
+
+            // To store new IVR Option
+            Route::post('store', 'store');
+
+            // To destroy the IVR Option by Id
             Route::delete('destroy/{id}', 'destroy');
         });
     });
