@@ -131,7 +131,6 @@ class SoundController extends Controller
                 'account_id' => 'required|exists:accounts,id',
                 'path' => 'required|file|mimes:wav,mp3|max:2048',
                 'type' => 'required|in:hold,busy,ringback,ivr,announcement',
-                'announcement_type' => 'string|nullable',
             ]
         );
 
@@ -246,8 +245,7 @@ class SoundController extends Controller
             [
                 'account_id' => 'required|exists:accounts,id',
                 'path' => 'file|mimes:wav,mp3|max:2048',
-                'type' => 'in:hold,busy,ringback,ivr,announcement|nullable',
-                'announcement_type' => 'string|nullable',
+                'type' => 'in:hold,busy,ringback,ivr,announcement|nullable'
             ]
         );
 
