@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\IvrMaster;
 use App\Models\Sound;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -129,7 +130,7 @@ class SoundController extends Controller
             [
                 'account_id' => 'required|exists:accounts,id',
                 'path' => 'required|file|mimes:wav,mp3|max:2048',
-                'type' => 'required|in:hold,busy,ringback,ivr',
+                'type' => 'required|in:hold,busy,ringback,ivr,announcement',
                 'announcement_type' => 'string|nullable',
             ]
         );
@@ -245,7 +246,7 @@ class SoundController extends Controller
             [
                 'account_id' => 'required|exists:accounts,id',
                 'path' => 'file|mimes:wav,mp3|max:2048',
-                'type' => 'in:hold,busy,ringback,ivr|nullable',
+                'type' => 'in:hold,busy,ringback,ivr,announcement|nullable',
                 'announcement_type' => 'string|nullable',
             ]
         );
@@ -377,8 +378,49 @@ class SoundController extends Controller
             Storage::disk('s3')->delete($filePath);
         }
 
+        DB::beginTransaction();
+
+        $audioId = $audio->id;
+
+        // Retrieve the records that match the audio ID
+        $ivrRecords = IvrMaster::where(function ($query) use ($audioId) {
+            $query->where('greet_long', $audioId)
+                ->orWhere('greet_short', $audioId)
+                ->orWhere('invalid_sound', $audioId)
+                ->orWhere('exit_sound', $audioId);
+        })->get();
+
+        // Prepare the updates array based on the fields that match
+        $updates = [];
+        foreach ($ivrRecords as $record) {
+            if ($record->greet_long === $audioId) {
+                $updates['greet_long'] = null;
+            }
+            if ($record->greet_short === $audioId) {
+                $updates['greet_short'] = null;
+            }
+            if ($record->invalid_sound === $audioId) {
+                $updates['invalid_sound'] = null;
+            }
+            if ($record->exit_sound === $audioId) {
+                $updates['exit_sound'] = null;
+            }
+        }
+
+        // Update only if there are any fields to update
+        if (!empty($updates)) {
+            IvrMaster::where(function ($query) use ($audioId) {
+                $query->where('greet_long', $audioId)
+                    ->orWhere('greet_short', $audioId)
+                    ->orWhere('invalid_sound', $audioId)
+                    ->orWhere('exit_sound', $audioId);
+            })->update($updates);
+        }
+
         // Delete the audio from the database
         $audio->delete();
+
+        DB::commit();
 
         // Prepare success response
         $response = [
