@@ -34,6 +34,11 @@ class IvroptionsController extends Controller
         // Retrieve all ivrOptions from the database
         $ivrOptions = IvrOptions::query();
 
+        // Apply filters if provided
+        if ($request->has('ivr_id')) {
+            $ivrOptions->where('ivr_id', $request->input('ivr_id'));
+        }
+
         // Execute the query to fetch domains
         $ivrOptions = $ivrOptions->get();
 
