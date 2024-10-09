@@ -136,6 +136,8 @@ class IvrmasterController extends Controller
                 'max_failures' => 'nullable|integer',
                 'max_timeouts' => 'nullable|integer',
                 'digit_len' => 'nullable|integer',
+                'max_digit' => 'nullable|integer',
+                'min_digit' => 'nullable|integer',
             ]
         );
 
@@ -229,6 +231,8 @@ class IvrmasterController extends Controller
                 'max_failures' => 'nullable|integer',
                 'max_timeouts' => 'nullable|integer',
                 'digit_len' => 'nullable|integer',
+                'max_digit' => 'nullable|integer',
+                'min_digit' => 'nullable|integer',
             ]
         );
 

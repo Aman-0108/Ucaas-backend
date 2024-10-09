@@ -32,6 +32,8 @@ class CreateIvrMastersTable extends Migration
             $table->integer('max_failures')->nullable()->default(3); // max failures
             $table->integer('max_timeouts')->nullable()->default(3); // max timeouts
             $table->integer('digit_len')->nullable(); // digit length, unspecified type
+            $table->integer('max_digit')->nullable(); // max digits
+            $table->integer('min_digit')->nullable(); // min digits
             $table->timestamps();
         });
     }
