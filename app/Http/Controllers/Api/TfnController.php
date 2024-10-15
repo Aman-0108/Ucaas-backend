@@ -8,6 +8,7 @@ use App\Models\DidRateChart;
 use App\Models\CardDetail;
 use App\Models\BillingAddress;
 use App\Models\DefaultPermission;
+use App\Models\DidDetail;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
@@ -342,6 +343,14 @@ class TfnController extends Controller
 
             // update domain id
             User::where('email', $account->email)->update(['domain_id' => $result->id]);
+
+            // First, set all rows for the account_id to false
+            DidDetail::where('account_id', $request->companyId)->update(['default_outbound' => false]);
+
+            // Then, set the first row found to true
+            DidDetail::where('account_id', $request->companyId)
+                ->first()
+                ->update(['default_outbound' => true]);
 
             $domain = Domain::where('account_id', $request->companyId)->first();
 

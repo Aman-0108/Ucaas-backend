@@ -29,6 +29,7 @@ class CreateDidDetailsTable extends Migration
             $table->string('thinqTier')->nullable();
             $table->string('currency')->nullable();
             $table->decimal('price', 10, 2)->default(0.00);
+            $table->boolean('default_outbound')->default(false);
             $table->integer('created_by');
             $table->timestamps();
         });

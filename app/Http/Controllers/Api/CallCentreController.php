@@ -84,9 +84,9 @@ class CallCentreController extends Controller
                         return $query->where('account_id', $request->input('account_id'));
                     }),
                 ],
-                'greeting' => 'string|nullable',
+                'greeting' => 'required|string',
                 'strategy' => 'in:' . implode(',', config('enums.agent.strategy')),
-                'moh_sound' => 'string|nullable',
+                'moh_sound' => 'required|string',
                 'time_base_score' => 'in:queue,system',
                 'record_template' => 'string|nullable',
                 'tier_rules_apply' => 'boolean',

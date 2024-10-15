@@ -694,6 +694,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             // To store new did
             Route::post('store', 'store');
 
+            // To set the default did for outbound call
+            Route::post('set-default', 'setdefaultOutbound');
+
             // To delete the particular did by Id
             Route::delete('destroy/{id}', 'destroy');
         });

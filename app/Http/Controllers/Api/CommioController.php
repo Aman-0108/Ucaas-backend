@@ -203,28 +203,29 @@ class CommioController extends Controller
             $jsondata = json_encode($issuedata);
 
             $curl = curl_init();
+            
             curl_setopt_array($curl, array(
-            CURLOPT_URL => 'https://api.thinq.com/account/'.$accountId.'/origination/order/create',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => $jsondata,
-            CURLOPT_HTTPHEADER => array(
-                'Authorization: Basic '. base64_encode("$username:$password"),
-                'Content-Type: application/json'
-            ),
+                CURLOPT_URL => 'https://api.thinq.com/account/' . $accountId . '/origination/order/create',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => '',
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 0,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_POSTFIELDS => $jsondata,
+                CURLOPT_HTTPHEADER => array(
+                    'Authorization: Basic ' . base64_encode("$username:$password"),
+                    'Content-Type: application/json'
+                ),
             ));
 
             $response = curl_exec($curl);
 
             curl_close($curl);
 
-            $responseData = json_decode($response, true); 
-           
+            $responseData = json_decode($response, true);
+
             if (isset($responseData['status']) && $responseData['status'] == 'created') {
 
                 //add param like order created but not Completed order as per commio
@@ -343,7 +344,7 @@ class CommioController extends Controller
         $response = curl_exec($curl);
 
         curl_close($curl);
-        
+
         $responseData = json_decode($response, true);
 
         return $responseData;

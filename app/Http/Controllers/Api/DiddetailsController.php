@@ -30,12 +30,12 @@ class DiddetailsController extends Controller
     public function index(Request $request)
     {
         // Define a base query for did's
-        $query = DidDetail::with(['dialplan','configuration']);
+        $query = DidDetail::with(['dialplan', 'configuration']);
 
         $userId = $request->user()->id;
         $account_id = User::find($userId)->account_id;
 
-        if($account_id){
+        if ($account_id) {
             $query->where('account_id', $account_id);
         }
 
@@ -70,7 +70,7 @@ class DiddetailsController extends Controller
         $account_id = $request->user()->account_id;
 
         $domain = Domain::where('account_id', $account_id)->first();
-       
+
         $request->merge([
             'account_id' => $account_id,
             'domain' => $domain->id,
@@ -252,7 +252,7 @@ class DiddetailsController extends Controller
         $accountHolderId = Auth::user()->account_id;
 
         // Check if the user has permission to disconnect the did details
-        if($usertype !== 'Company' || $accountHolderId !== $didDetail->account_id) {
+        if ($usertype !== 'Company' || $accountHolderId !== $didDetail->account_id) {
             return response()->json(['success' => false, 'message' => `You don't have permission to perform this action.`], 403);
         }
 
@@ -271,7 +271,7 @@ class DiddetailsController extends Controller
         $authToken = $didVendor->token;
         $username = $didVendor->username;
 
-        if(!$authToken || !$username) {
+        if (!$authToken || !$username) {
             return response()->json(['success' => false, 'message' => 'Vendor details not found.'], 404);
         }
 
@@ -354,5 +354,69 @@ class DiddetailsController extends Controller
         curl_close($curl);
 
         return $response;
+    }
+
+    /**
+     * Set the default outbound DID for the given account ID.
+     * 
+     * @param Request $request The incoming HTTP request
+     * @return \Illuminate\Http\JsonResponse JSON response indicating success or failure
+     */
+    public function setdefaultOutbound(Request $request)
+    {
+        // Get the user type and account holder ID
+        $userId = $request->user()->id;
+        $account_id = $request->user()->account_id;
+
+        // Validate incoming request data
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'id' => 'required|exists:did_details,id',
+            ]
+        );
+
+        // If validation fails
+        if ($validator->fails()) {
+            // If validation fails, return a JSON response with error messages
+            $response = [
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validator->errors()
+            ];
+
+            return response()->json($response, Response::HTTP_FORBIDDEN);
+        }
+
+        // Find the did details by ID
+        $didDetail = DidDetail::find($request->id);
+
+        // Check if the authenticated user has permission to edit the audio
+        if ($didDetail->account_id !== $account_id) {
+            // If user doesn't have permission, prepare error response
+            $response = [
+                'status' => false,
+                'error' => 'You dont have access to delete.',
+            ];
+
+            // Return a JSON response with error message and 403 status code
+            return response()->json($response, Response::HTTP_FORBIDDEN);
+        }
+
+        // First, set all rows for the account_id to false
+        DidDetail::where('account_id', $account_id)->update(['default_outbound' => false]);
+
+        // Then, set the row with the given id to true
+        $didDetail->update(['default_outbound' => true]);
+
+        // Prepare the response data
+        $response = [
+            'status' => true,
+            'data' => $didDetail,
+            'message' => 'Successfully set the default outbound DID.',
+        ];
+
+        // Return a JSON response indicating successful update with response code 200(ok)
+        return response()->json($response, Response::HTTP_OK);
     }
 }
