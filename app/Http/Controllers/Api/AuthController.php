@@ -157,6 +157,11 @@ class AuthController extends Controller
                         ], 401);
                     }
                 }
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Email & Password does not match with our record.',
+                ], 401);
             }
 
             // Retrieve the authenticated user
