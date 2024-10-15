@@ -36,13 +36,13 @@ class SoundController extends Controller
      */
     public function index(Request $request)
     {
+        $account_id = $request->user()->account_id;
+
         // Start building the query to fetch audios
         $query = Sound::query();
 
-        // Check if the request contains an 'account' parameter
-        if ($request->has('account_id')) {
-            // If 'account' parameter is provided, filter audios by account ID
-            $query->where('account_id', $request->account_id);
+        if($account_id) {
+            $query->where('account_id', $account_id);
         }
 
         if ($request->has('type')) {
