@@ -100,6 +100,9 @@ class DidVendorController extends Controller
         // Create a new group record with validated data
         $data = DidVendor::create($validated);
 
+        // Log the action
+        accessLog($action, $type, $validated, $userId);
+
         // Commit the database transaction
         DB::commit();
 
@@ -192,6 +195,9 @@ class DidVendorController extends Controller
 
         // Update the vendor record with validated data
         $vendor->update($validated);
+
+        // Log the action
+        accessLog($action, $type, $formattedDescription, $userId);
 
         // Prepare the response data
         $response = [

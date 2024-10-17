@@ -108,6 +108,12 @@ class LeadController extends Controller
         // Create a new lead with the validated input
         $lead = Lead::create($validated);
 
+        $action = "store";
+        $type = "lead";
+
+        // Log the action
+        accessLog($action, $type, $validated);
+
         // commit
         DB::commit();
 

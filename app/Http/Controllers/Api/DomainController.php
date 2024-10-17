@@ -152,8 +152,6 @@ class DomainController extends Controller
             return response()->json($response, Response::HTTP_FORBIDDEN);
         }
 
-        //path or file created { store in DB }
-
         // Retrieve the validated input
         $validated = $validator->validated();
 
@@ -164,11 +162,11 @@ class DomainController extends Controller
         $action = 'create';
         $type = $this->type;
 
-        // Generate UID and attach it to the validated data
-        // $validated['uid_no'] = createUid($action, $type, $validated, $userId);
-
         // Create a new domain record in the database
         $data = Domain::create($validated);
+
+        // Log the action
+        accessLog($action, $type, $validated, $userId);
 
         // Commit the database transaction
         DB::commit();
@@ -262,11 +260,11 @@ class DomainController extends Controller
         $action = 'update';
         $type = $this->type;
 
-        // Generate UID and attach it to the validated data
-        // $validated['uid_no'] = createUid($action, $type, $formattedDescription, $userId);
-
         // Update the domain with the validated data
         $domain->update($validated);
+
+        // Log the action
+        accessLog($action, $type, $formattedDescription, $userId);
 
         // Prepare success response
         $response = [
@@ -357,6 +355,4 @@ class DomainController extends Controller
         // Return a JSON response with domain data and success message
         return response()->json($response, Response::HTTP_OK);
     }
-
-    
 }

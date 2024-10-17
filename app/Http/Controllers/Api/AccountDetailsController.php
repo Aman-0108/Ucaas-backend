@@ -113,7 +113,7 @@ class AccountDetailsController extends Controller
      */
     public function store(Request $request)
     {
-        // $userId = $request->user()->id;
+        $userId = $request->user()->id;
 
         // Validate incoming request data
         $validator = Validator::make(
@@ -188,7 +188,12 @@ class AccountDetailsController extends Controller
             }
             
             // Insert data
-            $this->insertData($accountId, $document);
+            $inserteddata = $this->insertData($accountId, $document);
+
+            $action = 'store';
+            $type = $this->type;
+
+            accessLog($action, $type, $inserteddata, $userId);
 
             // Check if all documents are uploaded
             $this->checkAllDocumentsUploadedOrNot($accountId);
@@ -218,6 +223,8 @@ class AccountDetailsController extends Controller
      */
     public function update(Request $request)
     {
+        $userId = $request->user()->id;
+
         // Find the Account Details with the given ID
         $accountDetail = AccountDetail::find($request->id);
 
@@ -266,7 +273,7 @@ class AccountDetailsController extends Controller
         $type = $this->type;
 
         // Generate UID and attach it to the validated data
-        // createUid($action, $type, $formattedDescription, $userId);
+        accessLog($action, $type, $formattedDescription, $userId);
 
         // Retrieve the old file paths
 
@@ -386,12 +393,14 @@ class AccountDetailsController extends Controller
 
         $filePath = $file->storeAs('company', $filename);
 
-        AccountDetail::create([
+        $data = AccountDetail::create([
             'account_id' => $accountId,
             'document_id' => $document['document_id'],
             'path' => $filePath,
             'status' => 3
         ]);
+
+        return $data;
     }
 
     // Check if all required documents are uploaded

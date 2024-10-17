@@ -123,6 +123,9 @@ class DiddetailsController extends Controller
         // Create a new did details record with validated data
         $data = DidDetail::create($validated);
 
+        // Log the action
+        accessLog($action, $type, $validated, $userId);
+
         // Commit the database transaction
         DB::commit();
 
@@ -209,6 +212,9 @@ class DiddetailsController extends Controller
 
         // Update the did details record with validated data
         $didDetail->update($validated);
+
+        // Log the action
+        accessLog($action, $type, $formattedDescription, $userId);
 
         // Prepare the response data
         $response = [

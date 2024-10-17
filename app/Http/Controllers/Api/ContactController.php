@@ -11,6 +11,17 @@ use Illuminate\Validation\Rule;
 
 class ContactController extends Controller
 {
+    protected $type;
+
+    /**
+     * Constructor function initializes the 'type' property to 'Contact'.
+     */
+    public function __construct()
+    {
+        // Perform initialization 
+        $this->type = 'Contact';
+    }
+
     /**
      * Retrieve all contacts.
      *
@@ -89,6 +100,8 @@ class ContactController extends Controller
      */
     public function store(Request $request)
     {
+        $userId = $request->user()->id;
+
         // Perform validation on the request data
         $validator = Validator::make(
             $request->all(),
@@ -130,6 +143,12 @@ class ContactController extends Controller
         // Create a new Contact with the validated input
         $data = Contact::create($validated);
 
+        $action = 'store';
+        $type = $this->type;
+
+        // Log the action
+        accessLog($action, $type, $validated, $userId);
+
         // Prepare a success response with the stored Contact data
         $response = [
             'status' => true,
@@ -155,6 +174,8 @@ class ContactController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $userId = $request->user()->id;
+
         // Find the Contact by ID
         $contact = Contact::find($id);
 
@@ -211,8 +232,17 @@ class ContactController extends Controller
         // Retrieve the validated input
         $validated = $validator->validated();
 
+        $action = 'update';
+        $type = $this->type;
+
+        // Compare the Contact with the validated input
+        $formattedDescription = compareValues($contact, $validated);
+
         // Update the Contact with the validated input
         $contact->update($validated);
+
+        // Log the action
+        accessLog($action, $type, $formattedDescription, $userId);
 
         // Prepare a success response with updated Contact data
         $response = [

@@ -72,6 +72,8 @@ class CallCentreController extends Controller
      */
     public function store(Request $request)
     {
+        $userId = $request->user()->id;
+
         // Validate incoming request data
         $validator = Validator::make(
             $request->all(),
@@ -158,6 +160,11 @@ class CallCentreController extends Controller
         // Create a new record with validated data
         $data = CallCenterQueue::create($validated);
 
+        $action = 'store';
+        $type = $this->type;
+
+        accessLog($action, $type, $validated, $userId);
+
         $freeSWitch = new FreeSwitchController();
 
         $account_id = $data->account_id;
@@ -221,6 +228,31 @@ class CallCentreController extends Controller
                 $rvalidated['no_answer_delay_time'] = isset($rvalidated['no_answer_delay_time']) ? intval ($rvalidated['no_answer_delay_time']) : null;
                 
                 CallCenterAgent::create($rvalidated);                
+
+                $newAgent = CallCenterAgent::create($rvalidated);
+
+                $action = 'store';
+                $type = 'call_centre_agent';
+        
+                accessLog($action, $type, $rvalidated, $userId);
+
+                // $fsResponse = $freeSWitch->callcenter_config_agent_add($newAgent->agent_name, $newAgent->type);
+                // $fsResponse = $fsResponse->getData();
+
+                // $fsLevelResponse = $freeSWitch->callcenter_config_tier_set_level($generatedQueueName, $newAgent->agent_name, $newAgent->tier_level);
+                // $fsLevelResponse = $fsLevelResponse->getData();
+
+                // $fsPositionResponse = $freeSWitch->callcenter_config_tier_set_position($generatedQueueName, $newAgent->agent_name, $newAgent->tier_position);
+                // $fsPositionResponse = $fsPositionResponse->getData();
+
+                // || !$fsLevelResponse->status || !$fsPositionResponse->status
+                // if (!$fsResponse->status) {
+                //     $type = config('enums.RESPONSE.ERROR');
+                //     $status = false;
+                //     $msg = 'Something went wrong in freeswitch while adding an agent. Please try again later.';
+
+                //     return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
+                // }
             }
         }
 
@@ -285,6 +317,8 @@ class CallCentreController extends Controller
 
     public function update(Request $request, $id)
     {
+        $userId = $request->user()->id;
+
         // Find the call_centre_queue by ID
         $call_centre_queue = CallCenterQueue::find($id);
 
@@ -362,7 +396,7 @@ class CallCentreController extends Controller
 
         // Defining action and type for creating UID
         $action = 'update';
-        $type = $this->type;
+        $type = $this->type;       
 
         // Begin a database transaction
         // DB::beginTransaction();
@@ -382,6 +416,8 @@ class CallCentreController extends Controller
 
             return responseHelper($type, $status, $msg, Response::HTTP_EXPECTATION_FAILED);
         }
+        // Log the action
+        accessLog($action, $type, $formattedDescription, $userId);
 
         //data for child table group call_centre_agent
         if ($request->has('agents')) {

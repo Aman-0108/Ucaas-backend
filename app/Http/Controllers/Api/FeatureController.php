@@ -133,7 +133,7 @@ class FeatureController extends Controller
                     'data' => $existingRecord,
                     'message' => 'Successfully restored'
                 ];
-        
+
                 // Return a JSON response indicating successful storage and 201 status code
                 return response()->json($response, Response::HTTP_CREATED);
             }
@@ -161,8 +161,6 @@ class FeatureController extends Controller
             return response()->json($response, Response::HTTP_FORBIDDEN);
         }
 
-        //path or file created { store in DB }
-
         // Retrieve the validated input
         $validated = $validator->validated();
 
@@ -173,11 +171,11 @@ class FeatureController extends Controller
         $action = 'create';
         $type = $this->type;
 
-        // Generate UID and attach it to the validated data
-        createUid($action, $type, $validated, $userId);
-
         // Create a new Feature record in the database
         $data = Feature::create($validated);
+
+        // Log the action
+        accessLog($action, $type, $validated, $userId);
 
         // Commit the database transaction
         DB::commit();
@@ -284,11 +282,11 @@ class FeatureController extends Controller
         $action = 'update';
         $type = $this->type;
 
-        // Generate UID and attach it to the validated data
-        createUid($action, $type, $formattedDescription, $userId);
-
         // Update the Feature with the validated data
         $feature->update($validated);
+
+        // Generate UID and attach it to the validated data
+        accessLog($action, $type, $formattedDescription, $userId);
 
         // Prepare success response
         $response = [

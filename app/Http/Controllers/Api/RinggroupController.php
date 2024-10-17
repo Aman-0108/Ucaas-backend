@@ -129,8 +129,6 @@ class RinggroupController extends Controller
         $action = 'create';
         $type = $this->type;
 
-        createUid($action, $type, $validated, $userId);
-
         $startingPoint = config('globals.RINGGROUP_START_FROM');
 
         $maxExtension = Ringgroup::where('account_id', $request->account_id)->max('extension');
@@ -160,6 +158,8 @@ class RinggroupController extends Controller
         DB::beginTransaction();
 
         $data = Ringgroup::create($validated);
+
+        accessLog($action, $type, $validated, $userId);
 
         $ringGroupid =  $data->id;
         $account_id =  $data->account_id;
@@ -340,8 +340,8 @@ class RinggroupController extends Controller
         // Begin a database transaction
         DB::beginTransaction();
 
-        // Generate UID and attach it to the validated data
-        createUid($action, $type, $formattedDescription, $userId);
+        // Log the action
+        accessLog($action, $type, $formattedDescription, $userId);
 
         // Update the gateway with the validated data
         $ringgroup->update($validated);

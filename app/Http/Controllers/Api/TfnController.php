@@ -20,7 +20,6 @@ use App\Models\Role;
 use App\Models\RolePermission;
 use App\Models\Subscription;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class TfnController extends Controller

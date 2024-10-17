@@ -11,6 +11,17 @@ use Illuminate\Support\Facades\Validator;
 
 class BillingAddressController extends Controller
 {
+    protected $type;
+
+    /**
+     * Constructor function initializes the 'type' property to 'Billing_Address'.
+     */
+    public function __construct()
+    {
+        // Perform initialization 
+        $this->type = 'Billing_Address';
+    }
+
     /**
      * Retrieve all billing addresses.
      *
@@ -48,6 +59,8 @@ class BillingAddressController extends Controller
      */
     public function store(Request $request)
     {
+        $userId = $request->user() ? $request->user()->id : null ;
+        
         // Perform validation on the request data     
         $validator = Validator::make(
             $request->all(),
@@ -84,6 +97,11 @@ class BillingAddressController extends Controller
 
         // Create a new Billing Address with the validated data
         $data = BillingAddress::create($validated);
+
+        $action = 'store';
+        $type = $this->type;
+
+        accessLog($action, $type, $validated, $userId);
 
         // Commit the database transaction
         DB::commit();
@@ -189,8 +207,19 @@ class BillingAddressController extends Controller
         // Retrieve the validated input
         $validated = $validator->validated();
 
+        $action = 'update';
+        $type = $this->type;
+
+        $formattedDescription = compareValues($billingAddress, $validated);
+
+        DB::beginTransaction();
+
+        accessLog($action, $type, $formattedDescription, $userId);
+
         // Update the billing address record with validated data
         $billingAddress->update($validated);
+
+        DB::commit();
 
         // Prepare the response data
         $response = [

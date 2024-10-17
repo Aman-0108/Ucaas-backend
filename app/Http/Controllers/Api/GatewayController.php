@@ -145,8 +145,8 @@ class GatewayController extends Controller
         $action = 'create';
         $type = $this->type;
 
-        // Generate UID and attach it to the validated data
-        createUid($action, $type, $validated, $userId);
+        // Log the action
+        accessLog($action, $type, $validated, $userId);
 
         // if ($request->has('didConfigure')) {
 
@@ -304,8 +304,8 @@ class GatewayController extends Controller
         $action = 'update';
         $type = $this->type;
 
-        // Generate UID and attach it to the validated data
-        createUid($action, $type, $formattedDescription, $userId);
+        // Log the action and type
+        accessLog($action, $type, $formattedDescription, $userId);
 
         // Update the gateway with the validated data
         $gateway->update($validated);

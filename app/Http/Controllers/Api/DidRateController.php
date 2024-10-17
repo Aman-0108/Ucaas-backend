@@ -100,6 +100,9 @@ class DidRateController extends Controller
         // Create a new group record with validated data
         $data = DidRateChart::create($validated);
 
+        // Log the action and type
+        accessLog($action, $type, $validated, $userId);
+
         // Commit the database transaction
         DB::commit();
 
@@ -180,6 +183,9 @@ class DidRateController extends Controller
         // Update the did rate record with validated data
         $didRateChart->update($validated);
 
+        // Log the action and type
+        accessLog($action, $type, $formattedDescription, $userId);
+
         // Prepare the response data
         $response = [
             'status' => true,
@@ -229,17 +235,16 @@ class DidRateController extends Controller
     }
 
 
-    public function show($id,$rateType)
+    public function show($id, $rateType)
     {
-        if(empty($rateType)){
+        if (empty($rateType)) {
             $rateChart = DidRateChart::where('vendor_id', $id)->get();
-        }
-        else{
-           $rateChart =  DidRateChart::where('rate_type', $rateType)->where('vendor_id', $id)->first();
+        } else {
+            $rateChart =  DidRateChart::where('rate_type', $rateType)->where('vendor_id', $id)->first();
         }
         // Find the user with the given ID
-        
-            if (!$rateChart) {
+
+        if (!$rateChart) {
             // If user is not found, prepare error response
             $response = [
                 'status' => false,
@@ -260,5 +265,4 @@ class DidRateController extends Controller
         // Return a JSON response with user data and success message
         return response()->json($response, Response::HTTP_OK);
     }
-
 }

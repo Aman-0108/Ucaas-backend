@@ -72,12 +72,9 @@ class DidConfigureController extends Controller
         DB::beginTransaction();
 
         try {
-            // Define the action and type for creating UID
+            // Define the action and type
             $action = 'create';
             $type = $this->type;
-
-            // Generate UID and attach it to the validated data
-            createUid($action, $type, $validated, $userId);
 
             // Use updateOrCreate to either update an existing record or create a new one
             $data = DidConfigure::updateOrCreate(
@@ -86,6 +83,9 @@ class DidConfigureController extends Controller
                 ],
                 $validated // Attributes to update or create
             );
+
+            // Log the action and type
+            accessLog($action, $type, $validated, $userId);
 
             // Commit the database transaction
             DB::commit();
@@ -208,11 +208,11 @@ class DidConfigureController extends Controller
         $action = 'update';
         $type = $this->type;
 
-        // Generate UID and attach it to the validated data
-        createUid($action, $type, $formattedDescription, $userId);
-
         // Update the didConfigure record with validated data
         $didConfigure->update($validated);
+
+        // Call the accessLog function to log the action and type
+        accessLog($action, $type, $formattedDescription, $userId);
 
         // Prepare the response data
         $response = [

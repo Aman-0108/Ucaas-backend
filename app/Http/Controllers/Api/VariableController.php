@@ -111,6 +111,12 @@ class VariableController extends Controller
         // Create a new variable record in the database
         $data = Variable::create($validated);
 
+        $action = 'create';
+        $type = $this->type;
+
+        // Log the action in the access_log table
+        accessLog($action, $type, $validated, $userId);
+
         // Commit the database transaction
         DB::commit();
 
@@ -184,6 +190,12 @@ class VariableController extends Controller
 
         // Update the variable with the validated data
         $variable->update($validated);
+
+        $action = 'update';
+        $type = $this->type;
+
+        // Log the action in the access_log table
+        accessLog($action, $type, $validated, $userId);
 
         // Prepare success response
         $response = [
