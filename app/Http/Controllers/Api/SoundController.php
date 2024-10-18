@@ -41,7 +41,7 @@ class SoundController extends Controller
         // Start building the query to fetch audios
         $query = Sound::query();
 
-        if($account_id) {
+        if ($account_id) {
             $query->where('account_id', $account_id);
         }
 
@@ -341,8 +341,13 @@ class SoundController extends Controller
      */
     public function destroy(Request $request, $id)
     {
+        $action = 'delete';
+        $type = $this->type;
+
         // Retrieve the ID of the authenticated user making the request
         $account_id = $request->user()->account_id;
+
+        $userId = $request->user()->id;
 
         // Find the audio with the given ID
         $audio = Sound::find($id);
@@ -429,6 +434,9 @@ class SoundController extends Controller
 
         // Delete the audio from the database
         $audio->delete();
+
+        // Generate access log
+        accessLog($action, $type, $audio, $userId);
 
         DB::commit();
 

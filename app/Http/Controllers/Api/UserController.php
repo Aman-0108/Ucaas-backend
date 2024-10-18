@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Domain;
 use App\Models\Extension;
 use App\Models\RolePermission;
-use App\Models\Subscription;
 use App\Models\User;
 use App\Models\UserPermission;
 use App\Models\UserRole;
@@ -21,6 +20,17 @@ use Illuminate\Validation\Rule;
 class UserController extends Controller
 {
     use GetPermission;
+
+    protected $type;
+
+    /**
+     * Constructor function initializes the 'type' property to 'User'.
+     */
+    public function __construct()
+    {
+        // Perform initialization 
+        $this->type = 'User';
+    }
 
     /**
      * Creates a new user.
@@ -37,6 +47,8 @@ class UserController extends Controller
     public function create(Request $request)
     {
         try {
+
+            $action = 'create';
 
             $userId = $request->user()->id;
             $userType = $request->user()->usertype;
@@ -145,6 +157,9 @@ class UserController extends Controller
                     'created_by' => $userId
                 ]);
             }
+
+            // Log the action
+            accessLog($action, $this->type, $user, $userId);
 
             $this->insertUserRole($user->id, $request->role_id);
 
@@ -633,7 +648,7 @@ class UserController extends Controller
                 // Apply the extension_id filter if present
                 $voicemailsQuery->where(function ($query) use ($extension) {
                     $query->where('src', $extension->extension)
-                          ->orWhere('dest', $extension->extension);
+                        ->orWhere('dest', $extension->extension);
                 });
             }
         }
@@ -690,6 +705,59 @@ class UserController extends Controller
         ];
 
         // Return a JSON response with user data and success message
+        return response()->json($response, Response::HTTP_OK);
+    }
+
+    public function destroy($id)
+    {
+        $action = 'delete';
+        $type = $this->type;
+
+        $account_id = auth()->user()->account_id;
+        $usertype = auth()->user()->usertype;
+        $userId = auth()->user()->id;
+
+        // Find the Port by ID
+        $user = User::find($id);
+
+        // Check if the Port exists
+        if (!$user) {
+            // If the Port is not found, return a 404 Not Found response
+            $response = [
+                'status' => false,
+                'error' => 'User not found'
+            ];
+
+            return response()->json($response, Response::HTTP_NOT_FOUND);
+        }
+
+        if($user->account_id != $account_id && $usertype != 'Company') {
+            // If the Port is not found, return a 404 Not Found response
+            $response = [
+                'status' => false,
+                'error' => 'User not found'
+            ];
+
+            return response()->json($response, Response::HTTP_NOT_FOUND);
+        }
+
+        // Update the extension 
+        Extension::where('user', $id)->update(['extension' => '']);
+
+        // Generate log
+        accessLog($action, $type, $user, $userId);
+
+        // Delete the user
+        // $user->delete();
+        $user->forceDelete();
+
+        // Prepare the response data
+        $response = [
+            'status' => true,
+            'message' => 'Successfully deleted user.'
+        ];
+
+        // Return the response as JSON with HTTP status code 200 (OK)
         return response()->json($response, Response::HTTP_OK);
     }
 }

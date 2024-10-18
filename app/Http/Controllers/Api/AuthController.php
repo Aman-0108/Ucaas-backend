@@ -140,7 +140,6 @@ class AuthController extends Controller
                             }
 
                             $request->merge(['email' => $userData->email]);
-                            
                         } else {
                             return response()->json([
                                 'status' => false,
@@ -272,6 +271,8 @@ class AuthController extends Controller
      */
     public function changePassword(Request $request)
     {
+        $userId = Auth::user()->id;
+
         // Validate the request input
         $validateUser = Validator::make(
             $request->all(),
@@ -297,6 +298,17 @@ class AuthController extends Controller
         if (!Hash::check($request->old_password, $user->password)) {
             return response()->json(['status' => false, 'message' => 'Invalid old password'], Response::HTTP_NOT_FOUND);
         }
+
+        $action = 'change_password';
+        $type = 'user';
+
+        $modifiedData = [
+            'old_password' => $request->old_password,
+            'new_password' => $request->new_password,
+        ];
+
+        // Log the action
+        accessLog($action, $type, $modifiedData, $userId);
 
         // Update the user's password
         $user->password = Hash::make($request->new_password);

@@ -14,6 +14,17 @@ use Illuminate\Support\Facades\Validator;
 
 class CardController extends Controller
 {
+    protected $type;
+
+    /**
+     * Constructor function initializes the 'type' property to 'Card'.
+     */
+    public function __construct()
+    {
+        // Perform initialization 
+        $this->type = 'Card';
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -22,13 +33,21 @@ class CardController extends Controller
      */
     public function index(Request $request)
     {
+        $account_id = $request->user()->account_id;
+
+        $userType = $request->user()->usertype;
+
         // Initialize a query builder for the CardDetail model
         $cardQuery = CardDetail::query();
 
-        // Check if the request contains an 'account_id' parameter
-        if ($request->has('account_id')) {
-            // If 'account_id' parameter is present, filter results by 'account_id'
-            $cardQuery->where('account_id', $request->account_id);
+        if ($userType !== 'SuperAdmin' && $account_id) {
+            $cardQuery->where('account_id', $account_id);
+        } else {
+            // Check if the request contains an 'account_id' parameter
+            if ($request->has('account_id')) {
+                // If 'account_id' parameter is present, filter results by 'account_id'
+                $cardQuery->where('account_id', $request->account_id);
+            }
         }
 
         // Retrieve data based on the applied filters or no filters
@@ -51,6 +70,12 @@ class CardController extends Controller
      */
     public function create(Request $request)
     {
+        $userId = $request->user()->id;
+
+        // Defining action and type
+        $action = 'create';
+        $type = $this->type;
+
         // Get the current year
         $currentYear = date('Y');
 
@@ -100,6 +125,9 @@ class CardController extends Controller
         // Call a method to save the card information
         $data = $this->saveCard($request->account_id, $cardInput);
 
+        // Log the action and type
+        accessLog($action, $type, $data, $userId);
+
         $account = Account::find($request->account_id);
 
         $maskedCard = maskCreditCard($data['card_number']);
@@ -140,7 +168,11 @@ class CardController extends Controller
      */
     public function destroy($id)
     {
+        $action = 'delete';
+        $type = $this->type;
+
         $accountId = Auth::user()->account_id;
+        $userId = Auth::user()->id;
 
         // Find the card by ID
         $card = CardDetail::find($id);
@@ -163,8 +195,15 @@ class CardController extends Controller
             return responseHelper($type, $status, $msg, Response::HTTP_FORBIDDEN);
         }
 
+        DB::beginTransaction();
+
         // Delete the card
         $card->delete();
+
+        // Generate access log
+        accessLog($action, $type, $card, $userId);
+
+        DB::commit();
 
         $type = config('enums.RESPONSE.SUCCESS');
         $status = true;
@@ -202,6 +241,9 @@ class CardController extends Controller
      */
     public function setDefault(Request $request)
     {
+        $action = 'set_default';
+        $userId = $request->user()->id;
+
         // Validate incoming request data
         $validator = Validator::make(
             $request->all(),
@@ -230,9 +272,22 @@ class CardController extends Controller
             CardDetail::where('account_id', $request->account_id)->update(['default' => false]);
         }
 
+        $modifiedData = [
+            'account_id' => $request->account_id,
+            'new_default_card_id' => $request->id,
+        ];
+
         // Update the current card detail to set as default
         $data->default = $request->default;
+
+        DB::beginTransaction();
+
         $data->save();
+
+        // Log the action
+        accessLog($action, $this->type, $modifiedData, $userId);
+
+        DB::commit();
 
         // Prepare success response
         $type = config('enums.RESPONSE.SUCCESS');
@@ -242,5 +297,4 @@ class CardController extends Controller
         // Return a JSON response with HTTP status code 200 (OK)
         return responseHelper($type, $status, $msg, Response::HTTP_OK);
     }
-
 }

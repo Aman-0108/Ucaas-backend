@@ -6,10 +6,22 @@ use App\Http\Controllers\Controller;
 use App\Models\MailSetting;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class MailsettingsController extends Controller
 {
+    protected $type;
+
+    /**
+     * Constructor function initializes the 'type' property to 'Role'.
+     */
+    public function __construct()
+    {
+        // Perform initialization
+        $this->type = 'MailSetting';
+    }
+
     /**
      * Retrieve all mail settings.
      *
@@ -89,6 +101,12 @@ class MailsettingsController extends Controller
      */
     public function store(Request $request)
     {
+        $action = 'create';
+
+        // Retrieve the authenticated user's ID
+        $userId = $request->user()->id;
+
+        // Retrieve the authenticated account's ID
         $account_id = $request->user()->account_id;
 
         $request->merge(['account_id' => $account_id]);
@@ -128,8 +146,15 @@ class MailsettingsController extends Controller
             'account_id' => $account_id
         ];
 
+        DB::beginTransaction();
+
         // Store the mail setting in the database
         $data = MailSetting::updateOrCreate($match, $validated);
+
+        // Log the action
+        accessLog($action, $this->type, $validated, $userId);
+
+        DB::commit();
 
         // Prepare a success response with the stored mail setting data
         $response = [
@@ -156,6 +181,12 @@ class MailsettingsController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $userId = $request->user()->id;
+
+        // Defining action and type 
+        $action = 'update';
+        $type = $this->type;
+
         // Find the mailSetting by ID
         $mailSetting = MailSetting::find($id);
 
@@ -200,8 +231,18 @@ class MailsettingsController extends Controller
         // Retrieve the validated input
         $validated = $validator->validated();
 
+        // Call the compareValues function to generate a formatted description based on the gateway and validated data
+        $formattedDescription = compareValues($mailSetting, $validated);
+
+        DB::beginTransaction();
+
         // Update the mailSetting with the validated input
-        $mailSetting->update($validated);
+        $mailSetting->update($validated);        
+
+        // Log the action and type
+        accessLog($action, $type, $formattedDescription, $userId);
+
+        DB::commit();
 
         // Prepare a success response with updated mailSetting data
         $response = [
@@ -226,6 +267,11 @@ class MailsettingsController extends Controller
      */
     public function destroy($id)
     {
+        $userId = auth()->user()->id;
+
+        $action = 'delete';
+        $type = $this->type;
+
         // Find the mail setting by ID
         $mailSetting = MailSetting::find($id);
 
@@ -239,8 +285,15 @@ class MailsettingsController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
+        DB::beginTransaction();
+
         // Delete the mail setting
-        $mailSetting->delete();
+        $mailSetting->delete();        
+
+        // Generate UID and attach it to the validated data
+        accessLog($action, $type, $mailSetting, $userId);
+
+        DB::commit();
 
         // Prepare a success message
         $response = [

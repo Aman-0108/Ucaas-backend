@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BillingAddress;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -29,12 +30,20 @@ class BillingAddressController extends Controller
      */
     public function index(Request $request)
     {
+        $account_id = $request->user()->account_id;
+
+        $userType = $request->user()->usertype;
+
         // Define a base query for BillingAddress
         $query = BillingAddress::query();
 
-        // Apply filtering based on request parameters
-        if ($request->has('account_id')) {
-            $query->where('account_id', $request->account_id);
+        if ($userType !== 'SuperAdmin' && $account_id) {
+            $query->where('account_id', $account_id);
+        } else {
+            // Apply filtering based on request parameters
+            if ($request->has('account_id')) {
+                $query->where('account_id', $request->account_id);
+            }
         }
 
         // Fetch the billing addresses based on the query
@@ -59,8 +68,11 @@ class BillingAddressController extends Controller
      */
     public function store(Request $request)
     {
-        $userId = $request->user() ? $request->user()->id : null ;
-        
+        $action = 'store';
+        $type = $this->type;
+
+        $userId = $request->user()->id;
+
         // Perform validation on the request data     
         $validator = Validator::make(
             $request->all(),
@@ -96,11 +108,9 @@ class BillingAddressController extends Controller
         DB::beginTransaction();
 
         // Create a new Billing Address with the validated data
-        $data = BillingAddress::create($validated);
+        $data = BillingAddress::create($validated);       
 
-        $action = 'store';
-        $type = $this->type;
-
+        // Log the action
         accessLog($action, $type, $validated, $userId);
 
         // Commit the database transaction
@@ -240,6 +250,11 @@ class BillingAddressController extends Controller
      */
     public function destroy($id)
     {
+        $action = 'delete';
+        $type = $this->type;
+
+        $userId = Auth::user()->id;
+        
         // Find the billing address by its ID
         $billingAddress = BillingAddress::find($id);
 
@@ -254,8 +269,15 @@ class BillingAddressController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
+        DB::beginTransaction();
+
         // Delete the billing address
         $billingAddress->delete();
+
+        // Generate access log
+        accessLog($action, $type, $billingAddress, $userId);
+
+        DB::commit();
 
         // Prepare the response data
         $response = [
@@ -294,6 +316,9 @@ class BillingAddressController extends Controller
      */
     public function setDefault(Request $request)
     {
+        $action = 'set_default';
+        $userId = $request->user()->id;
+
         // Validate incoming request data
         $validator = Validator::make(
             $request->all(),
@@ -323,9 +348,22 @@ class BillingAddressController extends Controller
             BillingAddress::where('account_id', $request->account_id)->update(['default' => false]);
         }
 
+        $modifiedData = [
+            'account_id' => $request->account_id,
+            'new_default_address_id' => $request->id,
+        ];
+
         // Update the selected billing address to set as default
         $data->default = $request->default;
+
+        DB::beginTransaction();
+
         $data->save();
+
+        // Log the action
+        accessLog($action, $this->type, $modifiedData, $userId);
+
+        DB::commit();
 
         // Success response
         $type = config('enums.RESPONSE.SUCCESS'); // Response type (success)

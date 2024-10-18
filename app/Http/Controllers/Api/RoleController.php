@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Validator;
 class RoleController extends Controller
 {
     protected $type;
+
     use GetPermission;
 
     /**
@@ -32,7 +33,7 @@ class RoleController extends Controller
      * @return \Illuminate\Http\JsonResponse Returns a JSON response containing all fetched roles.
      */
     public function index(Request $request)
-    {        
+    {
         $userId = $request->user()->id;
 
         // Retrieve all permissions with role from the database
@@ -96,6 +97,12 @@ class RoleController extends Controller
      */
     public function store(Request $request)
     {
+        // Defining action and type
+        $action = 'create';
+
+        // Defining type
+        $type = $this->type;
+
         // Retrieve the ID of the authenticated user making the request
         $userId = $request->user()->id;
         $request->merge(['created_by' => $userId]);
@@ -113,12 +120,17 @@ class RoleController extends Controller
                 // Optionally, you may choose to update the attributes of the restored record
                 $existingRecord->update($request->only('name'));
 
+                $action = 'restore';
+
+                // Log the action
+                accessLog($action, $type, $existingRecord, $userId);
+
                 $response = [
                     'status' => true,
                     'data' => $existingRecord,
                     'message' => 'Successfully restored'
                 ];
-        
+
                 // Return a JSON response indicating successful storage and 201 status code
                 return response()->json($response, Response::HTTP_CREATED);
             }
@@ -150,10 +162,6 @@ class RoleController extends Controller
 
         // Begin a database transaction
         DB::beginTransaction();
-
-        // Defining action and type for creating UID
-        $action = 'create';
-        $type = $this->type;
 
         // Log the action
         accessLog($action, $type, $validated, $userId);
@@ -266,6 +274,9 @@ class RoleController extends Controller
      */
     public function destroy($id)
     {
+        // Retrieve the ID of the authenticated user making the request
+        $userId = auth()->user()->id;
+
         // Find the role with the given ID
         $role = Role::find($id);
 
@@ -279,6 +290,12 @@ class RoleController extends Controller
 
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
+
+        $action = 'delete';
+        $type = $this->type;
+
+        // Generate UID and attach it to the validated data
+        accessLog($action, $type, $role, $userId);
 
         // Delete the  record
         $role->delete();

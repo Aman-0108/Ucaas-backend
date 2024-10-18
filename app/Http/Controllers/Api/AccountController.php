@@ -685,7 +685,7 @@ class AccountController extends Controller
         // Prepare the response data
         $response = [
             'status' => true,
-            'data' => $amount,
+            'balance' => $amount,
             'message' => 'Balance fetched successfully.'
         ];
 

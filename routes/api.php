@@ -143,6 +143,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
             // To update the particular user by Id
             Route::put('{id}', 'update')->name('edit');
+
+            // To delete the particular user by Id
+            Route::delete('{id}', 'destroy')->name('delete');
         });
 
         // All users for messageservice
