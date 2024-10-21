@@ -932,21 +932,22 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         });
     });
 
+    // Provision
     Route::controller(ProvisionController::class)->group(function () {
         Route::prefix('provision')->group(function () {
-            // To get all the IVR Options
+            // To get all the Provisions
             Route::get('all', 'index');
 
-            // To get the particular IVR Option by Id
+            // To get the particular Provision by Id
             Route::get('show/{id}', 'show');
 
-            // To update the particular IVR Option by Id   
+            // To update the particular Provision by Id   
             Route::put('update/{id}', 'update');
 
-            // To store new IVR Option
+            // To store new Provision
             Route::post('store', 'store');
 
-            // To destroy the IVR Option by Id
+            // To destroy the Provision by Id
             Route::delete('destroy/{id}', 'destroy');
         });
     });
