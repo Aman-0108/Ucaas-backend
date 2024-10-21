@@ -48,6 +48,7 @@ use App\Http\Controllers\Api\{
     MessageController,
     PermissionController,
     PortController,
+    ProvisionController,
     SoundController,
     VariableController,
     WalletTransactionController
@@ -914,6 +915,25 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // IVR Option
     Route::controller(IvroptionsController::class)->group(function () {
         Route::prefix('ivr-option')->group(function () {
+            // To get all the IVR Options
+            Route::get('all', 'index');
+
+            // To get the particular IVR Option by Id
+            Route::get('show/{id}', 'show');
+
+            // To update the particular IVR Option by Id   
+            Route::put('update/{id}', 'update');
+
+            // To store new IVR Option
+            Route::post('store', 'store');
+
+            // To destroy the IVR Option by Id
+            Route::delete('destroy/{id}', 'destroy');
+        });
+    });
+
+    Route::controller(ProvisionController::class)->group(function () {
+        Route::prefix('provision')->group(function () {
             // To get all the IVR Options
             Route::get('all', 'index');
 
