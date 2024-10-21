@@ -30,10 +30,16 @@ class PortController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse Returns a JSON response containing all fetched ports.
      */
-    public function index()
-    {
+    public function index(Request $request)
+    {        
         // Retrieve all ports from the database
-        $ports = Port::all();
+        $ports = Port::query();
+
+        $account_id = $request->user()->account_id;
+
+        if($account_id) {
+            $ports->where('account_id', $account_id);
+        }
 
         // Prepare the response data
         $response = [

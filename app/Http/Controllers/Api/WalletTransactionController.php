@@ -17,10 +17,10 @@ class WalletTransactionController extends Controller
     {
         $query = WalletTransaction::query();
 
-        // Check if the request contains an 'account_id' parameter
-        if ($request->has('account_id')) {
-            // If 'account' parameter is provided, filter domains by account ID
-            $query->where('account_id', $request->account_id);
+        $account_id = $request->user()->account_id;
+
+        if($account_id) {
+            $query->where('account_id', $account_id);
         }
 
         if ($request->has('transaction_type')) {
