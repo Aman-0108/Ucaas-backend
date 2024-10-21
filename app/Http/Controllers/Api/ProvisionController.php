@@ -11,10 +11,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
 
 class ProvisionController extends Controller
 {
     protected $type;
+    // protected $sshService;
 
     /**
      * Constructor function initializes the 'type' property to 'Provision'.
@@ -23,6 +25,8 @@ class ProvisionController extends Controller
     {
         // Perform initialization 
         $this->type = 'Provision';
+        // SSHService $sshService
+        // $this->sshService = $sshService;
     }
 
     /**
@@ -126,7 +130,7 @@ class ProvisionController extends Controller
 
         $configResult = $this->createCfg($request->serial_id);
 
-        $phoneConfigResult = $this->createPhoneConfig($request->serial_id, $request->server_address, $request->user_id, $request->password);
+        $phoneConfigResult = $this->createPhoneConfig($validated['serial_id'], $validated['server_address'], $validated['user_id'], $validated['password']);
 
         if (!$configResult || !$phoneConfigResult) {
             // DB::rollBack();
@@ -350,7 +354,7 @@ class ProvisionController extends Controller
     {
         // Define the XML content
         $xmlContent = '<?xml version="1.0" standalone="yes"?>
-            <APPLICATION APP_FILE_PATH_EdgeB20="sip.ld" CONFIG_FILES_EdgeB20="' . $serialNumber . '"-registration.cfg, phone1.cfg, sip.cfg, custom.cfg" MISC_FILES="" LOG_FILE_DIRECTORY="logs" OVERRIDES_DIRECTORY="overrides" CONTACTS_DIRECTORY="contacts" LICENSE_DIRECTORY="">
+            <APPLICATION APP_FILE_PATH_EdgeB20="sip.ld" CONFIG_FILES_EdgeB20="' . $serialNumber . '-registration.cfg, phone1.cfg, sip.cfg, custom.cfg" MISC_FILES="" LOG_FILE_DIRECTORY="logs" OVERRIDES_DIRECTORY="overrides" CONTACTS_DIRECTORY="contacts" LICENSE_DIRECTORY="">
             </APPLICATION>';
 
         // Write the XML content to a .cfg file
@@ -361,13 +365,16 @@ class ProvisionController extends Controller
             // Instantiate the ConfigService directly
             $sshService = app()->make('App\Services\SSHService');
 
-            $remoteDirectory = '/usr/local/freeswitch/conf/directory/provision/';
+            // Define the remote directory
+            $remoteDirectory = '/home/solman/';
 
+            $fullPath = Storage::path($fileName);
+           
             // Upload the .cfg file to the remote server
-            $sshService->uploadFile($fileName, $remoteDirectory);
+            $sshService->uploadFile($fullPath, $remoteDirectory);
 
             // Delete the .cfg file from the local filesystem
-            Storage::disk('local')->delete($fileName);
+            // Storage::disk('local')->delete($fileName);
 
             return true;
         } else {
@@ -377,6 +384,15 @@ class ProvisionController extends Controller
 
     public function createPhoneConfig($serialNumber, $serverAddress, $userId, $userPassword)
     {
+        $data = [
+            'serial' => $serialNumber,
+            'serverAddress' => $serverAddress,
+            'userId' => $userId,
+            'userPassword' => $userPassword
+        ];
+
+        // Log::info($data);
+
         // Define the XML content with parameters
         $xmlContent = '<?xml version="1.0" encoding="utf-8" standalone="yes"?>
             <PHONE_CONFIG>
@@ -399,7 +415,7 @@ class ProvisionController extends Controller
             </PHONE_CONFIG>';
 
         // Write the XML content to a .cfg file
-        $fileName = $serialNumber . 'registration.cfg'; // You can customize the filename as needed
+        $fileName = $serialNumber . '-registration.cfg'; // You can customize the filename as needed
 
         // Attempt to write the file and handle potential errors
         if (Storage::disk('local')->put($fileName, $xmlContent)) {
@@ -407,13 +423,16 @@ class ProvisionController extends Controller
             // Instantiate the ConfigService directly
             $sshService = app()->make('App\Services\SSHService');
 
-            $remoteDirectory = '/usr/local/freeswitch/conf/directory/provision/';
+            $fullPath = Storage::path($fileName);
+
+            // Define the remote directory
+            $remoteDirectory = '/home/solman/';
 
             // Upload the .cfg file to the remote server
-            $sshService->uploadFile($fileName, $remoteDirectory);
+            $sshService->uploadFile($fullPath, $remoteDirectory);
 
             // Delete the .cfg file from the local filesystem
-            Storage::disk('local')->delete($fileName);
+            // Storage::disk('local')->delete($fileName);
             return true;
         } else {
             return false;
