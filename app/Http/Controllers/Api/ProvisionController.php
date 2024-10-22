@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\Log;
 class ProvisionController extends Controller
 {
     protected $type;
-    // protected $sshService;
 
     /**
      * Constructor function initializes the 'type' property to 'Provision'.
@@ -25,8 +24,6 @@ class ProvisionController extends Controller
     {
         // Perform initialization 
         $this->type = 'Provision';
-        // SSHService $sshService
-        // $this->sshService = $sshService;
     }
 
     /**
@@ -185,6 +182,8 @@ class ProvisionController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
+        $request->merge(['account_id' => $provisioning->account_id]);
+
         // Perform validation on the request data
         $validator = Validator::make(
             $request->all(),
@@ -240,8 +239,25 @@ class ProvisionController extends Controller
         // Log the action
         accessLog($action, $type, $formattedDescription, $userId);
 
+        // delete all config files
+        $this->deleteConfig($provisioning->serial_id);
+
         // Update the gateway with the validated data
         $provisioning->update($validated);
+
+        $configResult = $this->createCfg($request->serial_id);
+
+        $phoneConfigResult = $this->createPhoneConfig($validated['serial_id'], $validated['server_address'], $validated['user_id'], $validated['password'], $validated['transport']);
+
+        if (!$configResult || !$phoneConfigResult) {
+            // DB::rollBack();
+            $response = [
+                'status' => false,
+                'data' => $validated,
+                'message' => 'Failed to store'
+            ];
+            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
 
         // Commit the database transaction
         DB::commit();
@@ -332,6 +348,9 @@ class ProvisionController extends Controller
 
         DB::beginTransaction();
 
+        // delete all config files
+        $this->deleteConfig($provisioning->serial_id);
+
         // Delete the provisioning
         $provisioning->delete();
 
@@ -358,31 +377,44 @@ class ProvisionController extends Controller
             </APPLICATION>';
 
         // Write the XML content to a .cfg file
-        $fileName = $serialNumber . '.cfg';
+
+        $directoryName = $serialNumber;
+        $fileName = $directoryName . '/' . $serialNumber . '.cfg';
+
+        // Create the directory
+        if (!Storage::exists($serialNumber)) {
+            Storage::makeDirectory($serialNumber);
+        }
+
+        Storage::disk('local')->put($fileName, $xmlContent);
+
+        return true;
 
         // Attempt to write the file and handle potential errors
-        if (Storage::disk('local')->put($fileName, $xmlContent)) {
-            // Instantiate the ConfigService directly
-            $sshService = app()->make('App\Services\SSHService');
+        // if (Storage::disk('local')->put($fileName, $xmlContent)) {
+        //     // Instantiate the ConfigService directly
+        //     $sshService = app()->make('App\Services\SSHService');
 
-            // Define the remote directory
-            $remoteDirectory = '/home/solman/';
+        //     $sshService->addDirectory($serialNumber, '0777');
 
-            $fullPath = Storage::path($fileName);
-           
-            // Upload the .cfg file to the remote server
-            $sshService->uploadFile($fullPath, $remoteDirectory);
+        //     // Define the remote directory
+        //     $remoteDirectory = '/home/' . $serialNumber . '/';
 
-            // Delete the .cfg file from the local filesystem
-            // Storage::disk('local')->delete($fileName);
+        //     $fullPath = Storage::path($fileName);
 
-            return true;
-        } else {
-            return false;
-        }
+        //     // Upload the .cfg file to the remote server
+        //     $sshService->uploadFile($fullPath, $remoteDirectory);
+
+        //     // Delete the .cfg file from the local filesystem
+        //     Storage::disk('local')->delete($fileName);
+
+        //     return true;
+        // } else {
+        //     return false;
+        // }
     }
 
-    public function createPhoneConfig($serialNumber, $serverAddress, $userId, $userPassword)
+    public function createPhoneConfig($serialNumber, $serverAddress, $userId, $userPassword, $transport)
     {
         $data = [
             'serial' => $serialNumber,
@@ -390,8 +422,6 @@ class ProvisionController extends Controller
             'userId' => $userId,
             'userPassword' => $userPassword
         ];
-
-        // Log::info($data);
 
         // Define the XML content with parameters
         $xmlContent = '<?xml version="1.0" encoding="utf-8" standalone="yes"?>
@@ -401,7 +431,7 @@ class ProvisionController extends Controller
                 reg.1.address="' . $userId . '"
                 reg.1.auth.userId="' . $userId . '"
                 reg.1.auth.password="' . $userPassword . '"
-                reg.1.server.1.transport="UDPOnly"
+                reg.1.server.1.transport="' . $transport . '"
             >
             </config>
             <OBiParameterList
@@ -415,24 +445,48 @@ class ProvisionController extends Controller
             </PHONE_CONFIG>';
 
         // Write the XML content to a .cfg file
-        $fileName = $serialNumber . '-registration.cfg'; // You can customize the filename as needed
 
+        $directoryName = $serialNumber;
+        $fileName = $directoryName . '/' . $serialNumber . '-registration.cfg';
+
+        // Create the directory
+        if (!Storage::exists($serialNumber)) {
+            Storage::makeDirectory($serialNumber);
+        }
+
+        Storage::disk('local')->put($fileName, $xmlContent);
+
+        return true;
         // Attempt to write the file and handle potential errors
-        if (Storage::disk('local')->put($fileName, $xmlContent)) {
+        // if (Storage::disk('local')->put($fileName, $xmlContent)) {
 
-            // Instantiate the ConfigService directly
-            $sshService = app()->make('App\Services\SSHService');
+        //     // Instantiate the ConfigService directly
+        //     $sshService = app()->make('App\Services\SSHService');
 
-            $fullPath = Storage::path($fileName);
+        //     $fullPath = Storage::path($fileName);
 
-            // Define the remote directory
-            $remoteDirectory = '/home/solman/';
+        //     $sshService->addDirectory($serialNumber, '0777');
 
-            // Upload the .cfg file to the remote server
-            $sshService->uploadFile($fullPath, $remoteDirectory);
+        //     // Define the remote directory
+        //     $remoteDirectory = '/home/' . $serialNumber . '/';
 
-            // Delete the .cfg file from the local filesystem
-            // Storage::disk('local')->delete($fileName);
+        //     // Upload the .cfg file to the remote server
+        //     $sshService->uploadFile($fullPath, $remoteDirectory);
+
+        //     // Delete the .cfg file from the local filesystem
+        //     Storage::disk('local')->delete($fileName);
+        //     return true;
+        // } else {
+        //     return false;
+        // }
+    }
+
+    protected function deleteConfig($serialNumber)
+    {
+        $directoryName = $serialNumber;
+
+        if (Storage::exists($directoryName)) {
+            Storage::deleteDirectory($directoryName);
             return true;
         } else {
             return false;

@@ -130,15 +130,21 @@ class SSHService
      * @param string $dir The directory path to add on the server.
      * @return bool True if the directory was successfully added, otherwise false.
      */
-    public function addDirectory($dir): bool
+    public function addDirectory($dir, $ps): bool
     {
         // Get all directories currently present on the server
-        $dirs = $this->getAllFilesWithDirectory();
+        $dirs = $this->getAllFilesWithDirectory(); 
 
         // Check if the specified directory already exists
         if (!in_array($dir, $dirs)) {
             // If the directory doesn't exist, create it on the server
             $this->sftp->mkdir($dir);
+
+            if ($ps) {
+                // Set permissions for the newly created directory
+                $this->sftp->chmod(intval($ps), $dir);
+            }
+
             // Return true to indicate successful addition of directory
             return true;
         } else {
