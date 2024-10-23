@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Device;
 use App\Models\Extension;
 use App\Models\Provisioning;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -76,7 +78,7 @@ class ProvisionController extends Controller
             $request->all(),
             [
                 'account_id' => 'exists:accounts,id',
-                'serial_id' => 'required|regex:/^[a-zA-Z0-9]+$/', // Alphanumeric validation
+                'serial_number' => 'required|regex:/^[a-zA-Z0-9]+$/', // Alphanumeric validation
                 'address' => [
                     'required',
                     Rule::exists('extensions', 'id')->where(function ($query) use ($request) {
@@ -104,7 +106,7 @@ class ProvisionController extends Controller
 
         $validated = [
             'account_id' => $request->account_id,
-            'serial_id' => $request->serial_id,
+            'serial_number' => $request->serial_number,
             'server_address' => '192.168.2.225',
             'address' => $ext->extension,
             'user_id' => $ext->extension,
@@ -125,9 +127,9 @@ class ProvisionController extends Controller
         // Log the action
         accessLog($action, $this->type, $validated, $userId);
 
-        $configResult = $this->createCfg($request->serial_id);
+        $configResult = $this->createCfg($request->serial_number);
 
-        $phoneConfigResult = $this->createPhoneConfig($validated['serial_id'], $validated['server_address'], $validated['user_id'], $validated['password']);
+        $phoneConfigResult = $this->createPhoneConfig($validated['serial_number'], $validated['server_address'], $validated['user_id'], $validated['password'], $validated['transport']);
 
         if (!$configResult || !$phoneConfigResult) {
             // DB::rollBack();
@@ -189,7 +191,7 @@ class ProvisionController extends Controller
             $request->all(),
             [
                 'account_id' => 'exists:accounts,id',
-                'serial_id' => 'string|regex:/^[a-zA-Z0-9]+$/', // Alphanumeric validation
+                'serial_number' => 'string|regex:/^[a-zA-Z0-9]+$/', // Alphanumeric validation
                 'address' => [
                     Rule::exists('extensions', 'id')->where(function ($query) use ($request) {
                         $query->where('account_id', $request->account_id);
@@ -217,7 +219,7 @@ class ProvisionController extends Controller
         // Retrieve the validated input
         $validated = [
             'account_id' => $request->account_id,
-            'serial_id' => $request->serial_id,
+            'serial_number' => $request->serial_number,
             'server_address' => '192.168.2.225',
             'address' => $ext->extension,
             'user_id' => $ext->extension,
@@ -240,14 +242,14 @@ class ProvisionController extends Controller
         accessLog($action, $type, $formattedDescription, $userId);
 
         // delete all config files
-        $this->deleteConfig($provisioning->serial_id);
+        $this->deleteConfig($provisioning->serial_number);
 
         // Update the gateway with the validated data
         $provisioning->update($validated);
 
-        $configResult = $this->createCfg($request->serial_id);
+        $configResult = $this->createCfg($request->serial_number);
 
-        $phoneConfigResult = $this->createPhoneConfig($validated['serial_id'], $validated['server_address'], $validated['user_id'], $validated['password'], $validated['transport']);
+        $phoneConfigResult = $this->createPhoneConfig($validated['serial_number'], $validated['server_address'], $validated['user_id'], $validated['password'], $validated['transport']);
 
         if (!$configResult || !$phoneConfigResult) {
             // DB::rollBack();
@@ -349,7 +351,7 @@ class ProvisionController extends Controller
         DB::beginTransaction();
 
         // delete all config files
-        $this->deleteConfig($provisioning->serial_id);
+        $this->deleteConfig($provisioning->serial_number);
 
         // Delete the provisioning
         $provisioning->delete();
@@ -491,5 +493,78 @@ class ProvisionController extends Controller
         } else {
             return false;
         }
+    }
+
+    public function deviceResponse(Request $request)
+    {
+        $userAgent = $request->header('User-Agent');
+
+        // Extract the serial number
+        preg_match('/\((.*?)\)/', $userAgent, $serialMatch);
+        $serialNumber = $serialMatch[1] ?? null; // Will be '482567391BB0'
+
+        // Extract the model name
+        preg_match('/^(.*?)-/', $userAgent, $modelMatch);
+        $modelName = $modelMatch[1] ?? null; // Will be 'Poly/PolyEdgeB20'
+
+        // Extract the version number
+        preg_match('/-(\d+\.\d+\.\d+\.\d+)/', $userAgent, $versionMatch);
+        $versionNumber = $versionMatch[1] ?? null; // Will be '1.1.0.6355'
+
+        // Log the user agent
+        // Log::info('User Agent:', [
+        //     // 'agent' => $userAgent,
+        //     'serialNumber' => $serialNumber,
+        //     'modelName' => $modelName,
+        //     'versionNumber' => $versionNumber,
+        // ]);
+
+        $check = Provisioning::where('serial_number', $serialNumber)->first();
+
+        if ($check) {
+
+            $account_id = $check->account_id;
+
+            $validated = [
+                'account_id' => $account_id,
+                'brand_model' => $modelName,
+                'serial_number' => $serialNumber,
+                'firmware_version' => $versionNumber,
+            ];
+
+            $match = [
+                'account_id' => $account_id
+            ];
+
+            // Check if the device is already provisioned
+            $device = Device::where(['account_id' => $account_id, 'serial_number' => $serialNumber])->first();
+
+            if ($device) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Device already provisioned',
+                ]);
+            }
+
+            DB::beginTransaction();
+
+            // Store the mail setting in the database
+            Device::updateOrCreate($match, $validated);
+
+            DB::commit();
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Device is not configured properly. Please contact support.',
+            ]);
+        }
+
+        // Handle the request and prepare the response
+        $response = [
+            'status' => 'success',
+            'message' => 'Provisioning successful',
+        ];
+
+        return response()->json($response, Response::HTTP_OK);
     }
 }

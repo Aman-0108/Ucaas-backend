@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateProvisioningsTable extends Migration
+class CreateDevicesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,16 +13,12 @@ class CreateProvisioningsTable extends Migration
      */
     public function up()
     {
-        Schema::create('provisionings', function (Blueprint $table) {
+        Schema::create('devices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('account_id')->references('id')->on('accounts')->onUpdate('cascade')->onDelete('cascade');
+            $table->string('brand_model');
+            $table->string('firmware_version')->nullable();
             $table->string('serial_number');
-            $table->string('server_address');
-            $table->string('address');
-            $table->string('user_id');
-            $table->string('password');
-            $table->enum('transport', ['TCPpreferred', 'UDPOnly','TLS', 'TCPOnly'])->default('UDPOnly');
-            $table->string('port');
             $table->timestamps();
         });
     }
@@ -34,6 +30,6 @@ class CreateProvisioningsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('provisionings');
+        Schema::dropIfExists('devices');
     }
 }
