@@ -951,9 +951,10 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::delete('destroy/{id}', 'destroy');
         });
     });
-
-    Route::get('/provisioning', [ProvisionController::class, 'deviceResponse']);
+   
 });
+
+Route::get('/provisioning/{file}', [ProvisionController::class, 'deviceResponse']);
 
 // Stripe
 Route::controller(StripeController::class)->group(function () {

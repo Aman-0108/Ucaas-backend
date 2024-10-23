@@ -495,23 +495,30 @@ class ProvisionController extends Controller
         }
     }
 
-    public function deviceResponse(Request $request)
+    public function deviceResponse($file)
     {
-        $userAgent = $request->header('User-Agent');
+        // $userAgent = $request->header('User-Agent');
 
-        // Extract the serial number
-        preg_match('/\((.*?)\)/', $userAgent, $serialMatch);
-        $serialNumber = $serialMatch[1] ?? null; // Will be '482567391BB0'
+        $ipAddress = request()->ip();
 
-        // Extract the model name
-        preg_match('/^(.*?)-/', $userAgent, $modelMatch);
-        $modelName = $modelMatch[1] ?? null; // Will be 'Poly/PolyEdgeB20'
+        Log::info('IP Address:', [
+            'file' => $file,
+            'ipAddress' => $ipAddress,
+        ]);
 
-        // Extract the version number
-        preg_match('/-(\d+\.\d+\.\d+\.\d+)/', $userAgent, $versionMatch);
-        $versionNumber = $versionMatch[1] ?? null; // Will be '1.1.0.6355'
+        // // Extract the serial number
+        // preg_match('/\((.*?)\)/', $userAgent, $serialMatch);
+        // $serialNumber = $serialMatch[1] ?? null; // Will be '482567391BB0'
 
-        // Log the user agent
+        // // Extract the model name
+        // preg_match('/^(.*?)-/', $userAgent, $modelMatch);
+        // $modelName = $modelMatch[1] ?? null; // Will be 'Poly/PolyEdgeB20'
+
+        // // Extract the version number
+        // preg_match('/-(\d+\.\d+\.\d+\.\d+)/', $userAgent, $versionMatch);
+        // $versionNumber = $versionMatch[1] ?? null; // Will be '1.1.0.6355'
+
+        // // Log the user agent
         // Log::info('User Agent:', [
         //     // 'agent' => $userAgent,
         //     'serialNumber' => $serialNumber,
@@ -519,52 +526,52 @@ class ProvisionController extends Controller
         //     'versionNumber' => $versionNumber,
         // ]);
 
-        $check = Provisioning::where('serial_number', $serialNumber)->first();
+        // $check = Provisioning::where('serial_number', $serialNumber)->first();
 
-        if ($check) {
+        // if ($check) {
 
-            $account_id = $check->account_id;
+        //     $account_id = $check->account_id;
 
-            $validated = [
-                'account_id' => $account_id,
-                'brand_model' => $modelName,
-                'serial_number' => $serialNumber,
-                'firmware_version' => $versionNumber,
-            ];
+        //     $validated = [
+        //         'account_id' => $account_id,
+        //         'brand_model' => $modelName,
+        //         'serial_number' => $serialNumber,
+        //         'firmware_version' => $versionNumber,
+        //     ];
 
-            $match = [
-                'account_id' => $account_id
-            ];
+        //     $match = [
+        //         'account_id' => $account_id
+        //     ];
 
-            // Check if the device is already provisioned
-            $device = Device::where(['account_id' => $account_id, 'serial_number' => $serialNumber])->first();
+        //     // Check if the device is already provisioned
+        //     $device = Device::where(['account_id' => $account_id, 'serial_number' => $serialNumber])->first();
 
-            if ($device) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Device already provisioned',
-                ]);
-            }
+        //     if ($device) {
+        //         return response()->json([
+        //             'status' => 'error',
+        //             'message' => 'Device already provisioned',
+        //         ]);
+        //     }
 
-            DB::beginTransaction();
+        //     DB::beginTransaction();
 
-            // Store the mail setting in the database
-            Device::updateOrCreate($match, $validated);
+        //     // Store the mail setting in the database
+        //     Device::updateOrCreate($match, $validated);
 
-            DB::commit();
-        } else {
-            return response()->json([
-                'status' => false,
-                'message' => 'Device is not configured properly. Please contact support.',
-            ]);
-        }
+        //     DB::commit();
+        // } else {
+        //     return response()->json([
+        //         'status' => false,
+        //         'message' => 'Device is not configured properly. Please contact support.',
+        //     ]);
+        // }
 
-        // Handle the request and prepare the response
-        $response = [
-            'status' => 'success',
-            'message' => 'Provisioning successful',
-        ];
+        // // Handle the request and prepare the response
+        // $response = [
+        //     'status' => 'success',
+        //     'message' => 'Provisioning successful',
+        // ];
 
-        return response()->json($response, Response::HTTP_OK);
+        // return response()->json($response, Response::HTTP_OK);
     }
 }
