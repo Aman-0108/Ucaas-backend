@@ -6,10 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Device;
 use App\Models\Extension;
 use App\Models\Provisioning;
+use App\Traits\GeneratesXmlConfig;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Log;
 
 class ProvisionController extends Controller
 {
+    use GeneratesXmlConfig;
+
     protected $type;
 
     /**
@@ -373,6 +375,13 @@ class ProvisionController extends Controller
 
     public function createCfg($serialNumber)
     {
+        $parentDir = 'provisions';
+
+        // Create the directory
+        if (!Storage::exists($parentDir)) {
+            Storage::makeDirectory($parentDir);
+        }
+
         // Define the XML content
         $xmlContent = '<?xml version="1.0" standalone="yes"?>
             <APPLICATION APP_FILE_PATH_EdgeB20="sip.ld" CONFIG_FILES_EdgeB20="' . $serialNumber . '-registration.cfg, phone1.cfg, sip.cfg, custom.cfg" MISC_FILES="" LOG_FILE_DIRECTORY="logs" OVERRIDES_DIRECTORY="overrides" CONTACTS_DIRECTORY="contacts" LICENSE_DIRECTORY="">
@@ -381,7 +390,7 @@ class ProvisionController extends Controller
         // Write the XML content to a .cfg file
 
         $directoryName = $serialNumber;
-        $fileName = $directoryName . '/' . $serialNumber . '.cfg';
+        $fileName = $parentDir . '/' . $directoryName . '/' . $serialNumber . '.cfg';
 
         // Create the directory
         if (!Storage::exists($serialNumber)) {
@@ -391,29 +400,6 @@ class ProvisionController extends Controller
         Storage::disk('local')->put($fileName, $xmlContent);
 
         return true;
-
-        // Attempt to write the file and handle potential errors
-        // if (Storage::disk('local')->put($fileName, $xmlContent)) {
-        //     // Instantiate the ConfigService directly
-        //     $sshService = app()->make('App\Services\SSHService');
-
-        //     $sshService->addDirectory($serialNumber, '0777');
-
-        //     // Define the remote directory
-        //     $remoteDirectory = '/home/' . $serialNumber . '/';
-
-        //     $fullPath = Storage::path($fileName);
-
-        //     // Upload the .cfg file to the remote server
-        //     $sshService->uploadFile($fullPath, $remoteDirectory);
-
-        //     // Delete the .cfg file from the local filesystem
-        //     Storage::disk('local')->delete($fileName);
-
-        //     return true;
-        // } else {
-        //     return false;
-        // }
     }
 
     public function createPhoneConfig($serialNumber, $serverAddress, $userId, $userPassword, $transport)
@@ -448,8 +434,15 @@ class ProvisionController extends Controller
 
         // Write the XML content to a .cfg file
 
+        $parentDir = 'provisions';
+
+        // Create the directory
+        if (!Storage::exists($parentDir)) {
+            Storage::makeDirectory($parentDir);
+        }
+
         $directoryName = $serialNumber;
-        $fileName = $directoryName . '/' . $serialNumber . '-registration.cfg';
+        $fileName = $parentDir . '/' . $directoryName . '/' . $serialNumber . '-registration.cfg';
 
         // Create the directory
         if (!Storage::exists($serialNumber)) {
@@ -459,28 +452,6 @@ class ProvisionController extends Controller
         Storage::disk('local')->put($fileName, $xmlContent);
 
         return true;
-        // Attempt to write the file and handle potential errors
-        // if (Storage::disk('local')->put($fileName, $xmlContent)) {
-
-        //     // Instantiate the ConfigService directly
-        //     $sshService = app()->make('App\Services\SSHService');
-
-        //     $fullPath = Storage::path($fileName);
-
-        //     $sshService->addDirectory($serialNumber, '0777');
-
-        //     // Define the remote directory
-        //     $remoteDirectory = '/home/' . $serialNumber . '/';
-
-        //     // Upload the .cfg file to the remote server
-        //     $sshService->uploadFile($fullPath, $remoteDirectory);
-
-        //     // Delete the .cfg file from the local filesystem
-        //     Storage::disk('local')->delete($fileName);
-        //     return true;
-        // } else {
-        //     return false;
-        // }
     }
 
     protected function deleteConfig($serialNumber)
@@ -497,81 +468,145 @@ class ProvisionController extends Controller
 
     public function deviceResponse($file)
     {
-        // $userAgent = $request->header('User-Agent');
+        $userAgent = request()->header('User-Agent');
+
+        Log::info($userAgent);
 
         $ipAddress = request()->ip();
 
-        Log::info('IP Address:', [
-            'file' => $file,
-            'ipAddress' => $ipAddress,
-        ]);
+        $basename = pathinfo($file, PATHINFO_FILENAME);
 
-        // // Extract the serial number
-        // preg_match('/\((.*?)\)/', $userAgent, $serialMatch);
-        // $serialNumber = $serialMatch[1] ?? null; // Will be '482567391BB0'
+        // Remove all '0's from the string
+        $onlyZeros = str_replace('0', '', $basename);
 
-        // // Extract the model name
-        // preg_match('/^(.*?)-/', $userAgent, $modelMatch);
-        // $modelName = $modelMatch[1] ?? null; // Will be 'Poly/PolyEdgeB20'
+        if (empty($onlyZeros)) {
+            return response()->json(['success' => false], 402);
+        }
 
-        // // Extract the version number
-        // preg_match('/-(\d+\.\d+\.\d+\.\d+)/', $userAgent, $versionMatch);
-        // $versionNumber = $versionMatch[1] ?? null; // Will be '1.1.0.6355'
+        // Extract the serial number
+        preg_match('/\((.*?)\)/', $userAgent, $serialMatch);
+        $serialNumber = $serialMatch[1] ?? null; // Will be '482567391BB0'
 
-        // // Log the user agent
-        // Log::info('User Agent:', [
-        //     // 'agent' => $userAgent,
-        //     'serialNumber' => $serialNumber,
-        //     'modelName' => $modelName,
-        //     'versionNumber' => $versionNumber,
-        // ]);
+        // Extract the model name
+        preg_match('/^(.*?)-/', $userAgent, $modelMatch);
+        $modelName = $modelMatch[1] ?? null; // Will be 'Poly/PolyEdgeB20'
 
-        // $check = Provisioning::where('serial_number', $serialNumber)->first();
+        // Extract the version number
+        preg_match('/-(\d+\.\d+\.\d+\.\d+)/', $userAgent, $versionMatch);
+        $versionNumber = $versionMatch[1] ?? null; // Will be '1.1.0.6355'
 
-        // if ($check) {
+        Log::info($userAgent);
 
-        //     $account_id = $check->account_id;
 
-        //     $validated = [
-        //         'account_id' => $account_id,
-        //         'brand_model' => $modelName,
-        //         'serial_number' => $serialNumber,
-        //         'firmware_version' => $versionNumber,
-        //     ];
+        $brand = getBrandName($modelName);
+        $modelNumber = deviceModelFormat($modelName);
 
-        //     $match = [
-        //         'account_id' => $account_id
-        //     ];
+        // Check if the file exists
+        $generatedPath = 'provision-templates/' . $brand . '/' . $modelNumber . '/{$mac}-registration.cfg';
 
-        //     // Check if the device is already provisioned
-        //     $device = Device::where(['account_id' => $account_id, 'serial_number' => $serialNumber])->first();
+        $generatedPath2 = 'provision-templates/' . $brand . '/' . $modelNumber . '/{$mac}.cfg';
 
-        //     if ($device) {
-        //         return response()->json([
-        //             'status' => 'error',
-        //             'message' => 'Device already provisioned',
-        //         ]);
-        //     }
+        $check = Provisioning::where('serial_number', $serialNumber)->first();
 
-        //     DB::beginTransaction();
+        if ($check) {
 
-        //     // Store the mail setting in the database
-        //     Device::updateOrCreate($match, $validated);
+            $account_id = $check->account_id;
 
-        //     DB::commit();
-        // } else {
-        //     return response()->json([
-        //         'status' => false,
-        //         'message' => 'Device is not configured properly. Please contact support.',
-        //     ]);
-        // }
+            $validated = [
+                'account_id' => $account_id,
+                'brand_model' => $modelName,
+                'serial_number' => $serialNumber,
+                'firmware_version' => $versionNumber,
+            ];
 
-        // // Handle the request and prepare the response
-        // $response = [
-        //     'status' => 'success',
-        //     'message' => 'Provisioning successful',
-        // ];
+            $match = [
+                'account_id' => $account_id
+            ];
 
-        // return response()->json($response, Response::HTTP_OK);
+            // Check if the device is already provisioned
+            $device = Device::where(['account_id' => $account_id, 'serial_number' => $serialNumber])->first();
+
+            if ($device) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Device already provisioned',
+                ]);
+            }
+
+            DB::beginTransaction();
+
+            // Store the mail setting in the database
+            Device::updateOrCreate($match, $validated);
+
+            DB::commit();
+
+            if (Storage::disk('local')->exists($generatedPath2)) {
+                Log::info('File exists');
+                // Read the file contents
+                $fileContents2 = Storage::disk('local')->get($generatedPath2);
+
+                $fileContents2 = str_replace(
+                    ['{$mac}'],
+                    [$serialNumber],
+                    $fileContents2
+                );
+
+                header("Content-Type: text/xml; charset=utf-8");
+
+                // Return the modified content as XML
+                echo $fileContents2;
+
+                Log::info('File contents2: ' . $fileContents2);
+            }
+
+
+            if (Storage::disk('local')->exists($generatedPath)) {
+                Log::info('File exists');
+                // Read the file contents
+                $fileContents = Storage::disk('local')->get($generatedPath);
+
+                // Replace the placeholders with actual values
+                $serverAddress = $check->server_address; // Replace with your actual value
+                $userId = $check->user_id; // Replace with your actual value
+                $userPassword = $check->password; // Replace with your actual value
+
+                $fileContents = str_replace(
+                    ['{$server_address_1}', '{$user_id_1}', '{$user_password_1}'],
+                    [$serverAddress, $userId, $userPassword],
+                    $fileContents
+                );
+
+                // Set the appropriate headers for XML response
+                // header('Content-Type: application/xml; charset=utf-8');
+                header("Content-Type: text/xml; charset=utf-8");
+
+                // Return the modified content as XML
+                echo $fileContents;
+
+                Log::info('File contents: ' . $fileContents);
+            } 
+
+
+
+            // Generate XML
+            // $xmlContent = $this->generateXmlConfig($data);
+
+            // Return the XML response
+            // return response($xmlContent, 200)
+            //     ->header('Content-Type', 'application/xml');
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Device is not configured properly. Please contact support.',
+            ]);
+        }
+
+        // Handle the request and prepare the response
+        $response = [
+            'status' => 'success',
+            'message' => 'Provisioning successful',
+        ];
+
+        return response()->json($response, Response::HTTP_OK);
     }
 }

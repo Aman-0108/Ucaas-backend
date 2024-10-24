@@ -29,7 +29,7 @@ class ChannelHangupCompleteListener
     {
         $formattedData = $response->events;
 
-        Log::info($formattedData);
+        // Log::info($formattedData);
 
         $account_id = $formattedData['account_id'];
 

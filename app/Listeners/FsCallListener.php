@@ -129,6 +129,26 @@ class FsCallListener
             $response['Hangup-Cause'] = $data['Hangup-Cause'];
         }
 
+        if (array_key_exists("Hangup-Cause", $data)) {
+            $response['Hangup-Cause'] = $data['Hangup-Cause'];
+        }
+
+        if (array_key_exists("Hangup-Cause", $data)) {
+            $response['Hangup-Cause'] = $data['Hangup-Cause'];
+        }
+
+        if (array_key_exists("Caller-Caller-ID-Number", $data)) {
+            $response['origin'] = $data['Caller-Caller-ID-Number'];
+        }
+
+        if (array_key_exists("Other-Leg-Destination-Number", $data)) {
+            $response['destination'] = $data['Other-Leg-Destination-Number'];
+        } else {
+            if (array_key_exists("Caller-Destination-Number", $data)) {
+                $response['destination'] = $data['Caller-Destination-Number'];
+            }
+        }
+
         // Prepare a customized response format
         $customizedResponse = [
             'key' => 'CallState',

@@ -198,8 +198,6 @@ if (!function_exists('channelHangupCompleteDataFormat')) {
             $response['variable_sip_to_host'] = $data['variable_sip_to_host'];
         }
 
-        // Log::info(json_encode($eventData, true));
-
         if (array_key_exists("variable_sip_call_id", $data)) {
             $response['variable_sip_call_id'] = $data['variable_sip_call_id'];
         }
@@ -513,4 +511,34 @@ if (!function_exists('addQuotesIfHasSpace')) {
         // Return the original string if no spaces are found
         return $string;
     }
+}
+
+/**
+ * Format a device model string to be used in the device
+ * configuration file name.
+ *
+ * @param string $model The device model string to be formatted
+ *
+ * @return string The formatted device model string
+ */
+function deviceModelFormat($model)
+{
+    // Extract the part before the slash
+    $parts = explode('/', $model);
+    $afterSlash = $parts[1]; // Get the last part
+
+    // Step 2: Insert dashes before uppercase letters (except the first character)
+    $withDashes = preg_replace('/(?<!^)(?=[A-Z])/', '-', $afterSlash);
+
+    // Convert to lowercase
+    return strtolower($withDashes);
+}
+
+function getBrandName($model)
+{
+    // Extract the part before the slash
+    $parts = explode('/', $model);
+    $brandName = strtolower($parts[0]); // Get the first part
+
+    return strtolower($brandName);
 }
