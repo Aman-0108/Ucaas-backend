@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Device;
+use App\Models\Domain;
 use App\Models\Extension;
 use App\Models\Provisioning;
 use App\Traits\GeneratesXmlConfig;
@@ -129,19 +130,19 @@ class ProvisionController extends Controller
         // Log the action
         accessLog($action, $this->type, $validated, $userId);
 
-        $configResult = $this->createCfg($request->serial_number);
+        // $configResult = $this->createCfg($request->serial_number);
 
-        $phoneConfigResult = $this->createPhoneConfig($validated['serial_number'], $validated['server_address'], $validated['user_id'], $validated['password'], $validated['transport']);
+        // $phoneConfigResult = $this->createPhoneConfig($validated['serial_number'], $validated['server_address'], $validated['user_id'], $validated['password'], $validated['transport']);
 
-        if (!$configResult || !$phoneConfigResult) {
-            // DB::rollBack();
-            $response = [
-                'status' => false,
-                'data' => $data,
-                'message' => 'Failed to store'
-            ];
-            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
+        // if (!$configResult || !$phoneConfigResult) {
+        //     // DB::rollBack();
+        //     $response = [
+        //         'status' => false,
+        //         'data' => $data,
+        //         'message' => 'Failed to store'
+        //     ];
+        //     return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR);
+        // }
 
         DB::commit();
 
@@ -244,24 +245,24 @@ class ProvisionController extends Controller
         accessLog($action, $type, $formattedDescription, $userId);
 
         // delete all config files
-        $this->deleteConfig($provisioning->serial_number);
+        // $this->deleteConfig($provisioning->serial_number);
 
         // Update the gateway with the validated data
         $provisioning->update($validated);
 
-        $configResult = $this->createCfg($request->serial_number);
+        // $configResult = $this->createCfg($request->serial_number);
 
-        $phoneConfigResult = $this->createPhoneConfig($validated['serial_number'], $validated['server_address'], $validated['user_id'], $validated['password'], $validated['transport']);
+        // $phoneConfigResult = $this->createPhoneConfig($validated['serial_number'], $validated['server_address'], $validated['user_id'], $validated['password'], $validated['transport']);
 
-        if (!$configResult || !$phoneConfigResult) {
-            // DB::rollBack();
-            $response = [
-                'status' => false,
-                'data' => $validated,
-                'message' => 'Failed to store'
-            ];
-            return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
+        // if (!$configResult || !$phoneConfigResult) {
+        //     // DB::rollBack();
+        //     $response = [
+        //         'status' => false,
+        //         'data' => $validated,
+        //         'message' => 'Failed to store'
+        //     ];
+        //     return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR);
+        // }
 
         // Commit the database transaction
         DB::commit();
@@ -353,7 +354,7 @@ class ProvisionController extends Controller
         DB::beginTransaction();
 
         // delete all config files
-        $this->deleteConfig($provisioning->serial_number);
+        // $this->deleteConfig($provisioning->serial_number);
 
         // Delete the provisioning
         $provisioning->delete();
@@ -470,18 +471,12 @@ class ProvisionController extends Controller
     {
         $userAgent = request()->header('User-Agent');
 
-        Log::info($userAgent);
-
         $ipAddress = request()->ip();
 
         $basename = pathinfo($file, PATHINFO_FILENAME);
 
         // Remove all '0's from the string
         $onlyZeros = str_replace('0', '', $basename);
-
-        if (empty($onlyZeros)) {
-            return response()->json(['success' => false], 402);
-        }
 
         // Extract the serial number
         preg_match('/\((.*?)\)/', $userAgent, $serialMatch);
@@ -493,18 +488,19 @@ class ProvisionController extends Controller
 
         // Extract the version number
         preg_match('/-(\d+\.\d+\.\d+\.\d+)/', $userAgent, $versionMatch);
-        $versionNumber = $versionMatch[1] ?? null; // Will be '1.1.0.6355'
-
-        Log::info($userAgent);
-
+        $versionNumber = $versionMatch[1] ?? null; // Will be '1.1.0.6355'       
 
         $brand = getBrandName($modelName);
         $modelNumber = deviceModelFormat($modelName);
 
-        // Check if the file exists
-        $generatedPath = 'provision-templates/' . $brand . '/' . $modelNumber . '/{$mac}-registration.cfg';
+        $mac = strtolower($serialNumber);
 
-        $generatedPath2 = 'provision-templates/' . $brand . '/' . $modelNumber . '/{$mac}.cfg';
+        // Check if the file exists
+        $registrationTemplate = 'provision-templates/' . $brand . '/' . $modelNumber . '/{$mac}-registration.cfg';
+        $regTemplateExists = Storage::disk('local')->exists($registrationTemplate);
+
+        $macConfigureTemplate = 'provision-templates/' . $brand . '/' . $modelNumber . '/{$mac}.cfg';
+        $macTemplateExists = Storage::disk('local')->exists($macConfigureTemplate);
 
         $check = Provisioning::where('serial_number', $serialNumber)->first();
 
@@ -524,14 +520,7 @@ class ProvisionController extends Controller
             ];
 
             // Check if the device is already provisioned
-            $device = Device::where(['account_id' => $account_id, 'serial_number' => $serialNumber])->first();
-
-            if ($device) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Device already provisioned',
-                ]);
-            }
+            Device::where(['account_id' => $account_id, 'serial_number' => $serialNumber])->first();
 
             DB::beginTransaction();
 
@@ -540,60 +529,53 @@ class ProvisionController extends Controller
 
             DB::commit();
 
-            if (Storage::disk('local')->exists($generatedPath2)) {
-                Log::info('File exists');
+            if (empty($onlyZeros) && $macTemplateExists) {
+
+                Log::info('configuration File exists');
                 // Read the file contents
-                $fileContents2 = Storage::disk('local')->get($generatedPath2);
+                $macConfigureXml = Storage::disk('local')->get($macConfigureTemplate);
 
-                $fileContents2 = str_replace(
-                    ['{$mac}'],
-                    [$serialNumber],
-                    $fileContents2
-                );
+                $macConfigureXml = str_replace(['{$mac}'], [$mac], $macConfigureXml);
 
-                header("Content-Type: text/xml; charset=utf-8");
+                // Define the new file name
+                $newFileName = "generatedXml/{$mac}.xml"; // Adjust the file name as needed
 
-                // Return the modified content as XML
-                echo $fileContents2;
+                // Save the modified XML content to a new file
+                // Storage::disk('local')->put($newFileName, $macConfigureXml);
 
-                Log::info('File contents2: ' . $fileContents2);
+                return response($macConfigureXml, 200)->header('Content-Type', 'application/xml');
             }
 
-
-            if (Storage::disk('local')->exists($generatedPath)) {
-                Log::info('File exists');
+            if (strpos($basename, 'registration') !== false && $regTemplateExists) {
+                Log::info('registration File exists');
                 // Read the file contents
-                $fileContents = Storage::disk('local')->get($generatedPath);
+                $fileContents = Storage::disk('local')->get($registrationTemplate);
+
+                $domain = Domain::where('account_id', $account_id)->first();
+               
 
                 // Replace the placeholders with actual values
-                $serverAddress = $check->server_address; // Replace with your actual value
+                // $serverAddress = $check->server_address . ':' . $check->port; // Replace with your actual value
+                $serverAddress = '192.168.2.225'; // Replace with your actual value
                 $userId = $check->user_id; // Replace with your actual value
                 $userPassword = $check->password; // Replace with your actual value
+                $user_address = $userId . '@' . $domain->domain_name;
+                $user_transport = $check->transport;
 
-                $fileContents = str_replace(
-                    ['{$server_address_1}', '{$user_id_1}', '{$user_password_1}'],
-                    [$serverAddress, $userId, $userPassword],
+                $registrationXml = str_replace(
+                    ['{$server_address_1}', '{$user_address}', '{$user_id_1}', '{$user_password_1}', '{$user_port}', '{$user_transport}'],
+                    [$serverAddress, $user_address, $userId, $userPassword, $check->port, $user_transport],
                     $fileContents
                 );
 
-                // Set the appropriate headers for XML response
-                // header('Content-Type: application/xml; charset=utf-8');
-                header("Content-Type: text/xml; charset=utf-8");
+                // Define the new file name
+                $newFileName = "generatedXml/{$mac}-registration.xml"; // Adjust the file name as needed
 
-                // Return the modified content as XML
-                echo $fileContents;
+                // Save the modified XML content to a new file
+                Storage::disk('local')->put($newFileName, $registrationXml);
 
-                Log::info('File contents: ' . $fileContents);
-            } 
-
-
-
-            // Generate XML
-            // $xmlContent = $this->generateXmlConfig($data);
-
-            // Return the XML response
-            // return response($xmlContent, 200)
-            //     ->header('Content-Type', 'application/xml');
+                return response($registrationXml, 200)->header('Content-Type', 'application/xml');
+            }
         } else {
             return response()->json([
                 'status' => false,
