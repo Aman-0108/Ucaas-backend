@@ -149,6 +149,15 @@ class FsCallListener
             }
         }
 
+        // Event-Date-Local
+        if (array_key_exists("Event-Date-Local", $data)) {
+            $response['time'] = $data['Event-Date-Local'];
+        }
+
+        if (array_key_exists("Call-Direction", $data)) {
+            $response['Call-Direction'] = $data['Call-Direction'];
+        }
+
         // Prepare a customized response format
         $customizedResponse = [
             'key' => 'CallState',
