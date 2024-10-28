@@ -853,6 +853,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             // To destroy the fax file by Id
             Route::delete('destroy/{id}', 'destroy');
         });
+
+        Route::post('/send-fax', [FaxController::class, 'sendFax']);
     });
 
     // Mail settings
@@ -951,11 +953,13 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::delete('destroy/{id}', 'destroy');
         });
     });
+
+
    
 });
 
 Route::get('/provisioning/{file}', [ProvisionController::class, 'deviceResponse']);
-Route::post('/send-fax', [FaxController::class, 'sendFax']);
+
 
 // Stripe
 Route::controller(StripeController::class)->group(function () {
