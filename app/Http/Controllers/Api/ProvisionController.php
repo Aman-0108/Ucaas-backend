@@ -128,21 +128,7 @@ class ProvisionController extends Controller
         $data = Provisioning::updateOrCreate($match, $validated);
 
         // Log the action
-        accessLog($action, $this->type, $validated, $userId);
-
-        // $configResult = $this->createCfg($request->serial_number);
-
-        // $phoneConfigResult = $this->createPhoneConfig($validated['serial_number'], $validated['server_address'], $validated['user_id'], $validated['password'], $validated['transport']);
-
-        // if (!$configResult || !$phoneConfigResult) {
-        //     // DB::rollBack();
-        //     $response = [
-        //         'status' => false,
-        //         'data' => $data,
-        //         'message' => 'Failed to store'
-        //     ];
-        //     return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR);
-        // }
+        accessLog($action, $this->type, $validated, $userId);        
 
         DB::commit();
 
@@ -249,20 +235,6 @@ class ProvisionController extends Controller
 
         // Update the gateway with the validated data
         $provisioning->update($validated);
-
-        // $configResult = $this->createCfg($request->serial_number);
-
-        // $phoneConfigResult = $this->createPhoneConfig($validated['serial_number'], $validated['server_address'], $validated['user_id'], $validated['password'], $validated['transport']);
-
-        // if (!$configResult || !$phoneConfigResult) {
-        //     // DB::rollBack();
-        //     $response = [
-        //         'status' => false,
-        //         'data' => $validated,
-        //         'message' => 'Failed to store'
-        //     ];
-        //     return response()->json($response, Response::HTTP_INTERNAL_SERVER_ERROR);
-        // }
 
         // Commit the database transaction
         DB::commit();
@@ -559,7 +531,7 @@ class ProvisionController extends Controller
                 $serverAddress = '192.168.2.225'; // Replace with your actual value
                 $userId = $check->user_id; // Replace with your actual value
                 $userPassword = $check->password; // Replace with your actual value
-                $user_address = $userId . '@' . $domain->domain_name;
+                $user_address = $userId . '@' . $domain->domain_name . ':' . $check->port;
                 $user_transport = $check->transport;
 
                 $registrationXml = str_replace(

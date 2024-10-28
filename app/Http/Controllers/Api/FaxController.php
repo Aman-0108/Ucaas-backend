@@ -101,7 +101,7 @@ class FaxController extends Controller
             $request->all(),
             [
                 'account_id' => 'required|exists:accounts,id',
-                'file_path' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048',
+                'file_path' => 'required|file|mimes:doc,docx,pdf|max:2048',
             ]
         );
 
@@ -195,7 +195,7 @@ class FaxController extends Controller
             $request->all(),
             [
                 'account_id' => 'exists:accounts,id',
-                'file_path' => 'file|mimes:jpg,jpeg,png,doc,docx,xls,xlsx,pdf|max:2048'
+                'file_path' => 'file|mimes:doc,docx,pdf|max:2048'
             ]
         );
 
