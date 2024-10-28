@@ -1198,7 +1198,7 @@ class FreeSwitchController extends Controller
 
             // Filter for inbound calls with the status "ACTIVE"
             $filteredCalls = array_filter($activeCalls, function ($call) {
-                return $call['callstate'] === 'ACTIVE' || $call['callee_direction'] === 'ACTIVE' || $call['callstate'] === 'RINGING';                
+                return $call['callstate'] === 'ACTIVE' || $call['callee_direction'] === 'ACTIVE' || $call['callstate'] === 'RINGING';
             });
 
             // // Re-index array numerically
@@ -1663,5 +1663,44 @@ class FreeSwitchController extends Controller
         } else {
             return $this->disconnected();
         }
+    }
+
+    public function sendFax(Request $request)
+    {
+        if ($this->connected) {
+
+            $origination_caller_id_number = $request->origination_caller_id_number;
+            $origination_caller_id_name = $request->origination_caller_id_name;
+            $fax_ident = $request->fax_ident;
+            $fax_header = $request->fax_header;
+            $destination_caller_id_number = $request->destination_caller_id_number;
+            $fax_file = $request->fax_file;
+
+            $cmd = "originate {absolute_codec_string=PCMU,GSM,origination_caller_id_number=$origination_caller_id_number,origination_caller_id_name=$origination_caller_id_name,fax_ident=$fax_ident,fax_header=$fax_header}sofia/gateway/1/$destination_caller_id_number   &txfax($fax_file)";
+
+            Log::info($cmd);
+
+            // Check call state
+            $response = $this->socket->request($cmd);
+
+            // Check if the response contains "+OK"
+            if (strpos($response, "+OK") !== false) {
+                // Prepare the response data
+                $response = [
+                    'status' => true, // Indicates the success status of the request
+                    'data' => $response,
+                    'message' => 'Successfully send fax',
+                ];
+                // Return the response as JSON with HTTP status code 200 (OK)
+                return response()->json($response, Response::HTTP_OK);
+            }
+        } else {
+            // If the socket is not connected, return an error response
+            return $this->disconnected();
+        }
+
+        $response = $this->socket->request($api);
+
+        return $response;
     }
 }

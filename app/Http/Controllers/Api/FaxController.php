@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\DidDetail;
 use App\Models\FaxFile;
 use Exception;
 use Illuminate\Http\Request;
@@ -332,11 +333,14 @@ class FaxController extends Controller
 
     public function sendFax(Request $request)
     {
+        $account_id = $request->user()->account_id;
+
         // Perform validation on the request data
         $validator = Validator::make(
             $request->all(),
             [
                 'fax_files_id' => 'required|exists:fax_files,id',
+                'destination_caller_id_number' => 'required|number',
             ]
         );
 
@@ -358,6 +362,12 @@ class FaxController extends Controller
         $faxFile = FaxFile::find($fax_files_id);
         $filePath = $faxFile->file_path;
 
+        $didData = DidDetail::where(['default_outbound' => true, 'account_id' => $account_id])->first();
+
+        if(!$didData) {
+            return response()->json(['status' => false, 'message' => 'No default DID set for this account.'], 500);
+        }
+
         // Get the file content
         $fileContent = file_get_contents($filePath);
 
@@ -378,20 +388,23 @@ class FaxController extends Controller
             return response()->json(['status' => false, 'message' => 'PDF file does not exist.'], 500);
         }
 
-        Log::info('PDF file path: ' . $pdfFilePath);
-
         $outputDirectory = storage_path('app/public/efax/');
         if (!file_exists($outputDirectory)) {
             mkdir($outputDirectory, 0755, true); // Create directory with appropriate permissions
         }
 
+        $tiffName = 'document_' . $fax_files_id . '_' . time() . '.tiff';
+
         // Use LibreOffice to convert the DOC file to TIFF
-        $tiffFilePath = storage_path('app/public/efax/document_' . $fax_files_id . '_' . time() . '.tiff');
+        $tiffFilePath = storage_path('app/public/efax/' . $tiffName);
 
         try {
 
             // Ghostscript command for conversion
-            $command = "\"C:\\Program Files (x86)\\gs\\gs10.04.0\\bin\\gswin32c.exe\" -dNOPAUSE -dBATCH -sDEVICE=tiff32nc -sOutputFile=\"{$tiffFilePath}\" \"{$pdfFilePath}\"";
+            // $command = "\"C:\\Program Files (x86)\\gs\\gs10.04.0\\bin\\gswin32c.exe\" -dNOPAUSE -dBATCH -sDEVICE=tiff32nc -sOutputFile=\"{$tiffFilePath}\" \"{$pdfFilePath}\"";
+
+            // Ghostscript command for conversion
+            $command = "\"C:\\Program Files (x86)\\gs\\gs10.04.0\\bin\\gswin32c.exe\" -q -r204x196 -g1728x2156 -dNOPAUSE -dBATCH -dSAFER -sDEVICE=tiffg3 -sOutputFile=\"{$tiffFilePath}\" \"{$pdfFilePath}\"";
 
             // Execute the command
             exec($command . ' 2>&1', $output, $returnVar);
@@ -406,9 +419,49 @@ class FaxController extends Controller
             // Optionally, clean up the local PDF file after conversion
             Storage::disk('local')->delete($localPath);
 
-            return response()->json(['status' => true, 'message' => 'Conversion successful.', 'tiff_file' => $tiffFilePath]);
+            $this->copyFileToFs($tiffName);
+
+            $requestFormData = [
+                "origination_caller_id_number" => $didData->did,
+                "origination_caller_id_name" => $didData->did,
+                "fax_ident" => "1231231234",
+                "fax_header" => "Fax Test",
+                "destination_caller_id_number" => $request->destination_caller_id_number,
+                "fax_file" => "/home/fax_files/$tiffName",
+            ];
+
+            Log::info('Fax request data: ' . json_encode($requestFormData));
+
+            $fsController = new FreeSwitchController();
+            $response = $fsController->sendFax(new Request($requestFormData));
+
+            return $response;
+
+            // return response()->json(['status' => true, 'message' => 'Conversion successful.', 'tiff_file' => $tiffFilePath]);
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => 'Conversion failed: ' . $e->getMessage()], 500);
         }
+    }
+
+    public function copyFileToFs($tiffFilePath)
+    {
+        // Instantiate the ConfigService directly
+        $sshService = app()->make('App\Services\SSHService');
+
+        $sshService->addDirectory('/home/fax_files/', '0777');
+
+        // Remove the file extension from the PDF file path
+        $baseFilePath = $tiffFilePath;
+
+        // Define the remote directory
+        $remoteDirectory = '/home/fax_files/' . $tiffFilePath;
+
+        $tiffFilePath = storage_path('app/public/efax/' . $tiffFilePath);
+
+        // Upload the .cfg file to the remote server
+        $sshService->uploadFile($tiffFilePath, $remoteDirectory);
+
+        // Delete the .cfg file from the local filesystem
+        Storage::disk('local')->delete('/efax/' . $baseFilePath);
     }
 }
