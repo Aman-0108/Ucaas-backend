@@ -1372,7 +1372,7 @@ class FreeSwitchController extends Controller
             // $uuid = ($action == 'intercept') ? "'-bleg'. $uuid" : $uuid;
 
             // Build the API command to originate the call
-            $cmd = "api originate user/{$extension->extension}@{$domain} &$action($uuid)";
+            $cmd = "api originate {origination_caller_id_number={$extension->extension} user/{$extension->extension}@{$domain} &$action($uuid)";
 
             // Check call state
             $response = $this->socket->request($cmd);

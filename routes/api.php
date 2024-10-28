@@ -955,6 +955,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 });
 
 Route::get('/provisioning/{file}', [ProvisionController::class, 'deviceResponse']);
+Route::post('/send-fax', [FaxController::class, 'sendFax']);
 
 // Stripe
 Route::controller(StripeController::class)->group(function () {

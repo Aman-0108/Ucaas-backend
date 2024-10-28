@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\FaxFile;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class FaxController extends Controller
 {
@@ -326,5 +328,87 @@ class FaxController extends Controller
 
         // Return a JSON response with HTTP status code 200 (OK)
         return response()->json($response, Response::HTTP_OK);
+    }
+
+    public function sendFax(Request $request)
+    {
+        // Perform validation on the request data
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'fax_files_id' => 'required|exists:fax_files,id',
+            ]
+        );
+
+        //    Check if validation fails
+        if ($validator->fails()) {
+            // If validation fails, return a 403 Forbidden response with validation errors
+            $response = [
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validator->errors()
+            ];
+
+            return response()->json($response, Response::HTTP_FORBIDDEN);
+        }
+
+        $fax_files_id = $request->fax_files_id;
+
+        // Retrieve the FaxFile record
+        $faxFile = FaxFile::find($fax_files_id);
+        $filePath = $faxFile->file_path;
+
+        // Get the file content
+        $fileContent = file_get_contents($filePath);
+
+        if ($fileContent === false) {
+            throw new Exception('Failed to read the file content.');
+        }
+
+        // Define a local file path
+        $localPath = 'downloads/document_' . $fax_files_id . '_' . time() . '.pdf';
+
+        // Save the file locally
+        Storage::disk('local')->put($localPath, $fileContent);
+
+        // Use LibreOffice to convert the DOC file to TIFF
+        $pdfFilePath = storage_path('app/public') . '/' . $localPath;
+
+        if (!file_exists($pdfFilePath)) {
+            return response()->json(['status' => false, 'message' => 'PDF file does not exist.'], 500);
+        }
+
+        Log::info('PDF file path: ' . $pdfFilePath);
+
+        $outputDirectory = storage_path('app/public/efax/');
+        if (!file_exists($outputDirectory)) {
+            mkdir($outputDirectory, 0755, true); // Create directory with appropriate permissions
+        }
+
+        // Use LibreOffice to convert the DOC file to TIFF
+        $tiffFilePath = storage_path('app/public/efax/document_' . $fax_files_id . '_' . time() . '.tiff');
+
+        try {
+
+            // Ghostscript command for conversion
+            $command = "\"C:\\Program Files (x86)\\gs\\gs10.04.0\\bin\\gswin32c.exe\" -dNOPAUSE -dBATCH -sDEVICE=tiff32nc -sOutputFile=\"{$tiffFilePath}\" \"{$pdfFilePath}\"";
+
+            // Execute the command
+            exec($command . ' 2>&1', $output, $returnVar);
+
+            Log::info('Ghostscript output: ' . implode("\n", $output));
+
+            // Check if the command was successful
+            if ($returnVar !== 0) {
+                throw new Exception('Conversion failed: ' . implode("\n", $output));
+            }
+
+            // Optionally, clean up the local PDF file after conversion
+            Storage::disk('local')->delete($localPath);
+
+            return response()->json(['status' => true, 'message' => 'Conversion successful.', 'tiff_file' => $tiffFilePath]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => 'Conversion failed: ' . $e->getMessage()], 500);
+        }
     }
 }
