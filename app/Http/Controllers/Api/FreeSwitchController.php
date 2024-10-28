@@ -1276,8 +1276,12 @@ class FreeSwitchController extends Controller
                 return response()->json($response, Response::HTTP_BAD_REQUEST);
             }
 
+            $effectiveCallerIdName = $extension->effectiveCallerIdName;
+
             // Construct the command to barge on the call
-            $cmd = "api originate user/{$extension->extension} &three_way({$uuid})";
+            $cmd = "api originate {origination_caller_id_number={$extension->extension},application_state='barge',origination_caller_id_name='$effectiveCallerIdName'}user/{$extension->extension} &three_way({$uuid})";
+
+            Log::info($cmd);
 
             // Check call state
             $response = $this->socket->request($cmd);
@@ -1302,9 +1306,9 @@ class FreeSwitchController extends Controller
      * @param string $uuid The unique identifier of the call
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function eavesdrop($uuid)
+    protected function eavesdrop($uuid, $other_leg_destination_number = null)
     {
-        return $this->handleCallAction($uuid, 'eavesdrop');
+        return $this->handleCallAction($uuid, 'eavesdrop', $other_leg_destination_number);
     }
 
     /**
@@ -1313,9 +1317,9 @@ class FreeSwitchController extends Controller
      * @param string $uuid The unique identifier of the call
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function intercept($uuid)
+    protected function intercept($uuid, $other_leg_destination_number = null)
     {
-        return $this->handleCallAction($uuid, 'intercept');
+        return $this->handleCallAction($uuid, 'intercept', $other_leg_destination_number);
     }
 
     /**
@@ -1325,7 +1329,7 @@ class FreeSwitchController extends Controller
      * @param string $action The action to perform ('eavesdrop' or 'intercept')
      * @return \Illuminate\Http\JsonResponse
      */
-    private function handleCallAction($uuid, $action)
+    private function handleCallAction($uuid, $action, $other_leg_destination_number = null)
     {
         // Get the authenticated user's extension
         $extension = Extension::find(Auth::user()->extension_id);
@@ -1365,6 +1369,8 @@ class FreeSwitchController extends Controller
             return response()->json($response, Response::HTTP_BAD_REQUEST);
         }
 
+        $effectiveCallerIdName = $extension->effectiveCallerIdName;
+
         // If the socket is connected, perform the call action
         if ($this->connected) {
 
@@ -1372,7 +1378,9 @@ class FreeSwitchController extends Controller
             // $uuid = ($action == 'intercept') ? "'-bleg'. $uuid" : $uuid;
 
             // Build the API command to originate the call
-            $cmd = "api originate {origination_caller_id_number={$extension->extension} user/{$extension->extension}@{$domain} &$action($uuid)";
+            $cmd = "api originate {origination_caller_id_number={$extension->extension},application_state='$action',origination_caller_id_name='$effectiveCallerIdName',original_destination_number='test',other_leg_destination_number='$other_leg_destination_number'}user/{$extension->extension}@{$domain} &$action($uuid)";
+
+            Log::info($cmd);
 
             // Check call state
             $response = $this->socket->request($cmd);
@@ -1676,12 +1684,14 @@ class FreeSwitchController extends Controller
             $destination_caller_id_number = $request->destination_caller_id_number;
             $fax_file = $request->fax_file;
 
-            $cmd = "originate {absolute_codec_string=PCMU,GSM,origination_caller_id_number=$origination_caller_id_number,origination_caller_id_name=$origination_caller_id_name,fax_ident=$fax_ident,fax_header=$fax_header}sofia/gateway/1/$destination_caller_id_number   &txfax($fax_file)";
+            $cmd = "api originate {absolute_codec_string=PCMU,GSM,origination_caller_id_number=$origination_caller_id_number,origination_caller_id_name=$origination_caller_id_name,fax_ident=$fax_ident,fax_header='$fax_header'}sofia/gateway/1/$destination_caller_id_number   &txfax($fax_file)";
 
             Log::info($cmd);
 
             // Check call state
             $response = $this->socket->request($cmd);
+
+            Log::info($response);
 
             // Check if the response contains "+OK"
             if (strpos($response, "+OK") !== false) {
@@ -1693,6 +1703,18 @@ class FreeSwitchController extends Controller
                 ];
                 // Return the response as JSON with HTTP status code 200 (OK)
                 return response()->json($response, Response::HTTP_OK);
+            }
+
+            // Check if the response contains "+OK" indicating success
+            if (strpos($response, "-ERR") !== false) {
+                // If the call does not exist, return an error response
+                $response = [
+                    'status' => false, // Indicates the success status of the request
+                    'message' => 'Something went wrong. Please try again later.',
+                    'originate_msg' => $response
+                ];
+                // Return the response as JSON with HTTP status code 400 (Bad Request)
+                return response()->json($response, Response::HTTP_BAD_REQUEST);
             }
         } else {
             // If the socket is not connected, return an error response

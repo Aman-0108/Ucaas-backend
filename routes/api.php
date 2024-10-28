@@ -567,10 +567,10 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::get('call-barge/{uuid}', 'barge');
 
             // eavesdrop a call
-            Route::get('call-eavesdrop/{uuid}', 'eavesdrop');
+            Route::get('call-eavesdrop/{uuid}/{ext?}', 'eavesdrop');
 
             // intercept a call
-            Route::get('call-intercept/{uuid}', 'intercept');
+            Route::get('call-intercept/{uuid}/{ext?}', 'intercept');
 
             // hangup a call
             // Route::get('freeswitch/shutDown', 'shutDown');

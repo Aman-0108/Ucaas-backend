@@ -340,7 +340,7 @@ class FaxController extends Controller
             $request->all(),
             [
                 'fax_files_id' => 'required|exists:fax_files,id',
-                'destination_caller_id_number' => 'required|number',
+                'destination_caller_id_number' => 'required|integer',
             ]
         );
 
@@ -437,7 +437,6 @@ class FaxController extends Controller
 
             return $response;
 
-            // return response()->json(['status' => true, 'message' => 'Conversion successful.', 'tiff_file' => $tiffFilePath]);
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => 'Conversion failed: ' . $e->getMessage()], 500);
         }
