@@ -160,9 +160,6 @@ class CallCentreController extends Controller
         // Create a new record with validated data
         $data = CallCenterQueue::create($validated);
 
-        $action = 'store';
-        $type = $this->type;
-
         accessLog($action, $type, $validated, $userId);
 
         $freeSWitch = new FreeSwitchController();
@@ -228,8 +225,6 @@ class CallCentreController extends Controller
                 $rvalidated['no_answer_delay_time'] = isset($rvalidated['no_answer_delay_time']) ? intval ($rvalidated['no_answer_delay_time']) : null;
                 
                 CallCenterAgent::create($rvalidated);                
-
-                $newAgent = CallCenterAgent::create($rvalidated);
 
                 $action = 'store';
                 $type = 'call_centre_agent';
