@@ -60,7 +60,7 @@ class UserController extends Controller
                 [
                     'name' => 'required',
                     'email' => 'required|email|unique:users,email',
-                    'password' => 'required',
+                    'password' => 'required|min:6',
                     // 'username' => 'required|unique:users,username',
                     'username' => [
                         'required',
@@ -394,6 +394,7 @@ class UserController extends Controller
                 'name' => 'string|min:2',
                 'email' => 'email|unique:users,email,' . $id,
                 'username' => 'unique:users,username',
+                'password' => 'min:6',
                 'domain_id' => 'exists:domains,id',
                 'account_id' => 'exists:accounts,id',
                 'extension_id' => 'integer|nullable',
@@ -428,6 +429,11 @@ class UserController extends Controller
         DB::beginTransaction();
 
         unset($validated['permissions'], $validated['role_id']);
+
+        if($request->has('password')) {
+            $validated['password'] = Hash::make($validated['password']);
+        }
+
         // Update the user record in the database with the validated input
         $user->update($validated);
 
