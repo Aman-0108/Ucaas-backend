@@ -341,6 +341,8 @@ class FaxController extends Controller
             [
                 'fax_files_id' => 'required|exists:fax_files,id',
                 'destination_caller_id_number' => 'required|integer',
+                "fax_ident" => "required|integer",
+                "fax_header" => 'required|string',
             ]
         );
 
@@ -424,8 +426,8 @@ class FaxController extends Controller
             $requestFormData = [
                 "origination_caller_id_number" => $didData->did,
                 "origination_caller_id_name" => $didData->did,
-                "fax_ident" => "1231231234",
-                "fax_header" => "Fax Test",
+                "fax_ident" => $request->fax_ident,
+                "fax_header" => $request->fax_header,
                 "destination_caller_id_number" => $request->destination_caller_id_number,
                 "fax_file" => "/home/fax_files/$tiffName",
             ];

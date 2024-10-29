@@ -1720,9 +1720,5 @@ class FreeSwitchController extends Controller
             // If the socket is not connected, return an error response
             return $this->disconnected();
         }
-
-        $response = $this->socket->request($api);
-
-        return $response;
     }
 }

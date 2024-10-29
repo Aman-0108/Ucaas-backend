@@ -87,12 +87,12 @@ class CreateChannelHangupCompletesTable extends Migration
             $table->string('uuid', 100)->nullable();
             $table->string('call_cost', 50)->nullable();
 
+            $table->string('other_leg_destination_number')->nullable();
+
             $table->softDeletes();
 
-            // $table->timestamp('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->nullable();
-            // $table->timestamps();
         });
     }
 
