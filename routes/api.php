@@ -40,6 +40,8 @@ use App\Http\Controllers\Api\{
     DidRateController,
     DidVendorController,
     FaxController,
+    GroupController,
+    GroupUserController,
     InvoiceController,
     IvrmasterController,
     IvroptionsController,
@@ -954,8 +956,45 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         });
     });
 
+    // Group
+    Route::controller(GroupController::class)->group(function () {
+        Route::prefix('groups')->group(function () {
+            // To get all the Groups
+            Route::get('all', 'index');
 
-   
+            // To get the particular Group by Id
+            Route::get('show/{id}', 'show');
+
+            // To update the particular Group by Id
+            Route::put('update/{id}', 'update');
+
+            // To store new Group
+            Route::post('store', 'store');
+
+            // To destroy the Group by Id
+            Route::delete('destroy/{id}', 'destroy');
+        });
+    });
+
+    // Group User
+    Route::controller(GroupUserController::class)->group(function () {
+        Route::prefix('group-users')->group(function () {
+            // To get all the Group users
+            Route::get('all', 'index');
+
+            // To get the particular Group user by Id
+            Route::get('show/{id}', 'show');
+
+            // To update the particular Group user by Id
+            Route::put('update/{id}', 'update');
+
+            // To store new Group user
+            Route::post('store', 'store');
+
+            // To destroy the Group user by Id
+            Route::delete('destroy/{id}', 'destroy');
+        });
+    });
 });
 
 Route::get('/provisioning/{file}', [ProvisionController::class, 'deviceResponse']);

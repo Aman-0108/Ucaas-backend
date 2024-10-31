@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class GroupController extends Controller
 {
@@ -34,10 +35,10 @@ class GroupController extends Controller
         // Retrieve all groups from the database
         $groups = Group::query();
 
-        // Check if the request contains an 'account' parameter
-        if ($request->has('account')) {
-            // If 'account' parameter is provided, filter domains by account ID
-            $groups->where('account_id', $request->account);
+        $account_id = $request->user()->account_id;
+
+        if ($account_id) {
+            $groups->where('account_id', $account_id);
         }
 
         // Execute the query to fetch domains
@@ -78,6 +79,21 @@ class GroupController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
+        // Retrieve the account_id of the authenticated user
+        $account_id = auth()->user()->account_id;
+
+        // Check if the user has permission to access the group
+        if ($account_id !== $group->account_id) {
+            // If user doesn't have permission, prepare error response
+            $response = [
+                'status' => false,
+                'error' => 'You do not have permission to access this resource.',
+            ];
+
+            // Return a JSON response with error message and 403 status code
+            return response()->json($response, Response::HTTP_FORBIDDEN);
+        }
+
         // Prepare the response data
         $response = [
             'status' => true,
@@ -103,13 +119,21 @@ class GroupController extends Controller
     {
         // Retrieve the ID of the authenticated user making the request
         $userId = $request->user()->id;
+        $account_id = $request->user()->account_id;
+
+        $request->merge(['created_by' => $userId, 'account_id' => $account_id]);
 
         // Validate incoming request data
         $validator = Validator::make(
             $request->all(),
             [
                 'account_id' => 'required|exists:accounts,id',
-                'group_name' => 'required|unique:groups,group_name',
+                'group_name' => [
+                    'required',
+                    Rule::unique('groups')->where(function ($query) use ($account_id) {
+                        return $query->where('account_id', $account_id);
+                    }),
+                ],
                 'created_by' => 'required|exists:users,id',
             ]
         );
@@ -172,6 +196,9 @@ class GroupController extends Controller
     {
         // Retrieve the ID of the authenticated user making the request
         $userId = $request->user()->id;
+        $account_id = $request->user()->account_id;
+
+        $request->merge(['account_id' => $account_id]);
 
         // Find the group with the given ID
         $group = Group::find($id);
@@ -187,12 +214,24 @@ class GroupController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
+        // Check if the authenticated user has permission to update the group
+        if ($account_id !== $group->account_id) {
+            // If user doesn't have permission, prepare error response
+            $response = [
+                'status' => false,
+                'error' => 'You do not have permission to access this resource.',
+            ];
+
+            // Return a JSON response with error message and 403 status code
+            return response()->json($response, Response::HTTP_FORBIDDEN);
+        }
+
         // Validate the incoming request data
         $validator = Validator::make(
             $request->all(),
             [
-                'created_by' => 'exists:users,id',
-                'group_name' => 'unique:groups,group_name,' . $id,
+                'account_id' => 'required|exists:accounts,id',
+                'group_name' => 'unique:groups,group_name,' . $id . ',id,account_id,' . $request->input('account_id'),
             ]
         );
 
@@ -250,6 +289,9 @@ class GroupController extends Controller
         // Find the group with the given ID
         $group = Group::find($id);
 
+        $userId = auth()->user()->id;
+        $account_id = auth()->user()->account_id;
+
         // Check if the group exists
         if (!$group) {
             // If the group is not found, return a 404 Not Found response
@@ -261,8 +303,26 @@ class GroupController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
+        // Check if the authenticated user has permission to update the group
+        if ($account_id !== $group->account_id) {
+            // If user doesn't have permission, prepare error response
+            $response = [
+                'status' => false,
+                'error' => 'You do not have permission to access this resource.',
+            ];
+
+            // Return a JSON response with error message and 403 status code
+            return response()->json($response, Response::HTTP_FORBIDDEN);
+        }
+
+        $action = 'delete';
+        $type = $this->type;
+
+        // Log the action
+        accessLog($action, $type, $group, $userId);
+
         // Delete the group record
-        $group->delete();
+        $group->forceDelete();
 
         // Prepare the response data
         $response = [
