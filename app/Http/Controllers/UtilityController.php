@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class UtilityController extends Controller
@@ -99,5 +101,14 @@ class UtilityController extends Controller
 
         // Return a JSON response with the success message and stored account data
         return response()->json($response, Response::HTTP_CREATED);
+    }
+
+    public function getAccountcredentials($account_id = 7, $destination_number = '+1234567890')
+    {
+        // check_dialout_billing
+        $result = DB::select(DB::raw("CALL check_dialout_billing($account_id, '$destination_number')"));
+        Log::info($result);
+        return $result;
+
     }
 }

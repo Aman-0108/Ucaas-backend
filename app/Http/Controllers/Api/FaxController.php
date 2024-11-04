@@ -331,6 +331,21 @@ class FaxController extends Controller
         return response()->json($response, Response::HTTP_OK);
     }
 
+    /**
+     * Send a fax using the provided file and configuration.
+     *
+     * This method validates the incoming request data and performs the following steps:
+     * 1. Retrieves the FaxFile record based on the provided ID.
+     * 2. Gets the file content from the file path.
+     * 3. Saves the file locally.
+     * 4. Uses LibreOffice to convert the DOC file to TIFF.
+     * 5. Saves the TIFF file to the file system.
+     * 6. Copies the TIFF file to the FreeSwitch directory.
+     * 7. Creates a FreeSwitch request with the fax configuration and sends the fax.
+     *
+     * @param  \Illuminate\Http\Request  $request The request object containing the fax configuration and file ID
+     * @return \Illuminate\Http\JsonResponse The JSON response indicating the status of the operation
+     */
     public function sendFax(Request $request)
     {
         $account_id = $request->user()->account_id;
@@ -360,13 +375,15 @@ class FaxController extends Controller
 
         $fax_files_id = $request->fax_files_id;
 
+        // $fax_files_id = DB::select('CALL getFaxFilesId(?)', [$request->fax_files_id]);
+        
         // Retrieve the FaxFile record
         $faxFile = FaxFile::find($fax_files_id);
         $filePath = $faxFile->file_path;
 
         $didData = DidDetail::where(['default_outbound' => true, 'account_id' => $account_id])->first();
 
-        if(!$didData) {
+        if (!$didData) {
             return response()->json(['status' => false, 'message' => 'No default DID set for this account.'], 500);
         }
 
@@ -438,12 +455,18 @@ class FaxController extends Controller
             $response = $fsController->sendFax(new Request($requestFormData));
 
             return $response;
-
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => 'Conversion failed: ' . $e->getMessage()], 500);
         }
     }
 
+    /**
+     * Copies a file to the FreeSWITCH server.
+     *
+     * @param string $tiffFilePath The path to the TIFF file to copy.
+     *
+     * @return void
+     */
     public function copyFileToFs($tiffFilePath)
     {
         // Instantiate the ConfigService directly
@@ -464,5 +487,14 @@ class FaxController extends Controller
 
         // Delete the .cfg file from the local filesystem
         Storage::disk('local')->delete('/efax/' . $baseFilePath);
+    }
+
+    public function getAccountcredentials($account_id, $destination_number)
+    {
+        // check_dialout_billing
+        $result = DB::select(DB::raw("CALL check_dialout_billing($account_id, '$destination_number')"));
+        Log::info($result);
+        return $result;
+
     }
 }

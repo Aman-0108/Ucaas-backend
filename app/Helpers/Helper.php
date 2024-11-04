@@ -534,11 +534,19 @@ function deviceModelFormat($model)
     return strtolower($withDashes);
 }
 
+
+/**
+ * Extract and return the brand name from a device model string.
+ *
+ * This function retrieves the brand name by extracting the part before the slash
+ * in the given model string, converting it to lowercase. If no slash is found,
+ * it returns the entire model string in lowercase.
+ *
+ * @param string $model The device model string to be processed.
+ * @return string The extracted brand name in lowercase.
+ */
 function getBrandName($model)
 {
-    // Extract the part before the slash
-    $parts = explode('/', $model);
-    $brandName = strtolower($parts[0]); // Get the first part
-
-    return strtolower($brandName);
+    // Use strtok to get the part before the slash and convert to lowercase
+    return strtolower(strtok($model, '/')) ?: strtolower($model);
 }
