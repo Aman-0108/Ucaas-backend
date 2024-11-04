@@ -352,10 +352,15 @@ class FaxController extends Controller
         $account_id = $request->user()->account_id;
 
         // Get the account balance
-        $balance = AccountBalance::where('account_id', $account_id)->first();
+        $account = AccountBalance::where('account_id', $account_id)->first();
+
+        // Check if account balance is not found
+        if(!$account) {
+            return response()->json(['status' => false, 'message' => 'Account balance not found.'], 400);
+        }
 
         // Check if balance is less than 2
-        if ($balance->balance < 1) {
+        if ($account->amount < 1) {
             return response()->json(['status' => false, 'message' => 'Insufficient balance. Please top up.'], 500);
         }
 
