@@ -1049,7 +1049,6 @@ Route::controller(PermissionController::class)->group(function () {
 Route::controller(UtilityController::class)->group(function () {
     Route::post('check-mx', 'checkMailExchangeserver');
     Route::post('get-ip-from-host', 'getIpFromHost');
-    Route::get('getAccountcredentials', 'getAccountcredentials');
 });
 
 Route::post('/s3/presigned-url', [S3Controller::class, 'getPresignedUrl']);

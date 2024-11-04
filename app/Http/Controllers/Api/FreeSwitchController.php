@@ -1673,6 +1673,15 @@ class FreeSwitchController extends Controller
         }
     }
 
+    /**
+     * Send a fax using the provided file and configuration.
+     *
+     * This method makes a request to the FreeSwitch server to originate a call
+     * to the provided destination with the fax configuration and sends the fax.
+     *
+     * @param  \Illuminate\Http\Request  $request  The request object containing the fax configuration and file
+     * @return \Illuminate\Http\JsonResponse The JSON response indicating the status of the operation
+     */
     public function sendFax(Request $request)
     {
         if ($this->connected) {
@@ -1684,7 +1693,14 @@ class FreeSwitchController extends Controller
             $destination_caller_id_number = $request->destination_caller_id_number;
             $fax_file = $request->fax_file;
 
-            $cmd = "api originate {absolute_codec_string=PCMU,GSM,origination_caller_id_number=$origination_caller_id_number,origination_caller_id_name=$origination_caller_id_name,fax_ident=$fax_ident,fax_header='$fax_header'}sofia/gateway/1/$destination_caller_id_number   &txfax($fax_file)";
+            $call_plan_id = $request->call_plan_id;
+            $destination = $request->destination;
+            $selling_billing_block = $request->selling_billing_block;
+            $sell_rate = $request->sell_rate;
+            $gateway_id = $request->gateway_id;
+            $billing_type = $request->billing_type;
+
+            $cmd = "api originate {absolute_codec_string=PCMU,GSM,origination_caller_id_number=$origination_caller_id_number,origination_caller_id_name=$origination_caller_id_name,fax_ident=$fax_ident,fax_header='$fax_header',application='outbound',selling_billing_block='$selling_billing_block',sell_rate=$sell_rate,gateway_id=$gateway_id,billing_type=$billing_type',destination='$destination',call_plan_id='$call_plan_id'}sofia/gateway/1/$destination_caller_id_number   &txfax($fax_file)";
 
             // originate {ignore_early_media=true,absolute_codec_string=PCMU,GSM,origination_caller_id_number=18882610473,origination_caller_id_name=18882610473,fax_ident=8882610473,fax_header=8882610473,fax_verbose=true}sofia/gateway/1/18553301239   &txfax(/home/solman/sample-2.tiff)
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AccountBalance;
 use App\Models\DidDetail;
 use App\Models\FaxFile;
 use Exception;
@@ -350,6 +351,14 @@ class FaxController extends Controller
     {
         $account_id = $request->user()->account_id;
 
+        // Get the account balance
+        $balance = AccountBalance::where('account_id', $account_id)->first();
+
+        // Check if balance is less than 2
+        if ($balance->balance < 1) {
+            return response()->json(['status' => false, 'message' => 'Insufficient balance. Please top up.'], 500);
+        }
+
         // Perform validation on the request data
         $validator = Validator::make(
             $request->all(),
@@ -373,10 +382,27 @@ class FaxController extends Controller
             return response()->json($response, Response::HTTP_FORBIDDEN);
         }
 
+        // Get the additional parameters
+        $additionalParams = $this->getAccountcredentials($account_id, $request->destination_caller_id_number);
+
+        // Check if additional parameters are empty
+        if (!$additionalParams) {
+            return response()->json(['status' => false, 'message' => 'There is something wrong. Please try again later.'], 500);
+        }
+
+        $call_plan_id = $additionalParams['call_plan_id'];
+        $destination = $additionalParams['destination'];
+        $selling_billing_block = $additionalParams['selling_billing_block'];
+        $sell_rate = $additionalParams['sell_rate'];
+        $gateway_id = $additionalParams['gateway_id'];
+        $billing_type = $additionalParams['billing_type'];
+
+        if (!$call_plan_id || !$destination || !$selling_billing_block || !$sell_rate || !$gateway_id || !$billing_type) {
+            return response()->json(['status' => false, 'message' => 'There is something wrong. Please try again later.'], 500);
+        }
+
         $fax_files_id = $request->fax_files_id;
 
-        // $fax_files_id = DB::select('CALL getFaxFilesId(?)', [$request->fax_files_id]);
-        
         // Retrieve the FaxFile record
         $faxFile = FaxFile::find($fax_files_id);
         $filePath = $faxFile->file_path;
@@ -447,6 +473,12 @@ class FaxController extends Controller
                 "fax_header" => $request->fax_header,
                 "destination_caller_id_number" => $request->destination_caller_id_number,
                 "fax_file" => "/home/fax_files/$tiffName",
+                "call_plan_id" => $call_plan_id,
+                "destination" => $destination,
+                "selling_billing_block" => $selling_billing_block,
+                "sell_rate" => $sell_rate,
+                "gateway_id" => $gateway_id,
+                "billing_type" => $billing_type,
             ];
 
             Log::info('Fax request data: ' . json_encode($requestFormData));
@@ -491,10 +523,15 @@ class FaxController extends Controller
 
     public function getAccountcredentials($account_id, $destination_number)
     {
-        // check_dialout_billing
-        $result = DB::select(DB::raw("CALL check_dialout_billing($account_id, '$destination_number')"));
-        Log::info($result);
-        return $result;
-
+        try {
+            $result = DB::select("CALL check_dialout_billing(?, ?)", [$account_id, $destination_number]);
+            Log::info($result);
+            // Get the first row or null if no results
+            $accountCredentials = !empty($result) ? $result[0] : null;
+            return $accountCredentials;
+        } catch (\Exception $e) {
+            Log::error('Error fetching account credentials: ' . $e->getMessage());
+            return response()->json(['error' => 'Could not retrieve account credentials.'], 500);
+        }
     }
 }
