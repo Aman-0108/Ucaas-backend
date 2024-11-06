@@ -521,18 +521,21 @@ if (!function_exists('addQuotesIfHasSpace')) {
  *
  * @return string The formatted device model string
  */
-function deviceModelFormat($model)
-{
-    // Extract the part before the slash
-    $parts = explode('/', $model);
-    $afterSlash = $parts[1]; // Get the last part
+if (!function_exists('deviceModelFormat')) {
+    function deviceModelFormat($model)
+    {
+        // Extract the part before the slash
+        $parts = explode('/', $model);
+        $afterSlash = $parts[1]; // Get the last part
 
-    // Step 2: Insert dashes before uppercase letters (except the first character)
-    $withDashes = preg_replace('/(?<!^)(?=[A-Z])/', '-', $afterSlash);
+        // Step 2: Insert dashes before uppercase letters (except the first character)
+        $withDashes = preg_replace('/(?<!^)(?=[A-Z])/', '-', $afterSlash);
 
-    // Convert to lowercase
-    return strtolower($withDashes);
+        // Convert to lowercase
+        return strtolower($withDashes);
+    }
 }
+
 
 
 /**
@@ -545,8 +548,67 @@ function deviceModelFormat($model)
  * @param string $model The device model string to be processed.
  * @return string The extracted brand name in lowercase.
  */
-function getBrandName($model)
-{
-    // Use strtok to get the part before the slash and convert to lowercase
-    return strtolower(strtok($model, '/')) ?: strtolower($model);
+if (!function_exists('getBrandName')) {
+    function getBrandName($model)
+    {
+        // Use strtok to get the part before the slash and convert to lowercase
+        return strtolower(strtok($model, '/')) ?: strtolower($model);
+    }
+}
+
+/**
+ * Custom date parsing function
+ * @param string|null $date
+ * @return string|null
+ */
+if (!function_exists('parseDateOfBirth')) {
+    function parseDateOfBirth($date)
+    {
+        if (empty($date)) {
+            return null;
+        }
+
+        // Try to parse the date
+        $date = trim($date);
+
+        // Custom date format parsing (e.g., MM/DD/YYYY, YYYY-MM-DD, etc.)
+        $formats = ['m/d/Y', 'Y-m-d', 'd/m/Y', 'Y/m/d'];
+
+        foreach ($formats as $format) {
+            $parsedDate = \DateTime::createFromFormat($format, $date);
+            if ($parsedDate && $parsedDate->format($format) === $date) {
+                return $parsedDate->format('Y-m-d'); // return the date in Y-m-d format
+            }
+        }
+
+        return null;
+    }
+}
+
+/**
+ * Validate a local mobile number using a regular expression.
+ *
+ * @param string|null $value
+ * @return bool
+ */
+if (!function_exists('validate_local_mobile_number')) {
+    function validate_local_mobile_number($value)
+    {
+        // Regular expression to validate local phone numbers (no country code)
+        return preg_match('/^[\d\s\-]{3,14}$/', $value);
+    }
+}
+
+/**
+ * Validate a country code using a regular expression.
+ *
+ * @param string|null $value
+ * @return bool
+ */
+if (!function_exists('validate_country_code')) {
+    function validate_country_code($value)
+    {
+        // Regular expression to validate the country code
+        return preg_match('/^\+?\d{1,3}$/', $value);
+    }
 }
