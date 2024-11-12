@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AccessLog;
+use App\Models\Gateway;
 use App\Models\PaymentGateway;
 use App\Models\Uid;
 use Illuminate\Support\Str;
@@ -549,4 +550,23 @@ function getBrandName($model)
 {
     // Use strtok to get the part before the slash and convert to lowercase
     return strtolower(strtok($model, '/')) ?: strtolower($model);
+}
+
+/**
+ * Retrieves the ID of the first active payment gateway.
+ *
+ * @return int|false ID of the first active payment gateway if found, false otherwise.
+ */
+if (!function_exists('activeGatewayId')) {
+    function activeGatewayId()
+    {
+        // Query the PaymentGateway model for the first active gateway
+        $result = Gateway::where('active', 1)->first();
+
+        if (empty($result)) {
+            return false;
+        }
+
+        return $result->id;
+    }
 }

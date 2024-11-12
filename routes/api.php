@@ -590,6 +590,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
             // available slots
             Route::get('available-slots', 'availableSlots');
+
+            // clickToCall
+            Route::post('click-to-call', 'clickToCall');
         });
     });
 

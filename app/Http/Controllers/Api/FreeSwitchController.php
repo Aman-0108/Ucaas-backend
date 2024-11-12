@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AccountBalance;
+use App\Models\DidDetail;
 use App\Models\Domain;
 use App\Models\Extension;
 use App\Traits\Esl;
@@ -1704,6 +1706,96 @@ class FreeSwitchController extends Controller
 
             // originate {ignore_early_media=true,absolute_codec_string=PCMU,GSM,origination_caller_id_number=18882610473,origination_caller_id_name=18882610473,fax_ident=8882610473,fax_header=8882610473,fax_verbose=true}sofia/gateway/1/18553301239   &txfax(/home/solman/sample-2.tiff)
 
+            // Check call state
+            $response = $this->socket->request($cmd);
+
+            // Check if the response contains "+OK"
+            if (strpos($response, "+OK") !== false) {
+                // Prepare the response data
+                $response = [
+                    'status' => true, // Indicates the success status of the request
+                    'data' => $response,
+                    'message' => 'Successfully send fax',
+                ];
+                // Return the response as JSON with HTTP status code 200 (OK)
+                return response()->json($response, Response::HTTP_OK);
+            }
+
+            // Check if the response contains "+OK" indicating success
+            if (strpos($response, "-ERR") !== false) {
+                // If the call does not exist, return an error response
+                $response = [
+                    'status' => false, // Indicates the success status of the request
+                    'message' => 'Something went wrong. Please try again later.',
+                    'originate_msg' => $response
+                ];
+                // Return the response as JSON with HTTP status code 400 (Bad Request)
+                return response()->json($response, Response::HTTP_BAD_REQUEST);
+            }
+        } else {
+            // If the socket is not connected, return an error response
+            return $this->disconnected();
+        }
+    }
+
+    /**
+     * Initiates a call to a destination number using the default outbound gateway for the user's account.
+     *
+     * @param  \Illuminate\Http\Request  $request  HTTP request containing the destination number
+     * @return \Illuminate\Http\JsonResponse  JSON response with status and message
+     */
+    public function clickToCall(Request $request)
+    {
+        $gatewayId = activeGatewayId();
+
+        if (!$gatewayId) {
+            return response()->json(['status' => false, 'message' => 'Gateway not found.'], 400);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'destination' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'message' => $validator->errors()->first()], 422);
+        }
+
+        $account_id = $request->user()->account_id;
+
+        // Get the account balance
+        $account = AccountBalance::where('account_id', $account_id)->first();
+
+        // Check if account balance is not found
+        if (!$account) {
+            return response()->json(['status' => false, 'message' => 'Account balance not found.'], 400);
+        }
+
+        // Check if balance is less than 2
+        if ($account->amount < 1) {
+            return response()->json(['status' => false, 'message' => 'Insufficient balance. Please top up.'], 500);
+        }
+
+        // Check if the socket is connected
+        if ($this->connected) {
+            $destination = $request->destination;
+
+            $did_details = DidDetail::where(['account_id' => $account_id, 'default_outbound' => true])->first();
+
+            if (!$did_details) {
+                return response()->json(['status' => false, 'message' => 'Did details not found.'], 400);
+            }
+
+            $ext = Extension::where('account_id', $account_id)->first();
+            $extension = $ext->extension;
+
+            $domainResult = Domain::where('account_id', $account_id)->first();
+            $domain = $domainResult->domain_name;
+
+            $origination_caller_id_name = $did_details->did;
+            $origination_caller_id_number = $did_details->did;
+
+            $cmd = "api originate {ignore_early_media=true,absolute_codec_string=PCMU,GSM,origination_caller_id_number=$origination_caller_id_number,origination_caller_id_name=$origination_caller_id_name,application_state=click2call}sofia/gateway/$gatewayId/$destination &bridge(user/$extension@$domain)";
+
             Log::info($cmd);
 
             // Check call state
@@ -1735,7 +1827,6 @@ class FreeSwitchController extends Controller
                 return response()->json($response, Response::HTTP_BAD_REQUEST);
             }
         } else {
-            // If the socket is not connected, return an error response
             return $this->disconnected();
         }
     }
