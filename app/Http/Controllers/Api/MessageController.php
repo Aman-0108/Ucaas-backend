@@ -173,12 +173,16 @@ class MessageController extends Controller
                 'users.name', 'users.email', 'users.id', 
                 'e.id as extension_id', 'e.extension',
                 DB::raw('(
-                    SELECT message_text 
+                    SELECT JSON_OBJECT(
+                        "message_text", message_text, 
+                        "created_at", created_at, 
+                        "id", id
+                    ) 
                     FROM messages 
                     WHERE messages.user_id = users.id 
                     ORDER BY messages.created_at DESC 
                     LIMIT 1
-                ) AS last_message')
+                ) AS last_message_data')
             )
             ->distinct()
             ->orderBy('users.id', 'desc')

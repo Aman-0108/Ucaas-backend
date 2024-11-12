@@ -112,8 +112,7 @@ Route::group(['middleware' => 'guest'], function () {
     Route::controller(DocumentController::class)->group(function () {
         // To get all the documents
         Route::get('documents', 'index');
-    });   
-
+    });
 });
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
@@ -1007,12 +1006,13 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::controller(CampaignleadController::class)->group(function () {
         Route::group(['prefix' => 'campaign-lead'], function () {
             Route::get('all', 'index');
-            Route::get('show/{id}', 'show');           
+            Route::get('show/{id}', 'show');
             Route::put('update/{id}', 'update');
             Route::post('store', 'store');
             Route::delete('destroy/{id}', 'destroy');
-        });        
-        
+        });
+    });
+
     // Tag
     Route::controller(TagController::class)->group(function () {
         Route::prefix('tags')->group(function () {
@@ -1100,5 +1100,3 @@ Route::controller(UtilityController::class)->group(function () {
 });
 
 Route::post('/s3/presigned-url', [S3Controller::class, 'getPresignedUrl']);
-
-
