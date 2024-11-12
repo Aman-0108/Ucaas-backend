@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AccessLog;
+use App\Models\Gateway;
 use App\Models\PaymentGateway;
 use App\Models\Uid;
 use Illuminate\Support\Str;
@@ -610,5 +611,24 @@ if (!function_exists('validate_country_code')) {
     {
         // Regular expression to validate the country code
         return preg_match('/^\+?\d{1,3}$/', $value);
+    }
+}
+
+/**
+ * Retrieves the ID of the first active payment gateway.
+ *
+ * @return int|false ID of the first active payment gateway if found, false otherwise.
+ */
+if (!function_exists('activeGatewayId')) {
+    function activeGatewayId()
+    {
+        // Query the PaymentGateway model for the first active gateway
+        $result = Gateway::where('active', 1)->first();
+
+        if (empty($result)) {
+            return false;
+        }
+
+        return $result->id;
     }
 }
