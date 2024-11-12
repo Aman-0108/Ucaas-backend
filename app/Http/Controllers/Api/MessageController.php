@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Domain;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MessageController extends Controller
 {
@@ -174,34 +176,31 @@ class MessageController extends Controller
                 'users.email',
                 'users.id',
                 'e.id as extension_id',
-                'e.extension',
-                DB::raw('(
-                    SELECT JSON_OBJECT(
-                        "message_text", message_text, 
-                        "created_at", created_at, 
-                        "id", id
-                    ) 
-                    FROM messages 
-                    WHERE messages.user_id = users.id 
-                    ORDER BY messages.created_at DESC 
-                    LIMIT 1
-                ) AS last_message_data'),
-                DB::raw('(
-                    SELECT JSON_OBJECT(
-                        "message_text", message_text,
-                        "created_at", created_at,
-                        "id", id
-                    ) 
-                    FROM messages
-                    WHERE messages.user_id = users.id
-                    AND messages.is_pinned = 1
-                    ORDER BY messages.created_at DESC
-                    LIMIT 1
-                ) AS pin_message')
+                'e.extension'
             )
             ->distinct()
             ->orderBy('users.id', 'desc')
             ->get();
+
+        foreach ($results as $user) {
+
+            $lastMessageFromReceiver = DB::table('messages')
+                ->join('message_statuses as m', 'm.message_uuid', '=', 'messages.uuid')
+                ->where('m.user_id', $user->id) // Filter by user_id from the messages table
+                ->orderBy('m.created_at', 'desc')
+                ->select('messages.message_text', 'm.created_at')
+                ->first();
+
+            $lastMessageFromSender = DB::table('messages')
+                ->join('message_statuses as m', 'm.message_uuid', '=', 'messages.uuid')
+                ->where('m.user_id', $userId) // Filter by user_id from the messages table
+                ->orderBy('m.created_at', 'desc')
+                ->select('messages.message_text', 'm.created_at')
+                ->first();
+
+            $user->last_message_data_receiver = $lastMessageFromReceiver;
+            $user->last_message_data_sender = $lastMessageFromSender;
+        }
 
         // Prepare the response data
         $response = [
