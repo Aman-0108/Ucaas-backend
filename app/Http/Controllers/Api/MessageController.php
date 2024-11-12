@@ -169,7 +169,17 @@ class MessageController extends Controller
             ->join('extensions as e', 'e.id', '=', 'users.extension_id')
             ->where('messages.user_id', $userId)
             ->where('message_statuses.user_id', '!=', $userId)
-            ->select('users.name', 'users.email', 'users.id', 'e.id as extension_id', 'e.extension')
+            ->select(
+                'users.name', 'users.email', 'users.id', 
+                'e.id as extension_id', 'e.extension',
+                DB::raw('(
+                    SELECT message_text 
+                    FROM messages 
+                    WHERE messages.user_id = users.id 
+                    ORDER BY messages.created_at DESC 
+                    LIMIT 1
+                ) AS last_message')
+            )
             ->distinct()
             ->orderBy('users.id', 'desc')
             ->get();
