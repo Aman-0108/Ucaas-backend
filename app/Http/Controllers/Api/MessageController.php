@@ -148,7 +148,7 @@ class MessageController extends Controller
         return response()->json($response, Response::HTTP_OK);
     }
 
-    
+
     /**
      * Returns a list of all contacts for the current user.
      *
@@ -170,8 +170,11 @@ class MessageController extends Controller
             ->where('messages.user_id', $userId)
             ->where('message_statuses.user_id', '!=', $userId)
             ->select(
-                'users.name', 'users.email', 'users.id', 
-                'e.id as extension_id', 'e.extension',
+                'users.name',
+                'users.email',
+                'users.id',
+                'e.id as extension_id',
+                'e.extension',
                 DB::raw('(
                     SELECT JSON_OBJECT(
                         "message_text", message_text, 
@@ -182,7 +185,19 @@ class MessageController extends Controller
                     WHERE messages.user_id = users.id 
                     ORDER BY messages.created_at DESC 
                     LIMIT 1
-                ) AS last_message_data')
+                ) AS last_message_data'),
+                DB::raw('(
+                    SELECT JSON_OBJECT(
+                        "message_text", message_text,
+                        "created_at", created_at,
+                        "id", id
+                    ) 
+                    FROM messages
+                    WHERE messages.user_id = users.id
+                    AND messages.is_pinned = 1
+                    ORDER BY messages.created_at DESC
+                    LIMIT 1
+                ) AS pin_message')
             )
             ->distinct()
             ->orderBy('users.id', 'desc')
@@ -197,5 +212,53 @@ class MessageController extends Controller
 
         // Return the response as JSON with HTTP status code 200 (OK)
         return response()->json($response, Response::HTTP_OK);
+    }
+
+    /**
+     * Pins a message for the current user.
+     *
+     * This API endpoint accepts a GET request with a required parameter 'message_id'.
+     * It returns a JSON response with HTTP status code 200 (OK) containing the pinned message.
+     *
+     * @param int $message_id The ID of the message to be pinned.
+     * @return \Illuminate\Http\JsonResponse The JSON response containing the pinned message.
+     */
+    public function isPinned($message_id, $unpin = null)
+    {
+        $user_id = auth()->user()->id;
+
+        // If the pin parameter is not provided, default it to true
+        $unpin = $unpin ?? true;
+
+        // Check if the message exists for the user
+        $message = Message::where('id', $message_id)->where('user_id', $user_id)->first();
+
+        if (!$message) {
+            // If the message is not found, return a 404 Not Found response
+            return response()->json([
+                'status' => false,
+                'error' => 'Message not found',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        // Unpin any previously pinned message for the user
+        Message::where('user_id', $user_id)->update(['is_pinned' => 0]);
+
+        if ($unpin) {
+            return response()->json([
+                'status' => true,
+                'data' => $message,
+                'message' => 'Successfully unpinned',
+            ], Response::HTTP_OK);
+        }
+
+        // Pin the selected message
+        $message->update(['is_pinned' => 1]);
+
+        return response()->json([
+            'status' => true,
+            'data' => $message,
+            'message' => 'Successfully pinned',
+        ], Response::HTTP_OK);
     }
 }

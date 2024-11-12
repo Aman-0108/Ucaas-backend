@@ -899,6 +899,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
             // To destroy the mail setting by Id
             Route::delete('destroy/{id}', 'destroy');
+
+            // To pin/ unpin
+            Route::post('{message_id}/{unpin?}', 'isPinned');
         });
     });
 

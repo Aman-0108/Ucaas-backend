@@ -21,6 +21,7 @@ class CreateMessagesTable extends Migration
             $table->enum('message_type', ['text/plain', 'image', 'video', 'file'])->default('text/plain'); // Type of message
             $table->text('message_text')->nullable(); // Content of the message
             $table->string('attachment_url')->nullable(); // URL for attachment
+            $table->boolean('is_pinned')->default(false); 
             $table->timestamps();
         });
     }
