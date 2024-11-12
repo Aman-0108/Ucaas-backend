@@ -52,6 +52,8 @@ use App\Http\Controllers\Api\{
     PortController,
     ProvisionController,
     SoundController,
+    TagController,
+    TagUserController,
     VariableController,
     WalletTransactionController
 };
@@ -992,6 +994,37 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::post('store', 'store');
 
             // To destroy the Group user by Id
+            Route::delete('destroy/{id}', 'destroy');
+        });
+    });
+
+    // Tag
+    Route::controller(TagController::class)->group(function () {
+        Route::prefix('tags')->group(function () {
+            // To get all the Tags
+            Route::get('all', 'index');
+
+            // To get the particular Tag by Id
+            Route::get('show/{id}', 'show');
+
+            // To update the particular Tag by Id
+            Route::put('update/{id}', 'update');
+
+            // To store new Tag
+            Route::post('store', 'store');
+
+            // To destroy the Tag by Id
+            Route::delete('destroy/{id}', 'destroy');
+        });
+    });
+
+    // Tag user
+    Route::controller(TagUserController::class)->group(function () {
+        Route::prefix('tag-users')->group(function () {
+            // To store new Tag
+            Route::post('store', 'store');
+
+            // To destroy the Tag by Id
             Route::delete('destroy/{id}', 'destroy');
         });
     });
