@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\{
     AccountDetailsController,
     Admin\DocumentController,
     AuthController,
+    AutodialerController,
     BillingAddressController,
     CallCentreController,
     CampaignleadController,
@@ -35,6 +36,7 @@ use App\Http\Controllers\Api\{
     StripeController,
     CommioController,
     ContactController,
+    DialermemberController,
     DidConfigureController,
     DiddetailsController,
     TfnController,
@@ -1048,6 +1050,25 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::post('store', 'store');
 
             // To destroy the Tag by Id
+            Route::delete('destroy/{id}', 'destroy');
+        });
+    });
+
+    // Auto dialer
+    Route::controller(AutodialerController::class)->group(function () {
+        Route::group(['prefix' => 'auto-dialer'], function () {
+            Route::get('all', 'index');
+            Route::get('show/{id}', 'show');
+            Route::put('update/{id}', 'update');
+            Route::post('store', 'store');
+            Route::delete('destroy/{id}', 'destroy');
+        });
+    });
+
+    // Dialer Member
+    Route::controller(DialermemberController::class)->group(function () {
+        Route::group(['prefix' => 'dialer-member'], function () {           
+            Route::post('store', 'store');
             Route::delete('destroy/{id}', 'destroy');
         });
     });
