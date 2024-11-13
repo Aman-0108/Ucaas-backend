@@ -17,6 +17,7 @@ class CreateMessagesTable extends Migration
             $table->id();
             $table->string('uuid')->index()->unique();
             $table->string('sender_id'); 
+            $table->string('receiver_user_id'); 
             $table->foreignId('user_id')->nullable(); // User who received the message
             $table->enum('message_type', ['text/plain', 'image', 'video', 'file'])->default('text/plain'); // Type of message
             $table->text('message_text')->nullable(); // Content of the message

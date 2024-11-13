@@ -49,7 +49,7 @@ class MessageController extends Controller
 
         // Build a query to fetch message
         $results = DB::table('messages')
-            ->select('messages.*', 'message_statuses.user_id as receiver_user_id', 'message_statuses.receiver_id', 'message_statuses.status')
+            ->select('messages.*', 'message_statuses.user_id as receiver_user_ids', 'message_statuses.receiver_id', 'message_statuses.status')
             ->join('message_statuses', 'messages.uuid', '=', 'message_statuses.message_uuid')
             ->where('messages.user_id', $userId)
             ->where('message_statuses.user_id', $receiverId);
@@ -176,7 +176,18 @@ class MessageController extends Controller
                 'users.email',
                 'users.id',
                 'e.id as extension_id',
-                'e.extension'
+                'e.extension',
+                DB::raw('(
+                    SELECT JSON_OBJECT(
+                        "message_text", message_text, 
+                        "created_at", created_at, 
+                        "id", id
+                    ) 
+                    FROM messages 
+                    WHERE messages.user_id = users.id AND is_pinned = 1
+                    ORDER BY messages.created_at DESC 
+                    LIMIT 1
+                ) AS pinned_message'),
             )
             ->distinct()
             ->orderBy('users.id', 'desc')
@@ -184,22 +195,22 @@ class MessageController extends Controller
 
         foreach ($results as $user) {
 
-            $lastMessageFromReceiver = DB::table('messages')
-                ->join('message_statuses as m', 'm.message_uuid', '=', 'messages.uuid')
-                ->where('m.user_id', $user->id) // Filter by user_id from the messages table
+            $receiverId = $user->id;
+
+            $lastMessage = DB::table('messages as m')
+                ->where(function ($query) use ($userId, $receiverId) {
+                    $query->where('m.user_id', $userId)
+                        ->where('m.receiver_user_id', $receiverId)
+                        ->orWhere(function ($query) use ($userId, $receiverId) {
+                            $query->where('m.user_id', $receiverId)
+                                ->where('m.receiver_user_id', $userId);
+                        });
+                })
                 ->orderBy('m.created_at', 'desc')
-                ->select('messages.message_text', 'm.created_at')
+                ->select('m.message_text', 'm.created_at')
                 ->first();
 
-            $lastMessageFromSender = DB::table('messages')
-                ->join('message_statuses as m', 'm.message_uuid', '=', 'messages.uuid')
-                ->where('m.user_id', $userId) // Filter by user_id from the messages table
-                ->orderBy('m.created_at', 'desc')
-                ->select('messages.message_text', 'm.created_at')
-                ->first();
-
-            $user->last_message_data_receiver = $lastMessageFromReceiver;
-            $user->last_message_data_sender = $lastMessageFromSender;
+            $user->last_message_data = $lastMessage;
         }
 
         // Prepare the response data
@@ -212,6 +223,8 @@ class MessageController extends Controller
         // Return the response as JSON with HTTP status code 200 (OK)
         return response()->json($response, Response::HTTP_OK);
     }
+
+
 
     /**
      * Pins a message for the current user.

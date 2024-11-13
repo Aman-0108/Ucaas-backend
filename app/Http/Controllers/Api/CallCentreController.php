@@ -36,8 +36,7 @@ class CallCentreController extends Controller
      */
     public function index(Request $request)
     {
-        $userId = $request->user()->id;
-        $account_id = User::find($userId)->account_id;
+        $account_id = $request->user()->account_id;
 
         // Retrieve all call centre queues from the database
         $call_centre_queues = CallCenterQueue::with('agents');
@@ -46,8 +45,11 @@ class CallCentreController extends Controller
             $call_centre_queues = $call_centre_queues->where('account_id', $account_id);
         }
 
+        // COMING FROM GLOBAL CONFIG
+        $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+
         // Execute the query to fetch call centre queues
-        $call_centre_queues = $call_centre_queues->get();
+        $call_centre_queues = $call_centre_queues->orderBy('id', 'desc')->paginate($ROW_PER_PAGE);
 
         // Prepare the response data
         $response = [

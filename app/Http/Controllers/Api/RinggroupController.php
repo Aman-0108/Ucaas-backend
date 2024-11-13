@@ -31,15 +31,29 @@ class RinggroupController extends Controller
     }
 
 
+    /**
+     * Display a listing of the resource.
+     *
+     * Fetches all ring groups according to the request query.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function index(Request $request)
     {
         $ringgroups = Ringgroup::with(['ring_group_destination']); //relations tbl small character 1st letter
 
-        if ($request->has('account')) {
-            $ringgroups->where('account_id', $request->account);
+        $account_id = $request->user()->account_id;
+
+        if ($account_id) {
+            $ringgroups->where('account_id', $account_id);
         }
 
-        $ringgroups = $ringgroups->get();
+        // COMING FROM GLOBAL CONFIG
+        $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+
+        // Execute the query to fetch leads
+        $ringgroups = $ringgroups->orderBy('id', 'desc')->paginate($ROW_PER_PAGE);
 
         $response = [
             'status' => true,

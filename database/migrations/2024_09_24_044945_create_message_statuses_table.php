@@ -17,6 +17,7 @@ class CreateMessageStatusesTable extends Migration
             $table->id();
             $table->string('message_uuid')->index(); // Make sure it's a string
             $table->foreign('message_uuid')->references('uuid')->on('messages')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('user_id')->nullable(); // User who received the message
             $table->foreignId('receiver_id')->references('id')->on('users')->onUpdate('cascade')->onDelete('cascade');
             $table->enum('status', ['sent', 'delivered', 'read', 'accepted', 'rejected'])->default('sent');
             $table->timestamps();
