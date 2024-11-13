@@ -384,6 +384,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         // To get all the ringgroups
         Route::get('ringgroup', 'index');
 
+        // 
+        Route::get('ringgroup/dashboard', 'dashboard');
+
         // To store new ringgroup
         Route::post('ringgroup/store', 'store');
 
@@ -783,6 +786,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::controller(CallCentreController::class)->group(function () {
         // To get all the call-center-queues
         Route::get('call-center-queues', 'index');
+
+        Route::get('call-center-queues/dashboard', 'dashboard');
 
         // To get the particular call-center-queue by Id
         Route::get('call-center-queue/{id}', 'show');

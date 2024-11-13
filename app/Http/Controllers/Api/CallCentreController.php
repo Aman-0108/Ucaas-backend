@@ -49,7 +49,47 @@ class CallCentreController extends Controller
         $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
 
         // Execute the query to fetch call centre queues
+        // $call_centre_queues = $call_centre_queues->orderBy('id', 'desc')->paginate($ROW_PER_PAGE);
+        // Execute the query to fetch call centre queues
+        $call_centre_queues = $call_centre_queues->get();
+
+        // Prepare the response data
+        $response = [
+            'status' => true,
+            'data' => $call_centre_queues,
+            'message' => 'Successfully fetched all call centre queues'
+        ];
+
+        // Return the response as JSON with HTTP status code 200 (OK)
+        return response()->json($response, Response::HTTP_OK);
+    }
+
+    /**
+     * Display a listing of the resource for the dashboard.
+     *
+     * This method fetches all call centre queues from the database and returns them as a JSON response
+     * for the dashboard.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse Returns a JSON response containing all fetched call centre queues.
+     */
+    public function dashboard(Request $request)
+    {
+        $account_id = $request->user()->account_id;
+
+        // Retrieve all call centre queues from the database
+        $call_centre_queues = CallCenterQueue::with('agents');
+
+        if ($account_id) {
+            $call_centre_queues = $call_centre_queues->where('account_id', $account_id);
+        }
+
+        // COMING FROM GLOBAL CONFIG
+        $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+
+        // Execute the query to fetch call centre queues
         $call_centre_queues = $call_centre_queues->orderBy('id', 'desc')->paginate($ROW_PER_PAGE);
+        // Execute the query to fetch call centre queues
 
         // Prepare the response data
         $response = [
@@ -169,7 +209,7 @@ class CallCentreController extends Controller
         $account_id = $data->account_id;
         $domain = Domain::where(['account_id' => $account_id])->first();
 
-        $generatedQueueName = $data->extension . '@' . $domain->domain_name;    
+        $generatedQueueName = $data->extension . '@' . $domain->domain_name;
 
         $call_center_queue_id = $data->id;
 
@@ -218,19 +258,19 @@ class CallCentreController extends Controller
 
                 // Retrieve the validated input
                 $rvalidated = $agentValidator->validated();
-                                            
-                $rvalidated['max_no_answer'] = isset($rvalidated['max_no_answer']) ? intval ($rvalidated['max_no_answer']) : null;
-                $rvalidated['wrap_up_time'] = isset($rvalidated['wrap_up_time']) ? intval ($rvalidated['wrap_up_time']) : null;
-                $rvalidated['reject_delay_time'] = isset($rvalidated['reject_delay_time']) ? intval ($rvalidated['reject_delay_time']) : null;  
-                $rvalidated['call_timeout'] = isset($rvalidated['call_timeout']) ? intval ($rvalidated['call_timeout']) : null; 
-                $rvalidated['busy_delay_time'] = isset($rvalidated['busy_delay_time']) ? intval ($rvalidated['busy_delay_time']) : null;
-                $rvalidated['no_answer_delay_time'] = isset($rvalidated['no_answer_delay_time']) ? intval ($rvalidated['no_answer_delay_time']) : null;
-                
-                CallCenterAgent::create($rvalidated);                
+
+                $rvalidated['max_no_answer'] = isset($rvalidated['max_no_answer']) ? intval($rvalidated['max_no_answer']) : null;
+                $rvalidated['wrap_up_time'] = isset($rvalidated['wrap_up_time']) ? intval($rvalidated['wrap_up_time']) : null;
+                $rvalidated['reject_delay_time'] = isset($rvalidated['reject_delay_time']) ? intval($rvalidated['reject_delay_time']) : null;
+                $rvalidated['call_timeout'] = isset($rvalidated['call_timeout']) ? intval($rvalidated['call_timeout']) : null;
+                $rvalidated['busy_delay_time'] = isset($rvalidated['busy_delay_time']) ? intval($rvalidated['busy_delay_time']) : null;
+                $rvalidated['no_answer_delay_time'] = isset($rvalidated['no_answer_delay_time']) ? intval($rvalidated['no_answer_delay_time']) : null;
+
+                CallCenterAgent::create($rvalidated);
 
                 $action = 'store';
                 $type = 'call_centre_agent';
-        
+
                 accessLog($action, $type, $rvalidated, $userId);
 
                 // $fsResponse = $freeSWitch->callcenter_config_agent_add($newAgent->agent_name, $newAgent->type);
@@ -393,7 +433,7 @@ class CallCentreController extends Controller
 
         // Defining action and type for creating UID
         $action = 'update';
-        $type = $this->type;       
+        $type = $this->type;
 
         // Begin a database transaction
         // DB::beginTransaction();
@@ -491,12 +531,12 @@ class CallCentreController extends Controller
                 // Retrieve the validated input
                 $rvalidated = $agentValidator->validated();
 
-                $rvalidated['max_no_answer'] = isset($rvalidated['max_no_answer']) ? intval ($rvalidated['max_no_answer']) : null;
-                $rvalidated['wrap_up_time'] = isset($rvalidated['wrap_up_time']) ? intval ($rvalidated['wrap_up_time']) : null;
-                $rvalidated['reject_delay_time'] = isset($rvalidated['reject_delay_time']) ? intval ($rvalidated['reject_delay_time']) : null;  
-                $rvalidated['call_timeout'] = isset($rvalidated['call_timeout']) ? intval ($rvalidated['call_timeout']) : null; 
-                $rvalidated['busy_delay_time'] = isset($rvalidated['busy_delay_time']) ? intval ($rvalidated['busy_delay_time']) : null;
-                $rvalidated['no_answer_delay_time'] = isset($rvalidated['no_answer_delay_time']) ? intval ($rvalidated['no_answer_delay_time']) : null;               
+                $rvalidated['max_no_answer'] = isset($rvalidated['max_no_answer']) ? intval($rvalidated['max_no_answer']) : null;
+                $rvalidated['wrap_up_time'] = isset($rvalidated['wrap_up_time']) ? intval($rvalidated['wrap_up_time']) : null;
+                $rvalidated['reject_delay_time'] = isset($rvalidated['reject_delay_time']) ? intval($rvalidated['reject_delay_time']) : null;
+                $rvalidated['call_timeout'] = isset($rvalidated['call_timeout']) ? intval($rvalidated['call_timeout']) : null;
+                $rvalidated['busy_delay_time'] = isset($rvalidated['busy_delay_time']) ? intval($rvalidated['busy_delay_time']) : null;
+                $rvalidated['no_answer_delay_time'] = isset($rvalidated['no_answer_delay_time']) ? intval($rvalidated['no_answer_delay_time']) : null;
 
                 if (isset($input['id'])) {
                     $callCenterAgent = CallCenterAgent::find($input['id']);

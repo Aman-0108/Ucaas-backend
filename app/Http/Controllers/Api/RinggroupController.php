@@ -53,6 +53,40 @@ class RinggroupController extends Controller
         $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
 
         // Execute the query to fetch leads
+        // $ringgroups = $ringgroups->orderBy('id', 'desc')->paginate($ROW_PER_PAGE);
+        $ringgroups = $ringgroups->get();
+
+        $response = [
+            'status' => true,
+            'data' => $ringgroups,
+            'message' => 'Successfully fetched all Ring Groups'
+        ];
+
+        return response()->json($response, Response::HTTP_OK);
+    }
+
+    /**
+     * Display a listing of the resource for the dashboard.
+     *
+     * Fetches all ring groups according to the request query and returns them as a JSON response.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function dashboard(Request $request)
+    {
+        $ringgroups = Ringgroup::with(['ring_group_destination']); //relations tbl small character 1st letter
+
+        $account_id = $request->user()->account_id;
+
+        if ($account_id) {
+            $ringgroups->where('account_id', $account_id);
+        }
+
+        // COMING FROM GLOBAL CONFIG
+        $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+
+        // Execute the query to fetch leads
         $ringgroups = $ringgroups->orderBy('id', 'desc')->paginate($ROW_PER_PAGE);
 
         $response = [
