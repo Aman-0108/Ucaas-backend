@@ -13,6 +13,6 @@ class TagUser extends Model
 
     public function tag()
     {
-        return $this->hasMany(Tag::class, 'tag_id', 'tag_id');
+        return $this->hasMany(Tag::class, 'id', 'tag_id');
     }
 }
