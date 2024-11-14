@@ -55,6 +55,7 @@ use App\Http\Controllers\Api\{
     PortController,
     ProvisionController,
     SoundController,
+    SpamController,
     TagController,
     TagUserController,
     VariableController,
@@ -1067,7 +1068,16 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Dialer Member
     Route::controller(DialermemberController::class)->group(function () {
-        Route::group(['prefix' => 'dialer-member'], function () {           
+        Route::group(['prefix' => 'dialer-member'], function () {
+            Route::post('store', 'store');
+            Route::delete('destroy/{id}', 'destroy');
+        });
+    });
+
+    // Spam
+    Route::controller(SpamController::class)->group(function () {
+        Route::group(['prefix' => 'spam'], function () {
+            Route::get('all', 'index');
             Route::post('store', 'store');
             Route::delete('destroy/{id}', 'destroy');
         });

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Campaignlead;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class CampaignleadController extends Controller
@@ -66,8 +67,7 @@ class CampaignleadController extends Controller
      */
     public function store(Request $request)
     {
-        // $account_id = $request->user()->account_id;
-        $account_id = 1;
+        $account_id = $request->user()->account_id;
 
         // Validate the request data
         $validator = Validator::make(
@@ -163,6 +163,7 @@ class CampaignleadController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $userId = auth()->user()->id;
         $account_id = auth()->user()->account_id;
 
         $request->merge(['account_id' => $account_id]);
@@ -225,8 +226,22 @@ class CampaignleadController extends Controller
         // Retrieve the validated input...
         $validated = $validator->validated();
 
+        DB::beginTransaction();
+
+        // Call the compareValues function to generate a formatted description based on the lead and validated data
+        $formattedDescription = compareValues($campaignLead, $validated);
+
+        // Defining action and type for creating UID
+        $action = 'update';
+        $type = $this->type;
+
+        // Log the action
+        accessLog($action, $type, $formattedDescription, $userId);
+
         // Update the CallRatesPlan with the validated data
         $campaignLead->update($validated);
+
+        DB::commit();
 
         $response = [
             'status' => true,

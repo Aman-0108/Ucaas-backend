@@ -241,8 +241,11 @@ class TagController extends Controller
         // Begin a database transaction
         DB::beginTransaction();
 
+        // Call the compareValues function to generate a formatted description based on the lead and validated data
+        $formattedDescription = compareValues($tag, $validated);
+
         // Log the action
-        accessLog('update', $this->type, $validated, $userId);
+        accessLog('update', $this->type, $formattedDescription, $userId);
 
         // Update the tag with validated data
         $tag->update($validated);
