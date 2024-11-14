@@ -22,6 +22,7 @@ class CreateDidConfiguresTable extends Migration
             $table->string('forward_to')->nullable();
             $table->boolean('record');
             $table->string('hold_music');
+            $table->enum('stick_agent_type', ['last_spoken', 'longest_time'])->nullable();
             $table->unsignedTinyInteger('stick_agent_expires')->default(1)->comment('Expires are in days minimum is 1 day');
             $table->boolean('status')->default(false);
             $table->timestamps();
