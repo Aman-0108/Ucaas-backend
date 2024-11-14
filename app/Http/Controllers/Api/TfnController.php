@@ -320,7 +320,7 @@ class TfnController extends Controller
             $account = Account::find($request->companyId);
 
             // Remove spaces from domain name
-            $domainName = preg_replace('/\s+/', '', $account->admin_name);
+            $domainName = preg_replace('/\s+/', '', strtolower($account->admin_name));
 
             // To shorten the domain name if it's longer than 4 characters
             $formattedDomain = strlen($domainName) > 4 ? substr($domainName, 0, 4) : $domainName;
