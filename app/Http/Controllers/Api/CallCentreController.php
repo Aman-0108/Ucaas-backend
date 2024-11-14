@@ -84,8 +84,16 @@ class CallCentreController extends Controller
             $call_centre_queues = $call_centre_queues->where('account_id', $account_id);
         }
 
-        // COMING FROM GLOBAL CONFIG
-        $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+        if ($request->has('row_per_page')) {
+            $ROW_PER_PAGE = $request->row_per_page;
+
+            if (!is_numeric($ROW_PER_PAGE) || $ROW_PER_PAGE < 1) {
+                // Fallback to a default value if invalid
+                $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+            }
+        } else {
+            $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+        }
 
         // Execute the query to fetch call centre queues
         $call_centre_queues = $call_centre_queues->orderBy('id', 'desc')->paginate($ROW_PER_PAGE);

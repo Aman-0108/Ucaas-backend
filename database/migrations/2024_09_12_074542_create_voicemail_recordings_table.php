@@ -19,6 +19,7 @@ class CreateVoicemailRecordingsTable extends Migration
             $table->string('src')->nullable();  
             $table->string('dest')->nullable();  
             $table->string('recording_path');
+            $table->integer('duration')->nullable();
             $table->timestamps();
         });
     }
