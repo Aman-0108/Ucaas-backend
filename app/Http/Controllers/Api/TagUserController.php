@@ -75,11 +75,23 @@ class TagUserController extends Controller
         accessLog($action, $type, $validated, $userId);
 
         //  check if user exist in other tags
+        // $tagUser = TagUser::where(['tag_id' => $validated['tag_id'], 'user_id' => $validated['user_id']])->first();
+
+        // if ($tagUser) {
+        //     // remove from tag
+        //     $tagUser->delete();
+        // }
+
         $tagUser = TagUser::where(['tag_id' => $validated['tag_id'], 'user_id' => $validated['user_id']])->first();
 
         if ($tagUser) {
-            // remove from tag
-            $tagUser->delete();
+
+            $response = [
+                'status' => false,
+                'message' => 'Already tagged',
+            ];
+
+            return response()->json($response, Response::HTTP_EXPECTATION_FAILED);
         }
 
         // Create a new tag with validated data
@@ -99,77 +111,69 @@ class TagUserController extends Controller
         return response()->json($response, Response::HTTP_CREATED);
     }
 
+
     /**
-     * Remove the specified TagUser resource from storage.
+     * Remove the specified Tag User resource from storage.
      *
-     * This method retrieves the TagUser with the given user_id, checks if it exists,
-     * and deletes the TagUser record from the database. It returns a JSON response
+     * This method retrieves the Tag User with the given ID, checks if it exists,
+     * and deletes the Tag User record from the database. It returns a JSON response
      * indicating success or failure.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  int  $id The ID of the Tag User to delete
+     * @return \Illuminate\Http\JsonResponse JSON response indicating success or failure
      */
-    public function destroy(Request $request)
+    public function destroy($id)
     {
-        // Defining action and type
+        // Retrieve the ID of the authenticated user making the request
+        $userId = auth()->user()->id;
+
+        // Retrieve the account ID of the authenticated user
+        $account_id = auth()->user()->account_id;
+
+        // Find the tagUser by ID
+        $tagUser = TagUser::find($id);
+
+        // Check if the groupUser exists
+        if (!$tagUser) {
+            // If the groupUser is not found, return a 404 Not Found response
+            $response = [
+                'status' => false,
+                'error' => 'Tag User not found'
+            ];
+
+            return response()->json($response, Response::HTTP_NOT_FOUND);
+        }
+
+        $tag = Tag::find($tagUser->tag_id);
+
+        // Check if the user has permission to access the group_user
+        if ($account_id !== $tag->account_id) {
+            // If user doesn't have permission, prepare error response
+            $response = [
+                'status' => false,
+                'error' => 'You do not have permission to access this resource.',
+            ];
+
+            // Return a JSON response with error message and 403 status code
+            return response()->json($response, Response::HTTP_FORBIDDEN);
+        }
+
         $action = 'delete';
         $type = $this->type;
 
-        // Retrieve the ID of the authenticated user making the request
-        $userId = $request->user()->id;
-
-        // Validate incoming request data
-        $validator = Validator::make(
-            $request->all(),
-            [
-                'user_id' => 'required|exists:users,id',
-            ]
-        );
-
-        // If validation fails
-        if ($validator->fails()) {
-            // If validation fails, return a JSON response with error messages
-            $response = [
-                'status' => false,
-                'message' => 'validation error',
-                'errors' => $validator->errors(),
-            ];
-
-            return response()->json($response, Response::HTTP_BAD_REQUEST);
-        }
-
-        // check if user belongs to same account
-        if ($request->user()->account_id != $request->account_id) {
-            $response = [
-                'status' => false,
-                'message' => 'You are not authorized to delete this tag',
-            ];
-
-            return response()->json($response, Response::HTTP_BAD_REQUEST);
-        }
-
-        // Retrieve validated input
-        $validated = $validator->validated();
-
-        // Begin a database transaction
-        DB::beginTransaction();
-
         // Log the action
-        accessLog($action, $type, $validated, $userId);
+        accessLog($action, $type, $tagUser, $userId);
 
-        // delete tag
-        TagUser::where('user_id', $validated['user_id'])->delete();
-
-        // Commit the database transaction
-        DB::commit();
+        // Delete the groupUser
+        $tagUser->delete();
 
         // Prepare the response data
         $response = [
             'status' => true,
-            'message' => 'Successfully deleted',
+            'message' => 'Successfully deleted user'
         ];
 
-        // Return a JSON response with HTTP status code 201 (Created)
-        return response()->json($response, Response::HTTP_CREATED);
+        // Return the response as JSON with HTTP status code 200 (OK)
+        return response()->json($response, Response::HTTP_OK);
     }
 }

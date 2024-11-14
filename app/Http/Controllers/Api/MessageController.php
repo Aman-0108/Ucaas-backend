@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Domain;
 use App\Models\Message;
+use App\Models\TagUser;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -196,6 +197,8 @@ class MessageController extends Controller
         foreach ($results as $user) {
 
             $receiverId = $user->id;
+
+            $user->tags = TagUser::with('tag')->where('user_id', $user->id)->get();
 
             $lastMessage = DB::table('messages as m')
                 ->where(function ($query) use ($userId, $receiverId) {
