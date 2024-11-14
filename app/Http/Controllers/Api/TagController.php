@@ -120,6 +120,7 @@ class TagController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
+                'account_id' => 'required|exists:accounts,id',
                 'name' => 'required|unique:tags,name,NULL,id,account_id,' . $request->account_id,
             ]
         );
@@ -217,6 +218,7 @@ class TagController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
+                'account_id' => 'required|exists:accounts,id',
                 'name' => 'required|unique:tags,name,' . $id . ',id,account_id,' . $request->account_id,
             ]
         );
