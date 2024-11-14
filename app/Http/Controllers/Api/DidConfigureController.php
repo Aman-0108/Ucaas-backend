@@ -42,12 +42,15 @@ class DidConfigureController extends Controller
             [
                 'did_id' => 'required|exists:did_details,id',
                 'usages' => 'required|string', // Validate 'usages' as an array
-                // 'usages.*' => 'string', // Optionally, validate each item in the 'usages' array as a string
+                // 'usages.*' => 'string', 
                 'action' => 'required|string',
                 'forward' => 'required|in:disabled,pstn,direct',
                 'forward_to' => 'string|nullable',
                 'record' => 'required|boolean',
                 'hold_music' => 'required|string',
+                'stick_agent_type' => 'nullable|in:last_spoken,longest_time',
+                'stick_agent_expires' => 'numeric|between:1,99',
+                'sticky_agent_enable' => 'boolean|nullable',
                 'status' => 'boolean',
             ]
         );
@@ -177,6 +180,9 @@ class DidConfigureController extends Controller
                 'forward_to' => 'string|nullable',
                 'record' => 'boolean|nullable',
                 'hold_music' => 'string|nullable',
+                'stick_agent_type' => 'nullable|in:last_spoken,longest_time',
+                'stick_agent_expires' => 'numeric|between:1,99',
+                'sticky_agent_enable' => 'boolean|nullable',
                 'status' => 'boolean|nullable',
             ]
         );

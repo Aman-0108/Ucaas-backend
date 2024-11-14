@@ -17,7 +17,7 @@ class CreateContactsTable extends Migration
             $table->id();
             $table->foreignId('user_id')->references('id')->on('users')->onUpdate('cascade')->onDelete('cascade');
             $table->string('title')->nullable();
-            $table->string('name')->unique();
+            $table->string('name');
             $table->string('did')->unique();
             $table->timestamps();
         });
