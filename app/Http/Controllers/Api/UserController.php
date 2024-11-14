@@ -638,7 +638,7 @@ class UserController extends Controller
         $userType = $request->user() ? $request->user()->usertype : null;
 
         // Get all voicemail recordings associated with the account
-        $voicemailsQuery = DB::table('voicemail_recording');
+        $voicemailsQuery = DB::table('voicemail_recordings');
 
         if ($userType == 'Company') {
             // Apply the account_id filter if present
