@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Extension;
+use App\Models\Provisioning;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -16,6 +17,7 @@ use App\Traits\Esl;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
 
 class ExtensionController extends Controller
 {
@@ -53,8 +55,7 @@ class ExtensionController extends Controller
         $userType = $request->user()->usertype;
 
         // Fetch all extensions from the database
-        // $extensions = Extension::with(['followmes', 'domain']);
-        $extensions = Extension::with('provisionings');
+        $extensions = Extension::query();
 
         // Check if the request contains an 'account' parameter
         if (isset($userType) && $userType == 'Company') {
@@ -77,10 +78,25 @@ class ExtensionController extends Controller
         // Execute the query to fetch domains
         $extensions = $extensions->orderBy('extension', 'asc')->paginate($ROW_PER_PAGE);
 
+        // Map the results to include only necessary fields and any transformations
+        $extensions->getCollection()->map(function ($extension) {
+
+            $provisionings = Provisioning::where('account_id', $extension->account_id)
+                    ->where('address', $extension->extension)
+                    ->first();
+
+            $extension->provisionings = $provisionings;
+
+            return $extension;
+        });
+
+        // Replace the collection in the paginator with the mapped collection
+        // $extensions->setCollection($mappedExtensions);
+
         // Prepare the response data
         $response = [
             'status' => true, // Indicates the success status of the request
-            'data' => $extensions, // Contains the fetched extensions
+            'data' => $extensions, // Contains the fetched extensions          
             'message' => 'Successfully fetched all extensions'
         ];
 
