@@ -1278,10 +1278,14 @@ class FreeSwitchController extends Controller
                 return response()->json($response, Response::HTTP_BAD_REQUEST);
             }
 
+            $domain = Domain::where('account_id', $extension->account_id)->first()->domain_name;
+            
+            $domain =  $extension->extension.'@'.$domain;
+
             $effectiveCallerIdName = $extension->effectiveCallerIdName;
 
             // Construct the command to barge on the call
-            $cmd = "api originate {origination_caller_id_number={$extension->extension},application_state='barge',origination_caller_id_name='$effectiveCallerIdName'}user/{$extension->extension} &three_way({$uuid})";
+            $cmd = "api originate {origination_caller_id_number={$extension->extension},application_state='barge',origination_caller_id_name='$effectiveCallerIdName'}user/{$domain} &three_way({$uuid})";
 
             Log::info($cmd);
 
