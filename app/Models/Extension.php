@@ -27,4 +27,11 @@ class Extension extends Model
     {
         return $this->hasOne(Domain::class, 'id', 'domain');
     }
+
+    // Define the relationship with Provisioning
+    public function provisionings()
+    {
+        return $this->hasMany(Provisioning::class, 'account_id', 'account_id')
+            ->where('address', $this->extension);
+    }
 }

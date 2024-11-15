@@ -127,10 +127,21 @@ class ProvisionController extends Controller
         // Store the mail setting in the database
         // $data = Provisioning::updateOrCreate($match, $validated);
 
+        $numberOfDevices = Provisioning::where($match)->count();
+
+        if ($numberOfDevices > 3) {
+            $response = [
+                'status' => false,
+                'message' => 'Yo don\'t have permission to add more than 3 devices'
+            ];
+
+            return response()->json($response, Response::HTTP_FORBIDDEN);
+        }
+
         $data = Provisioning::create($validated);
 
         // Log the action
-        accessLog($action, $this->type, $validated, $userId);        
+        accessLog($action, $this->type, $validated, $userId);
 
         DB::commit();
 
@@ -526,7 +537,7 @@ class ProvisionController extends Controller
                 $fileContents = Storage::disk('local')->get($registrationTemplate);
 
                 $domain = Domain::where('account_id', $account_id)->first();
-               
+
 
                 // Replace the placeholders with actual values
                 // $serverAddress = $check->server_address . ':' . $check->port; // Replace with your actual value

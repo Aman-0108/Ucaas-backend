@@ -54,7 +54,7 @@ class ExtensionController extends Controller
 
         // Fetch all extensions from the database
         // $extensions = Extension::with(['followmes', 'domain']);
-        $extensions = Extension::query();
+        $extensions = Extension::with('provisionings');
 
         // Check if the request contains an 'account' parameter
         if (isset($userType) && $userType == 'Company') {
