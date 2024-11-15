@@ -15,7 +15,7 @@ class CreateSpamTable extends Migration
     {
         Schema::create('spam', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('accout_id')->references('id')->on('accounts')->onUpdate('cascade');
+            $table->foreignId('account_id')->references('id')->on('accounts')->onUpdate('cascade');
             $table->string('type');
             $table->string('number');
             $table->timestamps();

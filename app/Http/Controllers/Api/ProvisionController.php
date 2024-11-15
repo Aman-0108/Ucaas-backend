@@ -51,7 +51,7 @@ class ProvisionController extends Controller
         }
 
         // Execute the query to fetch provisioning
-        $provisioning = $query->orderBy('id', 'desc')->first();
+        $provisioning = $query->orderBy('id', 'desc')->get();
 
         // Prepare the response data
         $response = [
@@ -125,7 +125,9 @@ class ProvisionController extends Controller
         DB::beginTransaction();
 
         // Store the mail setting in the database
-        $data = Provisioning::updateOrCreate($match, $validated);
+        // $data = Provisioning::updateOrCreate($match, $validated);
+
+        $data = Provisioning::create($validated);
 
         // Log the action
         accessLog($action, $this->type, $validated, $userId);        
