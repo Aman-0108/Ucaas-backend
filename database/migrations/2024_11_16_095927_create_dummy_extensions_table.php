@@ -16,6 +16,7 @@ class CreateDummyExtensionsTable extends Migration
         Schema::create('dummy_extensions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('account_id')->references('id')->on('accounts')->onUpdate('cascade')->onDelete('cascade'); // Account ID, unsigned integer
+            $table->foreignId('domaain_id')->references('id')->on('domains')->onUpdate('cascade')->onDelete('cascade'); // Domain ID, unsigned integer
             $table->foreignId('conference_id')->references('id')->on('conferences')->onUpdate('cascade')->onDelete('cascade'); // Conference ID, unsigned integer
             $table->string('extension', 150); // Extension (varchar(150))
             $table->string('password', 150); // Password (varchar(150))

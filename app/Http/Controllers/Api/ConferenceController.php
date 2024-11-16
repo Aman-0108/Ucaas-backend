@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Conference;
+use App\Models\Domain;
 use App\Models\DummyExtension;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -145,16 +146,18 @@ class ConferenceController extends Controller
 
         $ROW_PER_PAGE = config('globals.DUMMY_EXTENSION_START_FROM') ?? 9000;
 
+        $domainId = Domain::where('account_id', $validated['account_id'])->first()->id;
+
         if ($max_members > 0) {
             $inputData = [];
 
             for ($i = 0; $i < $max_members; $i++) {
                 $inputData[] = [
                     'account_id' => $validated['account_id'],
+                    'domain_id' => $domainId,
                     'conference_id' => $data->id,
-                    'extension' => $ROW_PER_PAGE + $i,
-                    'password' => '1234',
-                    'status' => 0,
+                    'extension' => 'dummy' . $ROW_PER_PAGE + $i,
+                    'password' => rand(1000, 9999),
                     'created_at' => date('Y-m-d H:i:s'),
                     'updated_at' => date('Y-m-d H:i:s')
                 ];
@@ -162,8 +165,6 @@ class ConferenceController extends Controller
 
             DummyExtension::insert($inputData);
         }
-
-
 
         // Commit the database transaction
         DB::commit();
