@@ -129,6 +129,16 @@ class ConferenceController extends Controller
         // Retrieve validated input
         $validated = $validator->validated();
 
+        $exist = $this->checkConference($request);
+
+        if ($exist) {
+            $response = [
+                'status' => false,
+                'message' => 'Conference name already exist',
+            ];
+            return response()->json($response, Response::HTTP_FORBIDDEN);
+        }
+
         // Begin a database transaction
         DB::beginTransaction();
 
@@ -154,10 +164,11 @@ class ConferenceController extends Controller
             for ($i = 0; $i < $max_members; $i++) {
                 $inputData[] = [
                     'account_id' => $validated['account_id'],
-                    'domain_id' => $domainId,
+                    'domain' => $domainId,
                     'conference_id' => $data->id,
-                    'extension' => 'dummy' . $ROW_PER_PAGE + $i,
+                    'extension' => 'dummy_' . $ROW_PER_PAGE + $i,
                     'password' => rand(1000, 9999),
+                    'voice_mail_password' => rand(1000, 9999),
                     'created_at' => date('Y-m-d H:i:s'),
                     'updated_at' => date('Y-m-d H:i:s')
                 ];
@@ -178,5 +189,12 @@ class ConferenceController extends Controller
 
         // Return a JSON response with HTTP status code 201 (Created)
         return response()->json($response, Response::HTTP_CREATED);
+    }
+
+    protected function checkConference($request)
+    {
+        $freeSWitch = new FreeSwitchController();
+
+        return $freeSWitch->checkConference($request);
     }
 }

@@ -1834,4 +1834,24 @@ class FreeSwitchController extends Controller
             return $this->disconnected();
         }
     }
+
+    public function checkConference($request)
+    {
+        if ($this->connected) {
+            $cmd = "api conference list";
+            $response = $this->socket->request($cmd);
+            Log::info($response);
+
+            if (strpos($response, "+OK") !== false) {
+                $response = [
+                    'status' => true,
+                    'data' => $response,
+                ];
+                return response()->json($response, Response::HTTP_OK);
+            }
+
+        } else {
+            return $this->disconnected();
+        }   
+    }
 }
