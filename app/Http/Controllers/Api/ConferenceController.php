@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Conference;
+use App\Models\DummyExtension;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +24,61 @@ class ConferenceController extends Controller
         $this->type = 'Conference';
     }
 
+    /**
+     * Fetch all conferences.
+     *
+     * @param \Illuminate\Http\Request $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function index(Request $request)
+    {
+        $account_id = request()->user()->account_id;
+
+        $query = Conference::query();
+
+        if ($account_id) {
+            $query->where('account_id', $account_id);
+        }
+
+        // COMING FROM GLOBAL CONFIG
+        $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+
+        // Execute the query to fetch cdrs
+        $clead = $query->orderBy('id', 'desc')->paginate($ROW_PER_PAGE);
+
+        // Prepare a success response with the list of fax
+        $response = [
+            'status' => true,
+            'data' => $clead,
+            'message' => 'Successfully fetched all coferences'
+        ];
+
+        // Return a JSON response with the list of fax
+        return response()->json($response, Response::HTTP_OK);
+    }
+
+    /**
+     * Store a newly created conference resource in storage.
+     *
+     * This method is responsible for validating incoming request data,
+     * creating a new conference record in the database, and returning a 
+     * JSON response indicating success or failure.
+     *
+     * It performs the following operations:
+     * - Retrieves the authenticated user's ID and account ID.
+     * - Merges the account ID into the request data.
+     * - Validates the request data against a set of defined rules.
+     * - If validation fails, returns a 403 Forbidden response with error messages.
+     * - Begins a database transaction.
+     * - Logs the action for audit purposes.
+     * - Creates a new conference record with validated data.
+     * - Commits the database transaction.
+     * - Returns a JSON response with the created conference data and a 201 Created status.
+     *
+     * @param \Illuminate\Http\Request $request The HTTP request containing conference data.
+     * @return \Illuminate\Http\JsonResponse The JSON response indicating the outcome of the operation.
+     */
     public function store(Request $request)
     {
         // Retrieve the ID of the authenticated user making the request
@@ -84,6 +140,30 @@ class ConferenceController extends Controller
 
         // Create a new conference record with validated data
         $data = Conference::create($validated);
+
+        $max_members = $validated['conf_max_members'];
+
+        $ROW_PER_PAGE = config('globals.DUMMY_EXTENSION_START_FROM') ?? 9000;
+
+        if ($max_members > 0) {
+            $inputData = [];
+
+            for ($i = 0; $i < $max_members; $i++) {
+                $inputData[] = [
+                    'account_id' => $validated['account_id'],
+                    'conference_id' => $data->id,
+                    'extension' => $ROW_PER_PAGE + $i,
+                    'password' => '1234',
+                    'status' => 0,
+                    'created_at' => date('Y-m-d H:i:s'),
+                    'updated_at' => date('Y-m-d H:i:s')
+                ];
+            }
+
+            DummyExtension::insert($inputData);
+        }
+
+
 
         // Commit the database transaction
         DB::commit();

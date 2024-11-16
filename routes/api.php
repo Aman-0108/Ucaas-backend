@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\{
     PaymentController,
     StripeController,
     CommioController,
+    ConferenceController,
     ContactController,
     DialermemberController,
     DidConfigureController,
@@ -1080,6 +1081,15 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::get('all', 'index');
             Route::post('store', 'store');
             Route::delete('destroy/{id}', 'destroy');
+        });
+    });
+
+    // conference
+    Route::controller(ConferenceController::class)->group(function () {
+        Route::group(['prefix' => 'conference'], function () {
+            Route::get('all', 'index');
+            Route::post('store', 'store');
+            // Route::delete('destroy/{id}', 'destroy');
         });
     });
 });
