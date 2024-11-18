@@ -35,10 +35,10 @@ class CreateDialplansTable extends Migration
             $table->string('record')->comment('save the recording')->nullable();
             $table->string('holdMusic')->nullable();
              
-            $table->longText('dialplan_xml')->default("");
+            $table->longText('dialplan_xml')->nullable();
             $table->boolean('dialplan_enabled')->default(false);
             
-            $table->text('hostname')->default("");           
+            $table->text('hostname')->nullable();           
 
             $table->bigInteger('created_by')->nullable();
             $table->string('action')->nullable();

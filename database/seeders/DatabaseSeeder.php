@@ -29,7 +29,7 @@ class DatabaseSeeder extends Seeder
         $this->call(DidVendorSeeder::class);
         $this->call(DidRateChartSeeder::class);
 
-        $this->call(SofiaGlobalsettingsSeeder::class);
+        $this->call(SofiaGlobalSettingsSeeder::class);
         $this->call(SipProfileSeeder::class);
         $this->call(SipProfileSettingsSeeder::class);
         $this->call(SipProfileDomainSeeder::class);
