@@ -23,5 +23,10 @@ class RoleSeeder extends Seeder
             'name' => 'Manager',
             'created_by' => 2
         ]);
+
+        Role::create([
+            'name' => 'Agent',
+            'created_by' => 2
+        ]);
     }
 }
