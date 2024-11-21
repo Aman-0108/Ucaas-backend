@@ -25,6 +25,8 @@ class CreateDidConfiguresTable extends Migration
             $table->enum('stick_agent_type', ['last_spoken', 'longest_time'])->nullable();
             $table->unsignedTinyInteger('stick_agent_expires')->default(1)->comment('Expires are in days minimum is 1 day');
             $table->boolean('sticky_agent_enable')->default(false);
+            
+            $table->enum('spam_filter_type', ['1', '2', '3'])->default(null)->comment('1 = robo_calling, 2 = call_screening, 3 = dtmf_input');
             $table->boolean('status')->default(false);
             $table->timestamps();
         });

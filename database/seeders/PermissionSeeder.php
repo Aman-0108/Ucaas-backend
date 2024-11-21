@@ -47,5 +47,12 @@ class PermissionSeeder extends Seeder
                
             }
         }
+
+        Permission::create([
+            'model' => 'phoneDashboard',
+            'type' => 'phonedashboard',
+            'action' => 'browse',
+            'slug' => 'Phone Dashboard'
+        ]);
     }
 }

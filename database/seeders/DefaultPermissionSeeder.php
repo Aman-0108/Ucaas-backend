@@ -6,6 +6,7 @@ use App\Models\DefaultPermission;
 use App\Models\Permission;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DefaultPermissionSeeder extends Seeder
 {
@@ -16,11 +17,23 @@ class DefaultPermissionSeeder extends Seeder
      */
     public function run()
     {
-        $filteredModels = ['Account', 'User', 'Role', 'RolePermission', 'Extension', 'ChannelHangupComplete', 'WalletTransaction', 'BillingAddress', 'CardDetail', 'Domain', 'Timezone', 'Dialplan', 'Sound', 'Gateway'];
+        $filteredModels = [
+            'Account', 'User', 'Role', 'RolePermission', 
+            'Extension', 'ChannelHangupComplete', 
+            'WalletTransaction', 'BillingAddress', 
+            'CardDetail', 'Domain', 'Timezone', 
+            'Dialplan', 'Sound', 'Gateway', 
+            'CallCenterQueue', 'CallCenterAgent', 'Ringgroup', 
+            'MailSetting', 'IvrMaster', 'IvrOptions',
+            'Port', 'Autodialer', 'Sound', 
+            'DidDetail', 'DidConfigure'
+        ];
 
         $permissions = Permission::whereIn('model', $filteredModels)->get();
 
         $defaultPermissionsData = $this->formatDefaultPermissionsData($permissions);
+
+        Log::info('Default permissions data: ' . json_encode($defaultPermissionsData));
 
         DefaultPermission::upsert($defaultPermissionsData,'permission_id');
     }

@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class CreateMessagesTable extends Migration
 {
@@ -23,7 +24,8 @@ class CreateMessagesTable extends Migration
             $table->text('message_text')->nullable(); // Content of the message
             $table->string('attachment_url')->nullable(); // URL for attachment
             $table->boolean('is_pinned')->default(false); 
-            $table->timestamps();
+            $table->timestamp('created_at')->useCurrent(); // Sets current timestamp on insert
+            $table->timestamp('updated_at')->useCurrent()->nullable()->default(DB::raw('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'));
         });
     }
 

@@ -27,6 +27,7 @@ return new class extends Migration
             $table->enum('status', ['E', 'D'])->default('D')->comment('E for Enable & D for Disable');
             $table->text('description')->nullable();
             $table->bigInteger('retry')->nullable();
+            $table->boolean('active')->default(false);
             $table->integer('created_by');
             $table->timestamps();
         });

@@ -68,7 +68,7 @@ return new class extends Migration
             $table->bigInteger('created_by')->nullable();
 
             $table->boolean('sofia_status')->default(false);
-
+            $table->string('cidr')->nullable();
             $table->foreignId('moh_sound')->nullable()->references('id')->on('sounds');
 
             $table->softDeletes();
