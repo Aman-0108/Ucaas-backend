@@ -51,6 +51,11 @@ class DidConfigureController extends Controller
                 'stick_agent_type' => 'nullable|in:last_spoken,longest_time',
                 'stick_agent_expires' => 'numeric|between:1,99',
                 'sticky_agent_enable' => 'boolean|nullable',
+                'spam_filter_type' => 'nullable|in:1,2,3',
+                'dtmf_type' => 'nullable|in:random_digit,last_caller_id_digit',
+                'dtmf_length' => 'nullable|in:1,2,3,4,5',
+                'dtmf_retries' => 'nullable|in:1,2,3',
+                'dtmf_retry_file_sound' => 'nullable|numeric',
                 'status' => 'boolean',
             ]
         );
@@ -183,6 +188,11 @@ class DidConfigureController extends Controller
                 'stick_agent_type' => 'nullable|in:last_spoken,longest_time',
                 'stick_agent_expires' => 'numeric|between:1,99',
                 'sticky_agent_enable' => 'boolean|nullable',
+                'spam_filter_type' => 'nullable|in:1,2,3',
+                'dtmf_type' => 'nullable|in:random_digit,last_caller_id_digit',
+                'dtmf_length' => 'nullable|in:1,2,3,4,5',
+                'dtmf_retries' => 'nullable|in:1,2,3',
+                'dtmf_retry_file_sound' => 'nullable|numeric',
                 'status' => 'boolean|nullable',
             ]
         );

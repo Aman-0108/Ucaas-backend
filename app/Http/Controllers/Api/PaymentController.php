@@ -252,7 +252,7 @@ class PaymentController extends Controller
                 'company_name' => $account->company_name,
                 'email' => $account->email,
                 'username' => $account->company_name,
-                'password' => $account->company_name,
+                'password' => str_replace(' ', '', strtolower($account->company_name)),
                 'dynamicUrl' => '',
                 'transactionId' => $transactionId,
                 'pdfPath' => $payment->invoice_url

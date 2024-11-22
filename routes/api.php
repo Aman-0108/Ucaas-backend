@@ -50,7 +50,7 @@ use App\Http\Controllers\Api\{
     IvrmasterController,
     IvroptionsController,
     LeadController,
-    MailsettingsController,
+    MailSettingsController,
     MessageController,
     PermissionController,
     PortController,
@@ -788,28 +788,33 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // Call Center
     Route::controller(CallCentreController::class)->group(function () {
-        // To get all the call-center-queues
-        Route::get('call-center-queues', 'index');
 
-        Route::get('call-center-queues/dashboard', 'dashboard');
+        Route::prefix('call-center-queues')->name('callcenterqueue.')->group(function () {
+            // To get all the call-center-queues
+            Route::get('all', 'index')->name('browse');
 
-        // To get the particular call-center-queue by Id
-        Route::get('call-center-queue/{id}', 'show');
+            Route::get('dashboard', 'dashboard')->name('dashboard');
 
-        // To store new call-center-queue
-        Route::post('call-center-queue/store', 'store');
+            // To get the particular call-center-queue by Id
+            Route::get('show/{id}', 'show')->name('read');
 
-        // To update the particular call-center-queue by Id
-        Route::put('call-center-queue/update/{id}', 'update');
+            // To store new call-center-queue
+            Route::post('store', 'store')->name('add');
 
-        // To destroy the call-center-queue by Id
-        Route::delete('call-center-queue/destroy/{id}', 'destroy');
+            // To update the particular call-center-queue by Id
+            Route::put('update/{id}', 'update')->name('edit');
 
-        // To destroy the call-center-queue by Id
-        Route::delete('call-center-agent/destroy/{id}', 'callCentreAgentDelete');
+            // To destroy the call-center-queue by Id
+            Route::delete('destroy/{id}', 'destroy')->name('delete');
+        });
 
-        // To update the particular call-center-agent
-        Route::put('call-center-agent/update/{id}', 'callCentreAgentUpdate');
+        Route::prefix('call-center-agent')->name('callcenteragent.')->group(function () {
+            // To destroy the call-center-queue by Id
+            Route::delete('destroy/{id}', 'callCentreAgentDelete')->name('delete');
+
+            // To update the particular call-center-agent
+            Route::put('update/{id}', 'callCentreAgentUpdate')->name('edit');
+        });
     });
 
     // Variables
@@ -875,7 +880,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     });
 
     // Mail settings
-    Route::controller(MailsettingsController::class)->group(function () {
+    Route::controller(MailSettingsController::class)->group(function () {
         Route::prefix('mail-setting')->group(function () {
             // To get all the mail settings
             Route::get('all', 'index');
@@ -916,41 +921,41 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // IVR Master
     Route::controller(IvrmasterController::class)->group(function () {
-        Route::prefix('ivr-master')->group(function () {
+        Route::prefix('ivr-master')->name('ivrmaster.')->group(function () {
             // To get all the IVR Master
-            Route::get('all', 'index');
+            Route::get('all', 'index')->name('browse');
 
             // To get the particular IVR Master by Id
-            Route::get('show/{id}', 'show');
+            Route::get('show/{id}', 'show')->name('read');
 
             // To update the particular IVR Master by Id
-            Route::put('update/{id}', 'update');
+            Route::put('update/{id}', 'update')->name('edit');
 
             // To store new IVR Master
-            Route::post('store', 'store');
+            Route::post('store', 'store')->name('add');
 
             // To destroy the IVR Master by Id
-            Route::delete('destroy/{id}', 'destroy');
+            Route::delete('destroy/{id}', 'destroy')->name('delete');
         });
     });
 
     // IVR Option
     Route::controller(IvroptionsController::class)->group(function () {
-        Route::prefix('ivr-option')->group(function () {
+        Route::prefix('ivr-option')->name('ivroption.')->group(function () {
             // To get all the IVR Options
-            Route::get('all', 'index');
+            Route::get('all', 'index')->name('browse');
 
             // To get the particular IVR Option by Id
-            Route::get('show/{id}', 'show');
+            Route::get('show/{id}', 'show')->name('read');
 
             // To update the particular IVR Option by Id   
-            Route::put('update/{id}', 'update');
+            Route::put('update/{id}', 'update')->name('edit');
 
             // To store new IVR Option
-            Route::post('store', 'store');
+            Route::post('store', 'store')->name('add');
 
             // To destroy the IVR Option by Id
-            Route::delete('destroy/{id}', 'destroy');
+            Route::delete('destroy/{id}', 'destroy')->name('delete');
         });
     });
 
