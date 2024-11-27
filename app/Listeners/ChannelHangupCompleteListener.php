@@ -29,18 +29,24 @@ class ChannelHangupCompleteListener
     {
         $formattedData = $response->events;
 
-        // Log::info($formattedData);
+        $balance = 0;
 
-        $account_id = $formattedData['account_id'];
+        if(isset($formattedData['account_id'])) {
 
-        $account_balance = AccountBalance::where('account_id', $account_id)
-            ->select('amount')
-            ->first();
+            $account_id = $formattedData['account_id'];
+
+            $account_balance = AccountBalance::where('account_id', $account_id)
+                ->select('amount')
+                ->first();
+
+            $balance = $account_balance && $account_balance->amount !== null ? $account_balance->amount : 0;
+
+        }       
 
         $customizedResponse = [
             'key' => 'ChannelHangupComplete',
             'result' => $formattedData,
-            'balance' =>  $account_balance && $account_balance->amount !== null ? $account_balance->amount : 0,
+            'balance' =>  $balance,
             // 'userId' => 3
         ];
 
