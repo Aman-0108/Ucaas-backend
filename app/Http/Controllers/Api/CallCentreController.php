@@ -84,6 +84,24 @@ class CallCentreController extends Controller
             $call_centre_queues = $call_centre_queues->where('account_id', $account_id);
         }
 
+        // Filter by queue name
+        if ($request->has('name') && !empty($request->name)) {
+            $queue_name = $request->name;
+            $call_centre_queues = $call_centre_queues->where('queue_name', 'like', '%' . $queue_name . '%');
+        }
+
+        // filter by extension
+        if ($request->has('extension') && !empty($request->extension)) {
+            $extension = $request->extension;
+            $call_centre_queues = $call_centre_queues->where('extension', 'like', '%' . $extension . '%');
+        }
+
+        // strategy
+        if ($request->has('strategy') && !empty($request->strategy)) {
+            $strategy = $request->strategy;
+            $call_centre_queues = $call_centre_queues->where('strategy', 'like', '%' . $strategy . '%');
+        }
+
         if ($request->has('row_per_page')) {
             $ROW_PER_PAGE = $request->row_per_page;
 

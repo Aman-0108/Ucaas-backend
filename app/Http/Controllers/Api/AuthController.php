@@ -250,12 +250,18 @@ class AuthController extends Controller
         // Check if a user is authenticated
         $user = $request->user();
 
-        if ($user->id) {
+        if ($user) {
             User::where('id', $user->id)->update(['socket_session_id' => NULL, 'socket_status' => 'offline']);
+            // Delete the current access token
+            $request->user()->currentAccessToken()->delete();
+    
+            return response()->json([
+                'status' => true,
+                'message' => 'Successfully logged out.'
+            ], Response::HTTP_OK);
         }
-
+      
         // $request->user()->tokens()->delete();
-        $request->user()->currentAccessToken()->delete();
 
         return response()->json([
             'status' => true,

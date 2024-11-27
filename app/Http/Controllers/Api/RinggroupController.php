@@ -83,6 +83,25 @@ class RinggroupController extends Controller
             $ringgroups->where('account_id', $account_id);
         }
 
+        // Filter by name
+        if ($request->has('name') && !empty($request->name)) {
+            $name = $request->name;
+            $ringgroups = $ringgroups->where('name', 'like', '%' . $name . '%');
+        }
+
+        // filter by extension
+        if ($request->has('extension') && !empty($request->extension)) {
+            $extension = $request->extension;
+            $ringgroups = $ringgroups->where('extension', 'like', '%' . $extension . '%');
+        }
+
+        // strategy
+        if ($request->has('strategy') && !empty($request->strategy)) {
+            $strategy = $request->strategy;
+            $ringgroups = $ringgroups->where('strategy', 'like', '%' . $strategy . '%');
+        }
+
+
         if ($request->has('row_per_page')) {
             $ROW_PER_PAGE = $request->row_per_page;
 

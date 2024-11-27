@@ -40,7 +40,7 @@ class ChannelHangupCompleteListener
         $customizedResponse = [
             'key' => 'ChannelHangupComplete',
             'result' => $formattedData,
-            'balance' => $account_balance->amount,
+            'balance' =>  $account_balance && $account_balance->amount !== null ? $account_balance->amount : 0,
             // 'userId' => 3
         ];
 

@@ -44,7 +44,7 @@ class CreateRingGroupTable extends Migration
             $table->string('ring_group_cid_name_prefix')->nullable();
             $table->string('ring_group_cid_number_prefix')->nullable();
 
-            $table->string('ring_group_timeout_app')->nullable();
+            $table->enum('ring_group_timeout_app', ['transfer'])->nullable()->default('transfer');
             $table->string('ring_group_timeout_data')->nullable();
 
             $table->string('distinctive_ring')->nullable();
