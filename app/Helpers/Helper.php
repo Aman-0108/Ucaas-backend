@@ -632,3 +632,22 @@ if (!function_exists('activeGatewayId')) {
         return $result->id;
     }
 }
+
+
+/**
+ * Generates a random string of specified length using alphanumeric characters.
+ *
+ * @param int $length The length of the random string (default: 6)
+ * @return string The generated random string
+ */
+if (!function_exists('generateRandomString')) {
+    function generateRandomString($length = 6)
+    {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[rand(0, strlen($characters) - 1)];
+        }
+        return $randomString;
+    }
+}

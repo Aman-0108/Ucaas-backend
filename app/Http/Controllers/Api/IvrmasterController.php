@@ -37,12 +37,35 @@ class IvrmasterController extends Controller
         $ivrMaster = IvrMaster::with(['options']);
 
         // Filter by account_id if available
-        if($account_id) {
+        if ($account_id) {
             $ivrMaster->where('account_id', $account_id);
         }
 
-        // Execute the query to fetch domains
-        $ivrMaster = $ivrMaster->get();
+        if ($request->has('search')) {
+
+            $searchTerm = $request->search;
+
+            $ivrMaster->where(function ($q) use ($searchTerm) {
+                $q->where('ivr_name', 'like', "%$searchTerm%")
+                    ->orWhere('ivr_type', 'like', "%$searchTerm%")
+                    ->orWhere('timeout', 'like', "%$searchTerm%");
+            });
+        }
+
+        if ($request->has('row_per_page')) {
+            $ROW_PER_PAGE = $request->row_per_page;
+
+            if (!is_numeric($ROW_PER_PAGE) || $ROW_PER_PAGE < 1) {
+                // Fallback to a default value if invalid
+                $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+            }
+        } else {
+            $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+        }
+
+        // Execute the query to fetch ivrs
+        $ivrMaster = $ivrMaster->orderBy('id', 'desc')->paginate($ROW_PER_PAGE);
+
 
         // Prepare the response data
         $response = [
@@ -105,7 +128,7 @@ class IvrmasterController extends Controller
         // Retrieve the ID of the authenticated user making the request
         $accountId = $request->user()->account_id;
 
-        if($accountId == null) {
+        if ($accountId == null) {
             $response = [
                 'status' => false,
                 'message' => 'Account not found'

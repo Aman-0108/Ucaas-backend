@@ -110,7 +110,7 @@ class ProvisionController extends Controller
         $validated = [
             'account_id' => $request->account_id,
             'serial_number' => $request->serial_number,
-            'server_address' => '192.168.2.225',
+            'server_address' => '44.195.80.205',
             'address' => $ext->extension,
             'user_id' => $ext->extension,
             'password' => $ext->password,

@@ -1838,8 +1838,11 @@ class FreeSwitchController extends Controller
     public function checkConference($request)
     {
         if ($this->connected) {
+            
             $cmd = "api conference list";
+            
             $response = $this->socket->request($cmd);
+
             Log::info($response);
 
             if (strpos($response, "+OK") !== false) {

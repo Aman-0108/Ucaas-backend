@@ -69,11 +69,26 @@ class ExtensionController extends Controller
         if ($request->has('search')) {
             // If 'search' parameter is provided, filter extensions by extension name
             $searchTerm = $request->search;
-            $extensions->where('extension', 'like', "%$searchTerm%");
+
+            if ($searchTerm) {
+                $extensions->where(function ($q) use ($searchTerm) {
+                    $q->where('extension', 'like', "%$searchTerm%")
+                        ->orWhere('effectiveCallerIdName', 'like', "%$searchTerm%")
+                        ->orWhere('outbundCallerIdName', 'like', "%$searchTerm%");
+                });
+            }
         }
 
-        // COMING FROM GLOBAL CONFIG
-        $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+        if ($request->has('row_per_page')) {
+            $ROW_PER_PAGE = $request->row_per_page;
+
+            if (!is_numeric($ROW_PER_PAGE) || $ROW_PER_PAGE < 1) {
+                // Fallback to a default value if invalid
+                $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+            }
+        } else {
+            $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+        }
 
         // Execute the query to fetch domains
         $extensions = $extensions->orderBy('extension', 'asc')->paginate($ROW_PER_PAGE);
@@ -82,8 +97,8 @@ class ExtensionController extends Controller
         $extensions->getCollection()->map(function ($extension) {
 
             $provisionings = Provisioning::where('account_id', $extension->account_id)
-                    ->where('address', $extension->extension)
-                    ->first();
+                ->where('address', $extension->extension)
+                ->first();
 
             $extension->provisionings = $provisionings;
 

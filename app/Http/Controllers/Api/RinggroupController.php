@@ -83,24 +83,16 @@ class RinggroupController extends Controller
             $ringgroups->where('account_id', $account_id);
         }
 
-        // Filter by name
-        if ($request->has('name') && !empty($request->name)) {
-            $name = $request->name;
-            $ringgroups = $ringgroups->where('name', 'like', '%' . $name . '%');
-        }
+        if ($request->has('search')) {
+            // 
+            $searchTerm = $request->search;
 
-        // filter by extension
-        if ($request->has('extension') && !empty($request->extension)) {
-            $extension = $request->extension;
-            $ringgroups = $ringgroups->where('extension', 'like', '%' . $extension . '%');
+            $ringgroups->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', "%$searchTerm%")
+                    ->orWhere('extension', 'like', "%$searchTerm%")
+                    ->orWhere('strategy', 'like', "%$searchTerm%");
+            });
         }
-
-        // strategy
-        if ($request->has('strategy') && !empty($request->strategy)) {
-            $strategy = $request->strategy;
-            $ringgroups = $ringgroups->where('strategy', 'like', '%' . $strategy . '%');
-        }
-
 
         if ($request->has('row_per_page')) {
             $ROW_PER_PAGE = $request->row_per_page;

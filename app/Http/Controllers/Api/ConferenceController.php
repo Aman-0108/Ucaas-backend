@@ -129,15 +129,15 @@ class ConferenceController extends Controller
         // Retrieve validated input
         $validated = $validator->validated();
 
-        $exist = $this->checkConference($request);
+        // $exist = $this->checkConference($request);
 
-        if ($exist) {
-            $response = [
-                'status' => false,
-                'message' => 'Conference name already exist',
-            ];
-            return response()->json($response, Response::HTTP_FORBIDDEN);
-        }
+        // if ($exist) {
+        //     $response = [
+        //         'status' => false,
+        //         'message' => 'Conference name already exist',
+        //     ];
+        //     return response()->json($response, Response::HTTP_FORBIDDEN);
+        // }
 
         // Begin a database transaction
         DB::beginTransaction();
@@ -147,10 +147,16 @@ class ConferenceController extends Controller
         $type = $this->type;
 
         // Log the action
-        accessLog($action, $type, $validated, $userId);
+        accessLog($action, $type, $validated, $userId);        
 
         // Create a new conference record with validated data
         $data = Conference::create($validated);
+
+        // create conference url
+        $conferenceUrl = 'ucaas' . $data->id .'/' . generateRandomString();
+
+        // update the conference url
+        Conference::where('id', $data->id)->update('conf_url', $conferenceUrl);
 
         $max_members = $validated['conf_max_members'];
 

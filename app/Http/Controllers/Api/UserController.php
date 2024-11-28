@@ -298,8 +298,16 @@ class UserController extends Controller
             }
         }
 
-        // COMING FROM GLOBAL CONFIG
-        $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+        if ($request->has('row_per_page')) {
+            $ROW_PER_PAGE = $request->row_per_page;
+
+            if (!is_numeric($ROW_PER_PAGE) || $ROW_PER_PAGE < 1) {
+                // Fallback to a default value if invalid
+                $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+            }
+        } else {
+            $ROW_PER_PAGE = config('globals.PAGINATION.ROW_PER_PAGE');
+        }
 
         // Execute the query to fetch users
         $users = $users->orderBy('id', 'asc')->paginate($ROW_PER_PAGE);
@@ -430,7 +438,7 @@ class UserController extends Controller
 
         unset($validated['permissions'], $validated['role_id']);
 
-        if($request->has('password')) {
+        if ($request->has('password')) {
             $validated['password'] = Hash::make($validated['password']);
         }
 
@@ -737,7 +745,7 @@ class UserController extends Controller
             return response()->json($response, Response::HTTP_NOT_FOUND);
         }
 
-        if($user->account_id != $account_id && $usertype != 'Company') {
+        if ($user->account_id != $account_id && $usertype != 'Company') {
             // If the Port is not found, return a 404 Not Found response
             $response = [
                 'status' => false,
