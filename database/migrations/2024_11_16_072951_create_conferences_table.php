@@ -15,8 +15,9 @@ class CreateConferencesTable extends Migration
     {
         Schema::create('conferences', function (Blueprint $table) {
             $table->id();
-            $table->integer('room_id');
+            $table->integer('room_id')->nullable();
             $table->string('instance_id', 255)->nullable(); // varchar(255)
+            $table->enum('conf_type', ['public', 'private', 'webiner'])->default('public');
             $table->string('conf_ext', 10)->nullable(); // varchar(10)
             $table->foreignId('account_id')->nullable()->references('id')->on('accounts')->onUpdate('cascade')->onDelete('cascade');
             $table->string('conf_name', 255); // varchar(255)
@@ -35,6 +36,7 @@ class CreateConferencesTable extends Migration
             $table->dateTime('conf_start_time')->nullable(); // datetime
             $table->dateTime('conf_end_time')->nullable(); // datetime
             $table->longText('notification_settings')->nullable(); // longtext
+            $table->string('conf_url')->nullable();
             $table->timestamps();
         });
     }

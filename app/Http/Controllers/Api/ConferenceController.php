@@ -94,8 +94,16 @@ class ConferenceController extends Controller
             [
                 'account_id' => 'required|exists:accounts,id',
                 'instance_id' => 'nullable|string|max:255',
+                'conf_type' => 'required|in:public,private,webiner',
                 'conf_ext' => 'nullable|string|max:10',
-                'conf_name' => 'required|string|max:255',
+                'conf_name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    Rule::unique('conferences')->where(function ($query) use ($request) {
+                        return $query->where('account_id', $request->input('account_id'));
+                    }),
+                ],
                 'moh_sound' => 'required|integer',
                 'description' => 'nullable|string',
                 'participate_pin' => 'nullable|string|max:11',
@@ -111,6 +119,12 @@ class ConferenceController extends Controller
                 'conf_start_time' => 'nullable|date',
                 'conf_end_time' => 'nullable|date|after_or_equal:conf_start_time',
                 'notification_settings' => 'nullable|string',
+                'conf_url' => 'nullable|string'
+            ],
+            // Custom validation messages
+            [
+                'conf_type.required' => 'The conference type is required.',
+                'conf_type.in' => 'The conference type must be one of the following: public, private, webiner.'
             ]
         );
 
@@ -147,16 +161,18 @@ class ConferenceController extends Controller
         $type = $this->type;
 
         // Log the action
-        accessLog($action, $type, $validated, $userId);        
+        accessLog($action, $type, $validated, $userId);
 
         // Create a new conference record with validated data
         $data = Conference::create($validated);
 
         // create conference url
-        $conferenceUrl = 'ucaas' . $data->id .'/' . generateRandomString();
+        $conferenceUrl = 'https://ucaas.webvio.in/conference?type=' . $data->conf_type . '/' . $data->id . '/' . generateRandomString();
 
         // update the conference url
-        Conference::where('id', $data->id)->update('conf_url', $conferenceUrl);
+        Conference::where('id', $data->id)->update(['conf_url' => $conferenceUrl]);
+
+        $data['conf_url'] = $conferenceUrl;
 
         $max_members = $validated['conf_max_members'];
 
@@ -168,13 +184,14 @@ class ConferenceController extends Controller
             $inputData = [];
 
             for ($i = 0; $i < $max_members; $i++) {
+                $randomPassword = rand(1000, 9999);
                 $inputData[] = [
                     'account_id' => $validated['account_id'],
                     'domain' => $domainId,
                     'conference_id' => $data->id,
                     'extension' => 'dummy_' . $ROW_PER_PAGE + $i,
-                    'password' => rand(1000, 9999),
-                    'voice_mail_password' => rand(1000, 9999),
+                    'password' => $randomPassword,
+                    'voicemail_password' => $randomPassword,
                     'created_at' => date('Y-m-d H:i:s'),
                     'updated_at' => date('Y-m-d H:i:s')
                 ];

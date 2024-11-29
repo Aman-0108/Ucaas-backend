@@ -230,179 +230,199 @@ class TfnController extends Controller
                 ], 400);
             }
 
-            $paymentController = new PaymentController();
+            if ($vendor->vendor_name == 'Commio') {
 
-            $request->merge([
-                'amount' => $rate,
-                'account_id' => $request->companyId,
-            ]);
+                $paymentController = new PaymentController();
 
-            $paymentResponse = $paymentController->pay($request, $metadata);
+                $request->merge([
+                    'amount' => $rate,
+                    'account_id' => $request->companyId,
+                ]);
 
-            // Extract content from response
-            $paymentResponse = $paymentResponse->getContent();
-            $responseData = json_decode($paymentResponse, true);
+                $paymentResponse = $paymentController->pay($request, $metadata);
 
-            if ($responseData['status']) {
-                $response = $this->purchaseViaCommio($createdBy, $request->companyId, $request->vendorId, $qty, $rate, $request->accountId, $request->dids);
+                // Extract content from response
+                $paymentResponse = $paymentResponse->getContent();
+                $responseData = json_decode($paymentResponse, true);
 
-                $transactionId = $responseData['transactionId'];
+                if ($responseData['status']) {
+                    $response = $this->purchaseViaCommio($createdBy, $request->companyId, $request->vendorId, $qty, $rate, $request->accountId, $request->dids);
 
-                if ($request->has('card_id')) {
-                    // card details
-                    $card = CardDetail::where(['id' => $request->card_id, 'account_id' => $request->account_id, 'cvc' => $request->cvc])->first();
+                    $transactionId = $responseData['transactionId'];
 
-                    if (!$card) {
-                        $type = config('enums.RESPONSE.ERROR'); // Response type (error)
-                        $status = false; // Operation status (failed)
-                        $msg = 'CVV is invalid.'; // Detailed error messages
+                    if ($request->has('card_id')) {
+                        // card details
+                        $card = CardDetail::where(['id' => $request->card_id, 'account_id' => $request->account_id, 'cvc' => $request->cvc])->first();
 
-                        // Return CVV validation error response
-                        return responseHelper($type, $status, $msg, Response::HTTP_BAD_REQUEST);
+                        if (!$card) {
+                            $type = config('enums.RESPONSE.ERROR'); // Response type (error)
+                            $status = false; // Operation status (failed)
+                            $msg = 'CVV is invalid.'; // Detailed error messages
+
+                            // Return CVV validation error response
+                            return responseHelper($type, $status, $msg, Response::HTTP_BAD_REQUEST);
+                        }
+                    } else {
+                        $card = [
+                            'name' => $request->name,
+                            'card_number' => $request->card_number,
+                            'exp_month' => $request->exp_month,
+                            'exp_year' => $request->exp_year,
+                            'cvc' => $request->cvc,
+                        ];
+
+                        $card = json_decode(json_encode($card));
                     }
+
+                    if ($request->has('address_id')) {
+                        $billingAddress = BillingAddress::find($request->address_id);
+                    } else {
+                        $billingAddresInputs = [
+                            'fullname' => $request->fullname,
+                            'contact_no' => $request->contact_no,
+                            'email' => $request->email,
+                            'address' => $request->address,
+                            'zip' => $request->zip,
+                            'city' => $request->city,
+                            'state' => $request->state,
+                            'country' => $request->country
+                        ];
+
+                        $billingAddress = json_decode(json_encode($billingAddresInputs));
+                    }
+
+                    // Add payment record
+                    $paymentController->addPayment($transaction_type, $payment_gateway, $billingAddress, $request->account_id, $card, $paymentMode, $rate, $transactionId, $description);
+
+                    return $response;
                 } else {
-                    $card = [
-                        'name' => $request->name,
-                        'card_number' => $request->card_number,
-                        'exp_month' => $request->exp_month,
-                        'exp_year' => $request->exp_year,
-                        'cvc' => $request->cvc,
-                    ];
+                    if (isset($responseData['error'])) {
+                        return response()->json([
+                            'status' => false,
+                            'error' => $responseData['error']
+                        ], 400);
+                    }
 
-                    $card = json_decode(json_encode($card));
+                    return commonServerError();
                 }
-
-                if ($request->has('address_id')) {
-                    $billingAddress = BillingAddress::find($request->address_id);
-                } else {
-                    $billingAddresInputs = [
-                        'fullname' => $request->fullname,
-                        'contact_no' => $request->contact_no,
-                        'email' => $request->email,
-                        'address' => $request->address,
-                        'zip' => $request->zip,
-                        'city' => $request->city,
-                        'state' => $request->state,
-                        'country' => $request->country
-                    ];
-
-                    $billingAddress = json_decode(json_encode($billingAddresInputs));
-                }
-
-                // Add payment record
-                $paymentController->addPayment($transaction_type, $payment_gateway, $billingAddress, $request->account_id, $card, $paymentMode, $rate, $transactionId, $description);
-
-                return $response;
             } else {
-                if (isset($responseData['error'])) {
-                    return response()->json([
-                        'status' => false,
-                        'error' => $responseData['error']
-                    ], 400);
-                }
+                $response = [
+                    'status' => false,
+                    'errors' => 'Check vendor configuration.'
+                ];
 
-                return commonServerError();
+                return response()->json($response, Response::HTTP_FORBIDDEN);
             }
         }
 
         // for cofiguration
         if ($request->type == 'configure') {
 
-            $srcResponse = $this->purchaseViaCommio($createdBy, $request->companyId, $request->vendorId, $qty, $rate, $request->accountId, $request->dids);
+            if ($vendor->vendor_name == 'Commio') {
 
-            $response = $srcResponse->getData();
+                $srcResponse = $this->purchaseViaCommio($createdBy, $request->companyId, $request->vendorId, $qty, $rate, $request->accountId, $request->dids);
 
-            if (!$response->status) {
-                return $srcResponse;
-            }
+                $response = $srcResponse->getData();
 
-            // Find account
-            $account = Account::find($request->companyId);
+                if (!$response->status) {
+                    return $srcResponse;
+                }
 
-            // Remove spaces from domain name
-            $domainName = preg_replace('/\s+/', '', strtolower($account->admin_name));
+                // Find account
+                $account = Account::find($request->companyId);
 
-            // To shorten the domain name if it's longer than 4 characters
-            $formattedDomain = strlen($domainName) > 4 ? substr($domainName, 0, 4) : $domainName;
+                // Remove spaces from domain name
+                $domainName = preg_replace('/\s+/', '', strtolower($account->admin_name));
 
-            // Domain inputs
-            $domainInputs = [
-                'domain_name' =>  $formattedDomain . '.' . $account->id . '.webvio.in',
-                'created_by' => $createdBy
-            ];
+                // To shorten the domain name if it's longer than 4 characters
+                $formattedDomain = strlen($domainName) > 4 ? substr($domainName, 0, 4) : $domainName;
 
-            // create domain or update  
-            $result = Domain::updateOrCreate(
-                ['account_id' => (int) $request->companyId],
-                $domainInputs
-            );
+                // Domain inputs
+                $domainInputs = [
+                    'domain_name' =>  $formattedDomain . '.' . $account->id . '.webvio.in',
+                    'created_by' => $createdBy
+                ];
 
-            // update company status 
-            Account::where('id', $request->companyId)->update(['company_status' => 6]);
+                // create domain or update  
+                $result = Domain::updateOrCreate(
+                    ['account_id' => (int) $request->companyId],
+                    $domainInputs
+                );
 
-            // update domain id
-            User::where('email', $account->email)->update(['domain_id' => $result->id]);
+                // update company status 
+                Account::where('id', $request->companyId)->update(['company_status' => 6]);
 
-            // First, set all rows for the account_id to false
-            DidDetail::where('account_id', $request->companyId)->update(['default_outbound' => false]);
+                // update domain id
+                User::where('email', $account->email)->update(['domain_id' => $result->id]);
 
-            // Then, set the first row found to true
-            DidDetail::where('account_id', $request->companyId)
-                ->first()
-                ->update(['default_outbound' => true]);
+                // First, set all rows for the account_id to false
+                DidDetail::where('account_id', $request->companyId)->update(['default_outbound' => false]);
 
-            $domain = Domain::where('account_id', $request->companyId)->first();
+                // Then, set the first row found to true
+                DidDetail::where('account_id', $request->companyId)
+                    ->first()
+                    ->update(['default_outbound' => true]);
 
-            if (!$domain) {
-                return response()->json([
-                    'status' => false,
-                    'error' => 'Domain not found.'
-                ], 404);
-            }
+                $domain = Domain::where('account_id', $request->companyId)->first();
 
-            $activeSubscription = Subscription::where(['account_id' => $request->companyId, 'status' => 'active'])->first();
-
-            if ($activeSubscription) {
-                $package = Package::find($activeSubscription->package_id);
-
-                // Check if there are any users to create 
-                if (!$package || $package->number_of_user < 1) {
+                if (!$domain) {
                     return response()->json([
                         'status' => false,
-                        'error' => 'Check Package Details.'
-                    ]);
+                        'error' => 'Domain not found.'
+                    ], 404);
                 }
 
-                $number_of_user = $package->number_of_user;
+                $activeSubscription = Subscription::where(['account_id' => $request->companyId, 'status' => 'active'])->first();
 
-                $intitialExtension = config('globals.EXTENSION_START_FROM');
+                if ($activeSubscription) {
+                    $package = Package::find($activeSubscription->package_id);
 
-                for ($i = 0; $i < $number_of_user; $i++) {
+                    // Check if there are any users to create 
+                    if (!$package || $package->number_of_user < 1) {
+                        return response()->json([
+                            'status' => false,
+                            'error' => 'Check Package Details.'
+                        ]);
+                    }
 
-                    $data = Extension::create([
-                        'account_id' => $request->companyId,
-                        "domain" => $domain->id,
-                        "extension" => $intitialExtension,
-                        "password" => $intitialExtension,
-                        "voicemail_password" => $intitialExtension,
-                    ]);
+                    $number_of_user = $package->number_of_user;
 
-                    // Check if this is the first extension
-                    // if ($i == 0) {
-                    //     // Insert the first extension into the user table                    
-                    //     $userdata = User::find($request->user()->id);
-                    //     $userdata->extension_id = $data->id;
-                    //     $userdata->save();
+                    $intitialExtension = config('globals.EXTENSION_START_FROM');
 
-                    //     // Update the extension in the extension table
-                    //     Extension::where('id', $data->id)->update(['user' => $request->user()->id]);
-                    // }
+                    for ($i = 0; $i < $number_of_user; $i++) {
 
-                    $intitialExtension++;
+                        $data = Extension::create([
+                            'account_id' => $request->companyId,
+                            "domain" => $domain->id,
+                            "extension" => $intitialExtension,
+                            "password" => $intitialExtension,
+                            "voicemail_password" => $intitialExtension,
+                        ]);
+
+                        // Check if this is the first extension
+                        if ($i == 0) {
+                            // Insert the first extension into the user table                    
+                            $userdata = User::find($request->user()->id);
+                            $userdata->extension_id = $data->id;
+                            $userdata->save();
+
+                            // Update the extension in the extension table
+                            Extension::where('id', $data->id)->update(['user' => $request->user()->id]);
+                        }
+
+                        $intitialExtension++;
+                    }
                 }
+
+                return $response;
+            } else {
+                $response = [
+                    'status' => false,
+                    'errors' => 'Check vendor configuration.'
+                ];
+
+                return response()->json($response, Response::HTTP_FORBIDDEN);
             }
-
-            return $response;
         }
 
         // DB::commit();
@@ -448,4 +468,5 @@ class TfnController extends Controller
 
         return $purchaseDataResponse;
     }
+
 }

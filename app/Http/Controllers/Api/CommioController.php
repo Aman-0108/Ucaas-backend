@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DidDetail;
 use App\Models\DidOrderStatus;
 use App\Models\Account;
+use App\Models\DidRouting;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -203,7 +204,7 @@ class CommioController extends Controller
             $jsondata = json_encode($issuedata);
 
             $curl = curl_init();
-            
+
             curl_setopt_array($curl, array(
                 CURLOPT_URL => 'https://api.thinq.com/account/' . $accountId . '/origination/order/create',
                 CURLOPT_RETURNTRANSFER => true,
@@ -273,6 +274,18 @@ class CommioController extends Controller
                             ];
 
                             $ordeDetail = DidDetail::create($ordeDetail);
+
+                            $didConfigureResponse = $this->didRoutingConfigure($vendorId, $accountId, $row['did']);
+
+                            if (isset($didConfigureResponse['status'])) {
+                                $arr = [
+                                    'did' => $row['did'],
+                                    'route_id' => 246
+
+                                ];
+
+                                DidRouting::create($arr);
+                            }
                         }
 
                         //make the order Status Completed in did order statuses tbl
@@ -346,6 +359,129 @@ class CommioController extends Controller
         curl_close($curl);
 
         $responseData = json_decode($response, true);
+
+        return $responseData;
+    }
+
+    /**
+     * Configure DID routing settings via the Commio API.
+     * 
+     * This method configures routing for a specific DID number through Commio's API. It sends a PUT request
+     * to update the routing configuration with a predefined route ID. The method requires vendor credentials
+     * which are retrieved using the vendor ID.
+     *
+     * @param int $vendorId The ID of the Commio vendor
+     * @param string $commioAccountId The Commio account ID
+     * @param string $did The DID number to configure routing for
+     * @return array The decoded response from the Commio API
+     */
+    public function didRoutingConfigure($vendorId, $commioAccountId, $did)
+    {
+        // The data you want to send in the request, in JSON format
+        $data = [
+            "routing" => [
+                [
+                    "did" => $did,
+                    "route_id" => 16486
+                ]
+            ]
+        ];
+
+        $DidController = new DidVendorController();
+        $vendorDataResponse = $DidController->show($vendorId);
+        $datas = $vendorDataResponse->getData();
+        $username = $datas->data->username;
+        $password = $datas->data->token;
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => 'https://api.thinq.com/account/' . $commioAccountId . '/origination/did/routing/',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'PUT',
+            CURLOPT_HTTPHEADER => array(
+                'Authorization: Basic ' . base64_encode("$username:$password"),
+                'Content-Type: application/json'
+            ),
+            CURLOPT_POSTFIELDS => json_encode($data),
+        ));
+
+        $response = curl_exec($curl);
+
+        curl_close($curl);
+
+        $responseData = json_decode($response, true);
+
+        return $responseData;
+    }
+
+    /**
+     * Send an SMS message via the Commio API.
+     *
+     * This method sends an SMS message through Commio's API by first validating that an active
+     * Commio vendor exists, then making a POST request to their messaging endpoint. It handles
+     * the authentication and formatting of the request payload.
+     *
+     * @param string $fromDid The phone number/DID that will send the message
+     * @param string $ToDid The recipient's phone number/DID
+     * @param string $message The text content of the message to send
+     * @return \Illuminate\Http\JsonResponse|array The API response containing status and message details
+     */
+    public function sendMessage($fromDid, $ToDid, $message)
+    {
+        $vendor = DidVendor::where('status', 'active')->first();
+
+        if (!$vendor || $vendor->vendor_name !== 'Commio') {
+            $response = [
+                'status' => false,
+                'error' => 'Vendor not found.'
+            ];
+
+            return response()->json($response, Response::HTTP_BAD_REQUEST);
+        }
+
+        // Define the JSON payload to send in the POST request
+        $data = [
+            'from_did' => $fromDid,  // The sending DID (replace with actual DID)
+            'to_did' => $ToDid,    // The recipient DID (replace with actual DID)
+            'message' => $message  // The message content
+        ];
+
+        $username = $vendor->username;
+        $password = $vendor->token;
+
+        $account_id = 14642;
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => 'https://api.thinq.com/account/' . $account_id . '/product/origination/sms/send',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_HTTPHEADER => array(
+                'Authorization: Basic ' . base64_encode("$username:$password"),
+                'Content-Type: application/json'
+            ),
+            CURLOPT_POSTFIELDS => json_encode($data),
+        ));
+
+        $response = curl_exec($curl);
+
+        curl_close($curl);
+
+        $responseData = json_decode($response, true);
+
+        Log::info($responseData);
 
         return $responseData;
     }
