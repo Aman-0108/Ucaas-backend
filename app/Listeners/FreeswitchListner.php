@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\CallRecorded;
 use App\Events\ChannelHangupComplete;
+use App\Events\Conference;
 use App\Events\FreeswitchEvent;
 use App\Events\FreeSwitchShutDown;
 use App\Events\FsCallEvent;
@@ -76,6 +77,8 @@ class FreeswitchListner
             echo "Missing 'Event-Name' key in event data";
             return;
         }
+
+        Log::info($eventData);
 
         switch ($eventData['Event-Name']) {
             case 'CHANNEL_CREATE':
@@ -165,6 +168,10 @@ class FreeswitchListner
         // Register/unregister of extension from freeswitch
         if ($subclass == 'sofia::register' || $subclass == 'sofia::unregister') {
             Event::dispatch(new ExtensionRegistration($eventData));
+        }
+
+        if($subclass == 'conference::maintenance') {
+            Event::dispatch(new Conference($eventData));
         }
     }
 

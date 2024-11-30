@@ -1095,6 +1095,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::get('all', 'index');
             Route::post('store', 'store');
             // Route::delete('destroy/{id}', 'destroy');
+            Route::post('create', 'registerExtensions');
+            Route::post('start', 'startConference');
         });
     });
 });

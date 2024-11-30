@@ -6,12 +6,14 @@ use App\Events\Account\AccountCredentialCreated;
 use App\Events\AccountCreated;
 use App\Events\CallRecorded;
 use App\Events\ChannelHangupComplete;
+use App\Events\Conference;
 use App\Events\FreeswitchEvent;
 use App\Events\FreeSwitchShutDown;
 use App\Events\FsCallEvent;
 use App\Events\ExtensionRegistration;
 use App\Listeners\Account\AccountCredentialCreatedNotification;
 use App\Listeners\ChannelHangupCompleteListener;
+use App\Listeners\ConferenceListner;
 use App\Listeners\FreeswitchListner;
 use App\Listeners\FreeSwitchShutDownListener;
 use App\Listeners\FsCallListener;
@@ -58,6 +60,10 @@ class EventServiceProvider extends ServiceProvider
         CallRecorded::class => [
             HandleCallRecording::class
         ],
+
+        Conference::class => [
+            ConferenceListner::class
+        ]
     ];
 
     /**

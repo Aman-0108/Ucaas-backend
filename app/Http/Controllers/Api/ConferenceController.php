@@ -214,10 +214,178 @@ class ConferenceController extends Controller
         return response()->json($response, Response::HTTP_CREATED);
     }
 
+    /**
+     * Checks the status of a conference by delegating to FreeSwitchController.
+     * 
+     * This method creates a new FreeSwitchController instance and calls its 
+     * checkConference method to get the current status of conferences in the system.
+     *
+     * @param mixed $request The incoming request object
+     * @return \Illuminate\Http\JsonResponse Returns JSON response with conference status data
+     */
     protected function checkConference($request)
     {
         $freeSWitch = new FreeSwitchController();
 
         return $freeSWitch->checkConference($request);
+    }
+
+    /**
+     * Starts a conference call with the given name and room ID.
+     * 
+     * This method validates the conference exists, checks for available dummy extensions,
+     * marks an extension as joined, and initiates the conference call through FreeSwitch.
+     * 
+     * @param \Illuminate\Http\Request $request Request containing name and conference ID
+     * @return \Illuminate\Http\JsonResponse Returns success/failure status with appropriate message
+     */
+    public function registerExtensions(Request $request)
+    {
+        // Validate the request data
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'name' => 'string|max:255',
+                'room_id' => 'exists:conferences,id',
+            ]
+        );
+
+        // Check if validation fails
+        if ($validator->fails()) {
+            // If validation fails, prepare error response with validation errors
+            $response = [
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validator->errors()
+            ];
+
+            // Return a JSON response with validation errors and 403 status code
+            return response()->json($response, Response::HTTP_FORBIDDEN);
+        }
+
+        $name = $request->name;
+        $roomId = $request->room_id;
+
+        $conference = Conference::find($roomId);
+
+        if (!$conference) {
+            $response = [
+                'status' => false,
+                'message' => 'Conference not found',
+            ];
+            return response()->json($response, Response::HTTP_NOT_FOUND);
+        }
+
+        $dummyExt = DummyExtension::where(['conference_id' => $conference->id, 'joined' => 0])
+            ->orderBy('created_at', 'asc')  // Order by 'created_at' ascending
+            ->get();
+
+        if ($dummyExt->isEmpty()) {
+            $response = [
+                'status' => false,
+                'message' => 'Room is full',
+            ];
+            return response()->json($response, Response::HTTP_FORBIDDEN);
+        }
+
+        $firstRow = $dummyExt->first();
+
+        $domain = Domain::where('account_id', $firstRow->account_id)->first();
+
+        if (!$domain) {
+            $response = [
+                'status' => false,
+                'message' => 'Domain not found',
+            ];
+            return response()->json($response, Response::HTTP_NOT_FOUND);
+        }
+
+        $data = [
+            'extension_id' => $firstRow->id,
+            'name' => $name,
+            'domainName' => $domain->domain_name,
+            'room_id' => $roomId,
+            'participate_pin' => $conference->participate_pin,
+            'moderator_pin' => $conference->moderator_pin,
+            'extension' => $firstRow->extension,
+            'password' => $firstRow->password 
+        ];
+
+        // Prepare the response data
+        $response = [
+            'status' => true,
+            'data' => $data,
+            'message' => 'Successfully initiated'
+        ];
+
+        // Return a JSON response with HTTP status code 201 (Created)
+        return response()->json($response, Response::HTTP_CREATED);
+
+        //  bgapi originate {origination_caller_id_name='vivek negi'}user/1002@webs.9.webvio.in &conference(1@)"
+
+    }
+
+    /**
+     * Start a conference call with the given participant details
+     * 
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     * 
+     * @throws \Illuminate\Validation\ValidationException
+     * 
+     * Request body parameters:
+     * @bodyParam id integer required The ID of the dummy extension. Example: 1
+     * @bodyParam name string required The name of the conference participant. Max length: 100. Example: "John Doe"
+     * 
+     */
+    public function startConference(Request $request)
+    {
+        // Validate the request data
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'id' => 'required|exists:dummy_extensions,id',
+                'name' => 'required|string|max:100'
+            ]
+        );
+
+        // Check if validation fails
+        if ($validator->fails()) {
+            // If validation fails, prepare error response with validation errors
+            $response = [
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validator->errors()
+            ];
+
+            // Return a JSON response with validation errors and 403 status code
+            return response()->json($response, Response::HTTP_FORBIDDEN);
+        }
+
+        $dext = DummyExtension::find($request->id);
+
+        // Update the 'joined' status to 1
+        $dext->joined = 1;
+        $dext->save();
+
+        $domain = Domain::where('account_id', $dext->account_id)->first();
+
+        if (!$domain) {
+            $response = [
+                'status' => false,
+                'message' => 'Domain not found',
+            ];
+            return response()->json($response, Response::HTTP_NOT_FOUND);
+        }
+
+        $name = $request->name;
+        $roomId = $request->id;
+        $domainName = $domain->domain_name;
+        $extension = $dext->extension;
+        $user = 'user/' . $extension . '@' . $domainName;
+
+        $freeSWitch = new FreeSwitchController();
+
+        return $freeSWitch->createConference($name, $roomId, $user);
     }
 }

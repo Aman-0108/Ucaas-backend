@@ -1279,8 +1279,8 @@ class FreeSwitchController extends Controller
             }
 
             $domain = Domain::where('account_id', $extension->account_id)->first()->domain_name;
-            
-            $domain =  $extension->extension.'@'.$domain;
+
+            $domain =  $extension->extension . '@' . $domain;
 
             $effectiveCallerIdName = $extension->effectiveCallerIdName;
 
@@ -1835,12 +1835,22 @@ class FreeSwitchController extends Controller
         }
     }
 
+    /**
+     * Checks the status of conferences in FreeSwitch.
+     * 
+     * This method sends an API request to FreeSwitch to list all active conferences.
+     * If successful, returns the conference list data. If the socket is not connected,
+     * returns a disconnected response.
+     *
+     * @param mixed $request The incoming request object
+     * @return \Illuminate\Http\JsonResponse Returns JSON response with conference data or error
+     */
     public function checkConference($request)
     {
         if ($this->connected) {
-            
+
             $cmd = "api conference list";
-            
+
             $response = $this->socket->request($cmd);
 
             Log::info($response);
@@ -1852,9 +1862,85 @@ class FreeSwitchController extends Controller
                 ];
                 return response()->json($response, Response::HTTP_OK);
             }
-
         } else {
             return $this->disconnected();
-        }   
+        }
+    }
+
+    /**
+     * Performs maintenance on active conferences and broadcasts the results via WebSocket.
+     * 
+     * This method checks the socket connection, fetches conference maintenance data from FreeSwitch,
+     * formats the response, and sends it through WebSocket to connected clients.
+     *
+     * @return \Illuminate\Http\JsonResponse|void Returns disconnected response if socket is not connected
+     */
+    public function conferenceMintenance()
+    {
+        // Check if the socket is connected
+        if (!$this->connected) {
+            return $this->disconnected();
+        }
+
+        // Send an API request to fetch call events
+        $response = $this->socket->request('api conference::maintenance');
+
+        // Initialize response variable
+        $customizedResponse = [
+            'key' => 'activeConference',
+            'result' => $response,
+        ];
+
+        // Initialize WebSocket controller and send the response
+        $socketController = new WebSocketController();
+        $socketController->send($customizedResponse);
+    }
+
+    /**
+     * Creates a new conference call with the specified parameters.
+     * 
+     * This method initiates a conference call by sending a command to FreeSwitch to originate
+     * a call with the given caller name and user, connecting them to the specified conference room.
+     *
+     * @param string $name The display name of the caller
+     * @param string $roomId The conference room ID to connect to
+     * @param string $user The full user identifier (e.g. user/extension@domain)
+     * @return \Illuminate\Http\JsonResponse Returns success/failure status with the FreeSwitch response
+     */
+    public function createConference($name, $roomId, $user)
+    {
+        // Check if the socket is connected
+        if (!$this->connected) {
+            return $this->disconnected();
+        }
+
+        // bgapi originate {origination_caller_id_name='vivek negi'}user/1002@webs.9.webvio.in &conference(1@)"
+        $cmd = "bgapi originate {origination_caller_id_name=$name}user/$user &conference($roomId)";
+
+        Log::info($cmd);
+
+        // Send an API request to fetch call events
+        $response = $this->socket->request($cmd);
+
+        // Accessing individual values
+        $contentType = $response['Content-Type'];
+        $replyText = $response['Reply-Text'];
+        $jobUuid = $response['Job-UUID'];
+
+        Log::info($replyText);
+
+        if (strpos($replyText, "+OK") !== false) {
+            $response = [
+                'status' => true,
+                'data' => $response,
+            ];
+            return response()->json($response, Response::HTTP_OK);
+        } else {
+            $response = [
+                'status' => false,
+                'data' => $response,
+            ];
+            return response()->json($response, Response::HTTP_EXPECTATION_FAILED);
+        }
     }
 }
