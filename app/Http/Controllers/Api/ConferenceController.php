@@ -95,7 +95,7 @@ class ConferenceController extends Controller
                 'account_id' => 'required|exists:accounts,id',
                 'instance_id' => 'nullable|string|max:255',
                 'conf_type' => 'required|in:public,private,webiner',
-                'conf_ext' => 'nullable|string|max:10',
+                // 'conf_ext' => 'nullable|string|max:10',
                 'conf_name' => [
                     'required',
                     'string',
@@ -143,22 +143,36 @@ class ConferenceController extends Controller
         // Retrieve validated input
         $validated = $validator->validated();
 
-        // $exist = $this->checkConference($request);
-
-        // if ($exist) {
-        //     $response = [
-        //         'status' => false,
-        //         'message' => 'Conference name already exist',
-        //     ];
-        //     return response()->json($response, Response::HTTP_FORBIDDEN);
-        // }
-
         // Begin a database transaction
         DB::beginTransaction();
 
         // Defining action and type for creating UID
         $action = 'create';
         $type = $this->type;
+
+        // conf_ext
+        $startingPoint = config('globals.CONFERENCE_EXTENSION_START_FROM');
+
+        $maxExtension = Conference::where('account_id', $request->account_id)->max('conf_ext');
+
+        // Ensure the maxExtension is at least the starting point
+        $maxExtension = $maxExtension !== null ? max($maxExtension, $startingPoint) : $startingPoint;
+
+        // Fetch all existing extensions
+        $existingExtensions = Conference::where('account_id', $request->account_id)
+            ->pluck('conf_ext')
+            ->toArray();
+
+        // Generate a list of potential extensions
+        $potentialExtensions = range($startingPoint, $maxExtension + 1); // Include +1 to cover the edge case
+
+        // Find the missing extensions
+        $availableExtensions = array_diff($potentialExtensions, $existingExtensions);
+
+        // Get the smallest available extension number
+        $newExtension = !empty($availableExtensions) ? min($availableExtensions) : $maxExtension + 1;
+
+        $validated['conf_ext'] = $newExtension;
 
         // Log the action
         accessLog($action, $type, $validated, $userId);
@@ -176,7 +190,7 @@ class ConferenceController extends Controller
 
         $max_members = $validated['conf_max_members'];
 
-        $ROW_PER_PAGE = config('globals.DUMMY_EXTENSION_START_FROM') ?? 9000;
+        $startingExtension = config('globals.DUMMY_EXTENSION_START_FROM') ?? 9000;
 
         $domainId = Domain::where('account_id', $validated['account_id'])->first()->id;
 
@@ -189,7 +203,7 @@ class ConferenceController extends Controller
                     'account_id' => $validated['account_id'],
                     'domain' => $domainId,
                     'conference_id' => $data->id,
-                    'extension' => 'dummy_' . $ROW_PER_PAGE + $i,
+                    'extension' => $validated['account_id'] . 'dummy_' . $startingExtension + $i,
                     'password' => $randomPassword,
                     'voicemail_password' => $randomPassword,
                     'created_at' => date('Y-m-d H:i:s'),
@@ -308,7 +322,7 @@ class ConferenceController extends Controller
             'participate_pin' => $conference->participate_pin,
             'moderator_pin' => $conference->moderator_pin,
             'extension' => $firstRow->extension,
-            'password' => $firstRow->password 
+            'password' => $firstRow->password
         ];
 
         // Prepare the response data
@@ -379,7 +393,7 @@ class ConferenceController extends Controller
         }
 
         $name = $request->name;
-        $roomId = $request->id;
+        $roomId = $dext->conference_id;
         $domainName = $domain->domain_name;
         $extension = $dext->extension;
         $user = 'user/' . $extension . '@' . $domainName;
@@ -387,5 +401,86 @@ class ConferenceController extends Controller
         $freeSWitch = new FreeSwitchController();
 
         return $freeSWitch->createConference($name, $roomId, $user);
+    }
+
+    /**
+     * Retrieve conference details by ID.
+     * 
+     * This method finds a conference by ID and fetches its details from FreeSwitch.
+     * If the conference is not found, it returns a 404 Not Found response.
+     * Otherwise, it delegates to FreeSwitchController to get the conference details.
+     *
+     * @param int $id The ID of the conference to retrieve details for
+     * @return \Illuminate\Http\JsonResponse Returns conference details or error response
+     */
+    public function conferenceDetailsById($id)
+    {
+        $validator = Validator::make(['id' => $id], [
+            'id' => 'required|integer|exists:conferences,id'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'errors' => $validator->errors()
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $conference = Conference::find($id);
+
+        if (!$conference) {
+            $response = [
+                'status' => false,
+                'error' => 'Invalid room id.'
+            ];
+
+            return response()->json($response, Response::HTTP_NOT_FOUND);
+        }
+
+        $fsController = new FreeSwitchController();
+        return $fsController->conferenceDetails($conference->id);
+    }
+
+    /**
+     * Execute an action on a conference member.
+     * 
+     * This method validates the incoming request and performs the specified action 
+     * (mute or kick) on a conference member. It requires the action type, conference 
+     * room ID, and member ID. The request is validated before being delegated to 
+     * FreeSwitchController to execute the action.
+     *
+     * @param \Illuminate\Http\Request $request The request containing action, room_id and member
+     * @return \Illuminate\Http\JsonResponse Returns success/failure status with response data
+     */
+    public function conferenceAction(Request $request)
+    {
+        // Validate incoming request data
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'action' => 'required|in:mute,kick',
+                'room_id' => 'required|exists:conferences,id',
+                'member' => 'required|string',
+            ]
+        );
+
+        // If validation fails
+        if ($validator->fails()) {
+            // If validation fails, return a JSON response with error messages
+            $response = [
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validator->errors()
+            ];
+
+            return response()->json($response, Response::HTTP_FORBIDDEN);
+        }
+
+        $action = $request->action;
+        $roomId = $request->room_id;
+        $member = $request->member;
+
+        $fsController = new FreeSwitchController();
+        return $fsController->conferenceAction($action, $roomId, $member);
     }
 }

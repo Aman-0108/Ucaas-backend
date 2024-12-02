@@ -117,6 +117,16 @@ Route::group(['middleware' => 'guest'], function () {
         // To get all the documents
         Route::get('documents', 'index');
     });
+
+    // conference
+    Route::controller(ConferenceController::class)->group(function () {
+        Route::group(['prefix' => 'conference'], function () {
+            Route::post('create', 'registerExtensions');
+            Route::post('start', 'startConference');
+            Route::get('{id}/details', 'conferenceDetailsById');
+            Route::post('action', 'conferenceAction');
+        });
+    });
 });
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
@@ -1095,8 +1105,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
             Route::get('all', 'index');
             Route::post('store', 'store');
             // Route::delete('destroy/{id}', 'destroy');
-            Route::post('create', 'registerExtensions');
-            Route::post('start', 'startConference');
         });
     });
 });

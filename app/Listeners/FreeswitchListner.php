@@ -78,8 +78,6 @@ class FreeswitchListner
             return;
         }
 
-        Log::info($eventData);
-
         switch ($eventData['Event-Name']) {
             case 'CHANNEL_CREATE':
                 $this->handleChannelCreateEvent($eventData);

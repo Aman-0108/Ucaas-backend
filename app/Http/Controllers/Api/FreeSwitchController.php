@@ -1943,4 +1943,70 @@ class FreeSwitchController extends Controller
             return response()->json($response, Response::HTTP_EXPECTATION_FAILED);
         }
     }
+
+    /**
+     * Retrieve details of a specific conference.
+     * 
+     * This method sends a command to FreeSwitch to get JSON-formatted details about
+     * a conference room identified by the given ID. The details include information
+     * about participants and conference settings.
+     *
+     * @param int $id The ID of the conference room to get details for
+     * @return \Illuminate\Http\JsonResponse Returns conference details on success or error message on failure
+     */
+    public function conferenceDetails($id)
+    {
+        // Check if the socket is connected
+        if (!$this->connected) {
+            return $this->disconnected();
+        }
+
+        $cmd = "api Conference $id json_list";
+
+        Log::info($cmd);
+
+        // Send an API request to fetch call events
+        $response = $this->socket->request($cmd);
+
+        $response = [
+            'status' => true,
+            'data' => $response,
+        ];
+
+        return response()->json($response, Response::HTTP_OK);
+    }
+
+    /**
+     * Execute an action on a conference member.
+     * 
+     * This method sends a command to FreeSwitch to perform the specified action on a 
+     * conference member. Actions can include mute, unmute, kick, etc. The method requires
+     * the action type, conference room ID, and member ID to execute the command.
+     *
+     * @param string $action The action to perform on the member (e.g. mute, unmute, kick)
+     * @param int $roomId The ID of the conference room
+     * @param int $member The ID of the member to perform the action on
+     * @return \Illuminate\Http\JsonResponse Returns success status and response data
+     */
+    public function conferenceAction($action, $roomId, $member)
+    {
+        // Check if the socket is connected
+        if (!$this->connected) {
+            return $this->disconnected();
+        }
+
+        $cmd = "api conference $roomId $action $member";
+
+        Log::info($cmd);
+
+        // Send an API request to fetch call events
+        $response = $this->socket->request($cmd);
+
+        $response = [
+            'status' => true,
+            'data' => $response,
+        ];
+
+        return response()->json($response, Response::HTTP_OK);
+    }
 }

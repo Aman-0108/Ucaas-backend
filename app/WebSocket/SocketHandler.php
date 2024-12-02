@@ -24,7 +24,7 @@ class SocketHandler implements MessageComponentInterface
         echo "New connection! ({$conn->resourceId})\n";
 
         $this->clients[$conn->resourceId] = $conn;
-       
+
         $query = $conn->httpRequest->getUri()->getQuery();
 
         // Parse query parameters to get user credentials or token
@@ -58,6 +58,12 @@ class SocketHandler implements MessageComponentInterface
                 // $this->getOnlineUsers($userId, $resourceId);
                 $this->getOnlineUsers();
             }
+        } else {
+            $resourceId = $conn->resourceId;
+
+            echo "New connection ({$resourceId}) " . date('Y/m/d h:i:sa') . "\n";
+
+            $conn->send(json_encode(['isGuest' => true]));
         }
     }
 
@@ -307,9 +313,9 @@ class SocketHandler implements MessageComponentInterface
     {
         // Query the User model for online users
         $result = User::select('id', 'name', 'email')
-                        // ->where('created_by', $userId)
-                        ->where('socket_status', true)
-                        ->get();
+            // ->where('created_by', $userId)
+            ->where('socket_status', true)
+            ->get();
 
         // If online users are found
         if ($result) {
@@ -325,5 +331,4 @@ class SocketHandler implements MessageComponentInterface
             $this->onDataReceived(json_encode($customizedResponse));
         }
     }
-
 }
