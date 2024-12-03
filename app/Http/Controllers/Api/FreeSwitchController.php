@@ -1915,7 +1915,7 @@ class FreeSwitchController extends Controller
         }
 
         // bgapi originate {origination_caller_id_name='vivek negi'}user/1002@webs.9.webvio.in &conference(1@)"
-        $cmd = "bgapi originate {origination_caller_id_name=$name}user/$user &conference($roomId)";
+        $cmd = "bgapi originate {origination_caller_id_name=$name,origination_caller_id_number=$name,application_state='conference'}$user &conference($roomId)";
 
         Log::info($cmd);
 

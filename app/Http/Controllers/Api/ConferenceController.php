@@ -203,7 +203,7 @@ class ConferenceController extends Controller
                     'account_id' => $validated['account_id'],
                     'domain' => $domainId,
                     'conference_id' => $data->id,
-                    'extension' => $validated['account_id'] . 'dummy_' . $startingExtension + $i,
+                    'extension' => $validated['account_id'] . '.' . $data->id . '.' . $startingExtension + $i,
                     'password' => $randomPassword,
                     'voicemail_password' => $randomPassword,
                     'created_at' => date('Y-m-d H:i:s'),
@@ -458,7 +458,7 @@ class ConferenceController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                'action' => 'required|in:mute,kick',
+                'action' => 'required|in:tmute,deaf,undeaf,kick,hupa,hup',
                 'room_id' => 'required|exists:conferences,id',
                 'member' => 'required|string',
             ]
