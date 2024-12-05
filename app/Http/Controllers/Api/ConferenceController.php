@@ -354,6 +354,7 @@ class ConferenceController extends Controller
      */
     public function startConference(Request $request)
     {
+        if($request->is_guest=='1') {
         // Validate the request data
         $validator = Validator::make(
             $request->all(),
@@ -397,6 +398,12 @@ class ConferenceController extends Controller
         $domainName = $domain->domain_name;
         $extension = $dext->extension;
         $user = 'user/' . $extension . '@' . $domainName;
+    } else {
+        $name = $request->name;
+        $roomId = $request->roomId;
+        $user = $request->user;
+
+    }
 
         $freeSWitch = new FreeSwitchController();
 

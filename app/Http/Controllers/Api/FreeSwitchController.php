@@ -1914,8 +1914,14 @@ class FreeSwitchController extends Controller
             return $this->disconnected();
         }
 
+        // api conference $roomId count;
+        $presence_id = substr($user, 5); 
         // bgapi originate {origination_caller_id_name='vivek negi'}user/1002@webs.9.webvio.in &conference(1@)"
-        $cmd = "bgapi originate {origination_caller_id_name=$name,origination_caller_id_number=$name,application_state='conference'}$user &conference($roomId)";
+        $cmd = "bgapi originate {origination_callee_id_name=$name,caller_id_name=$name,origination_caller_id_name=$name," .
+        "origination_callee_id_number=$presence_id,caller_id_number=$presence_id,application_state='conference'}$user &conference($roomId)";
+
+        echo $cmd;
+        exit;
 
         Log::info($cmd);
 
