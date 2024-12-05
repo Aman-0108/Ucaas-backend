@@ -1920,9 +1920,6 @@ class FreeSwitchController extends Controller
         $cmd = "bgapi originate {origination_callee_id_name=$name,caller_id_name=$name,origination_caller_id_name=$name," .
         "origination_callee_id_number=$presence_id,caller_id_number=$presence_id,application_state='conference'}$user &conference($roomId)";
 
-        echo $cmd;
-        exit;
-
         Log::info($cmd);
 
         // Send an API request to fetch call events
